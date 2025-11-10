@@ -125,6 +125,16 @@ export interface Order {
     deliveryLocation?: LocationPoint;
     estimatedDeliveryTime?: string;
     rider?: Rider;
+    isReviewed?: boolean;
+}
+
+export interface OrderReview {
+    orderId: string;
+    itemReviews: {
+        itemId: string;
+        rating: number;
+        comment?: string;
+    }[];
 }
 
 export interface User {

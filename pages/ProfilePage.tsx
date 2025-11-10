@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import * as api from '../services/api';
 import type { User, Address, Order, Restaurant } from '../types';
 import { useNotification } from '../contexts/NotificationContext';
@@ -7,6 +7,7 @@ import { UserCircleIcon, TrashIcon } from '../components/Icons';
 import AddressModal from '../components/AddressModal';
 import SupportModal from '../components/SupportModal';
 import ChatWindow from '../components/ChatWindow';
+import ReviewModal from '../components/ReviewModal';
 
 interface ProfilePageProps {
     onChangeLocation: () => void;
@@ -68,12 +69,18 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ onChangeLocation }) => {
     const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
     const [isSupportModalOpen, setIsSupportModalOpen] = useState(false);
     const [isChatWindowOpen, setIsChatWindowOpen] = useState(false);
+    const [reviewingOrder, setReviewingOrder] = useState<Order | null>(null);
     const { logout } = useAuth();
+    const { showNotification } = useNotification();
 
     const handleStartChat = () => {
         setIsSupportModalOpen(false);
         setIsChatWindowOpen(true);
     };
+
+    const fetchOrders = useCallback(() => {
+        api.getOrders(orderFilter).then(setOrders);
+    }, [orderFilter]);
 
     useEffect(() => {
         const loadAllData = async () => {
@@ -98,9 +105,9 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ onChangeLocation }) => {
 
     useEffect(() => {
         if (activeTab === 'orders') {
-            api.getOrders(orderFilter).then(setOrders);
+            fetchOrders();
         }
-    }, [activeTab, orderFilter]);
+    }, [activeTab, orderFilter, fetchOrders]);
     
     const handleAddressAdded = () => {
         setIsAddressModalOpen(false);
@@ -112,6 +119,12 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ onChangeLocation }) => {
             const updatedAddresses = await api.removeAddress(id);
             setAddresses(updatedAddresses);
         }
+    };
+    
+    const handleReviewSubmitted = () => {
+        setReviewingOrder(null);
+        showNotification('Thank you for your review!', 'success');
+        fetchOrders(); // Refetch orders to update the button state
     };
     
     if (isLoading) {
@@ -175,6 +188,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ onChangeLocation }) => {
                                     orders={orders} 
                                     filter={orderFilter}
                                     onFilterChange={setOrderFilter}
+                                    onReviewClick={setReviewingOrder}
                                 />
                             )}
                             {activeTab === 'favorites' && <FavoritesSection restaurants={favoriteRestaurants} />}
@@ -185,6 +199,13 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ onChangeLocation }) => {
             {isAddressModalOpen && <AddressModal onClose={() => setIsAddressModalOpen(false)} onAddressAdded={handleAddressAdded} />}
             {isSupportModalOpen && <SupportModal onClose={() => setIsSupportModalOpen(false)} onStartChat={handleStartChat} />}
             {isChatWindowOpen && <ChatWindow onClose={() => setIsChatWindowOpen(false)} />}
+            {reviewingOrder && (
+                <ReviewModal 
+                    order={reviewingOrder}
+                    onClose={() => setReviewingOrder(null)}
+                    onSubmit={handleReviewSubmitted}
+                />
+            )}
         </>
     );
 };
@@ -283,7 +304,7 @@ const AddressSection: React.FC<{ addresses: Address[], onAddClick: () => void, o
 );
 
 // Orders Section
-const OrdersSection: React.FC<{ orders: Order[], filter: OrderFilter, onFilterChange: (filter: OrderFilter) => void }> = ({ orders, filter, onFilterChange }) => (
+const OrdersSection: React.FC<{ orders: Order[], filter: OrderFilter, onFilterChange: (filter: OrderFilter) => void, onReviewClick: (order: Order) => void }> = ({ orders, filter, onFilterChange, onReviewClick }) => (
     <div>
         <h2 className="text-2xl font-bold mb-4">Order History</h2>
         <div className="border-b mb-4">
@@ -307,16 +328,30 @@ const OrdersSection: React.FC<{ orders: Order[], filter: OrderFilter, onFilterCh
                            <p className={`text-sm font-semibold ${order.status === 'Delivered' ? 'text-green-600' : 'text-gray-600'}`}>{order.status}</p>
                         </div>
                     </div>
-                    {filter === 'ongoing' && (
-                        <div className="mt-4 pt-4 border-t text-right">
+                    <div className="mt-4 pt-4 border-t text-right">
+                        {filter === 'ongoing' && (
                             <a 
                                 href={`#/track/${order.id}`}
                                 className="px-4 py-2 bg-red-500 text-white font-semibold rounded-lg hover:bg-red-600 transition inline-block"
                             >
                                 Track Order
                             </a>
-                        </div>
-                    )}
+                        )}
+                        {filter === 'past' && (
+                            order.isReviewed ? (
+                                <button className="px-4 py-2 bg-gray-200 text-gray-500 font-semibold rounded-lg cursor-not-allowed" disabled>
+                                    Reviewed
+                                </button>
+                            ) : (
+                                <button
+                                    onClick={() => onReviewClick(order)}
+                                    className="px-4 py-2 bg-blue-500 text-white font-semibold rounded-lg hover:bg-blue-600 transition inline-block"
+                                >
+                                    Leave a Review
+                                </button>
+                            )
+                        )}
+                    </div>
                 </div>
             )) : <p>No {filter} orders found.</p>}
         </div>

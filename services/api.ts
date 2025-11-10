@@ -1,4 +1,4 @@
-import type { Offer, Restaurant, Food, PaginatedFoods, SearchResult, PaginatedRestaurants, MenuCategory, Review, CartItem, MenuItem, Address, Order, AddressSuggestion, AddressDetails, User, LoginCredentials, SignupData, AuthResponse, LocationPoint, SupportInfo, ChatMessage } from '../types';
+import type { Offer, Restaurant, Food, PaginatedFoods, SearchResult, PaginatedRestaurants, MenuCategory, Review, CartItem, MenuItem, Address, Order, AddressSuggestion, AddressDetails, User, LoginCredentials, SignupData, AuthResponse, LocationPoint, SupportInfo, ChatMessage, OrderReview } from '../types';
 
 // --- Mock Databases ---
 let mockUsers: User[] = [
@@ -215,7 +215,7 @@ let mockAddresses: Address[] = [
     { id: 'addr-2', label: 'Work', details: '456 Business Ave, Suite 500, Food City, 12345' }
 ];
 let mockOrders: Order[] = [
-    { id: 'order-1', items: [], subtotal: 45.50, deliveryFee: 5.99, total: 51.49, address: mockAddresses[0], paymentMethod: 'cod', deliveryOption: 'home', status: 'Delivered', restaurantName: 'Restaurant Hub 1', date: '2023-10-26' },
+    { id: 'order-1', items: allMockFoods.slice(10,12).map(f => ({...f, quantity: 1, restaurantName: f.vendor.name })), subtotal: 45.50, deliveryFee: 5.99, total: 51.49, address: mockAddresses[0], paymentMethod: 'cod', deliveryOption: 'home', status: 'Delivered', restaurantName: 'Restaurant Hub 1', date: '2023-10-26', isReviewed: false },
     { id: 'order-2', items: [], subtotal: 22.00, deliveryFee: 5.99, total: 27.99, address: mockAddresses[1], paymentMethod: 'online', deliveryOption: 'home', status: 'Cancelled', restaurantName: 'Restaurant Hub 3', date: '2023-10-25' },
     { 
         id: 'order-3', 
@@ -240,6 +240,7 @@ let mockOrders: Order[] = [
             location: { lat: 34.0572, lng: -118.2487 },
         }
     },
+    { id: 'order-4', items: allMockFoods.slice(20,21).map(f => ({...f, quantity: 2, restaurantName: f.vendor.name })), subtotal: 25.00, deliveryFee: 5.99, total: 30.99, address: mockAddresses[0], paymentMethod: 'online', deliveryOption: 'home', status: 'Delivered', restaurantName: 'Restaurant Hub 4', date: '2023-10-24', isReviewed: true },
 ];
 let riderLocations = new Map<string, LocationPoint>([
     ['order-3', { lat: 34.0572, lng: -118.2487 }]
@@ -463,4 +464,15 @@ export const sendChatMessage = (messageText: string, userId: string): Promise<Ch
     }, 1500);
 
     return simulateNetwork(userMessage);
+};
+
+// --- Review API ---
+export const submitOrderReview = (review: OrderReview): Promise<{ success: boolean }> => {
+    console.log('API: Submitting review for order:', review);
+    const orderIndex = mockOrders.findIndex(o => o.id === review.orderId);
+    if (orderIndex > -1) {
+        mockOrders[orderIndex].isReviewed = true;
+        return simulateNetwork({ success: true }, 1000);
+    }
+    return simulateError('Order not found for review.');
 };
