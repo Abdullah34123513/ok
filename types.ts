@@ -3,6 +3,13 @@ export interface Offer {
   imageUrl: string;
   title: string;
   description: string;
+  expiresAt?: string; // ISO 8601 format
+  restaurantId?: string;
+  restaurantName?: string;
+  discountValue: number;
+  discountType: 'percentage' | 'fixed';
+  code: string;
+  minOrderValue?: number;
 }
 
 export interface Restaurant {

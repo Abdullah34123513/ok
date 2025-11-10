@@ -73,7 +73,7 @@ const CartPageSkeleton = () => (
 
 
 const CartPage: React.FC<CartPageProps> = () => {
-    const { cartItems, cartTotal, deliveryFee, grandTotal, isLoading, numberOfRestaurants } = useCart();
+    const { cartItems, cartTotal, deliveryFee, grandTotal, isLoading, numberOfRestaurants, appliedOffer, removeOffer, discountAmount } = useCart();
 
     const groupedItems = useMemo(() => {
         return cartItems.reduce<Record<string, { restaurantName: string, items: CartItem[] }>>((acc, item) => {
@@ -132,6 +132,15 @@ const CartPage: React.FC<CartPageProps> = () => {
                                <span>Delivery Fee {numberOfRestaurants > 1 ? `(${numberOfRestaurants} restaurants)`: ''}</span>
                                <span className="font-semibold">${deliveryFee.toFixed(2)}</span>
                            </div>
+                           {appliedOffer && (
+                               <div className="flex justify-between text-green-600">
+                                   <div className="flex items-center">
+                                     <span>Discount <span className="font-semibold">({appliedOffer.code})</span></span>
+                                     <button onClick={removeOffer} className="ml-2 text-red-500 font-bold text-xs">[Remove]</button>
+                                   </div>
+                                   <span className="font-semibold">-${discountAmount.toFixed(2)}</span>
+                               </div>
+                           )}
                            <div className="border-t pt-3 mt-3 flex justify-between font-bold text-xl text-black">
                                <span>Total</span>
                                <span>${grandTotal.toFixed(2)}</span>

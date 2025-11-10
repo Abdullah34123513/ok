@@ -22,7 +22,7 @@ const AddressSectionSkeleton = () => (
 );
 
 const CheckoutPage: React.FC<CheckoutPageProps> = () => {
-    const { cartItems, cartTotal, clearCart, deliveryFee, numberOfRestaurants } = useCart();
+    const { cartItems, cartTotal, clearCart, deliveryFee, grandTotal, numberOfRestaurants, appliedOffer, removeOffer, discountAmount } = useCart();
     const { showNotification } = useNotification();
     const [addresses, setAddresses] = useState<Address[]>([]);
     const [selectedAddress, setSelectedAddress] = useState<string | null>(null);
@@ -37,8 +37,8 @@ const CheckoutPage: React.FC<CheckoutPageProps> = () => {
     }, [deliveryOption, deliveryFee]);
 
     const currentGrandTotal = useMemo(() => {
-        return cartTotal + currentDeliveryFee;
-    }, [cartTotal, currentDeliveryFee]);
+        return Math.max(0, cartTotal - discountAmount + currentDeliveryFee);
+    }, [cartTotal, discountAmount, currentDeliveryFee]);
 
     const groupedItems = useMemo(() => {
         return cartItems.reduce<Record<string, { restaurantName: string, items: CartItem[] }>>((acc, item) => {
@@ -200,6 +200,15 @@ const CheckoutPage: React.FC<CheckoutPageProps> = () => {
                                     <span>Delivery Fee {numberOfRestaurants > 1 ? `(${numberOfRestaurants} restaurants)`: ''}</span>
                                     <span className="font-semibold">${currentDeliveryFee.toFixed(2)}</span>
                                 </div>
+                                 {appliedOffer && (
+                                    <div className="flex justify-between text-sm text-green-600">
+                                       <div className="flex items-center">
+                                            <span>Discount</span>
+                                            <button onClick={removeOffer} className="ml-2 text-red-500 font-bold text-xs">[Remove]</button>
+                                       </div>
+                                        <span className="font-semibold">-${discountAmount.toFixed(2)}</span>
+                                    </div>
+                                )}
                                 <div className="flex justify-between font-bold text-lg text-black mt-2 pt-2 border-t">
                                     <span>Total</span>
                                     <span>${currentGrandTotal.toFixed(2)}</span>

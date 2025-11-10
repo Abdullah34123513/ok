@@ -34,7 +34,8 @@ const ReviewModal: React.FC<ReviewModalProps> = ({ order, onClose, onSubmit }) =
     setReviews(prev => ({ ...prev, [itemId]: { ...prev[itemId], comment } }));
   };
   
-  const canSubmit = Object.values(reviews).some(r => r.rating > 0);
+  // FIX: Cast `r` to `ItemReviewState` to access the `rating` property.
+  const canSubmit = Object.values(reviews).some(r => (r as ItemReviewState).rating > 0);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -48,11 +49,14 @@ const ReviewModal: React.FC<ReviewModalProps> = ({ order, onClose, onSubmit }) =
     const reviewPayload: OrderReview = {
         orderId: order.id,
         itemReviews: Object.entries(reviews)
-            .filter(([, review]) => review.rating > 0)
+            // FIX: Cast `review` to `ItemReviewState` to access the `rating` property.
+            .filter(([, review]) => (review as ItemReviewState).rating > 0)
             .map(([itemId, review]) => ({
                 itemId,
-                rating: review.rating,
-                comment: review.comment || undefined,
+                // FIX: Cast `review` to `ItemReviewState` to access the `rating` property.
+                rating: (review as ItemReviewState).rating,
+                // FIX: Cast `review` to `ItemReviewState` to access the `comment` property.
+                comment: (review as ItemReviewState).comment || undefined,
             }))
     };
     

@@ -15,7 +15,7 @@ interface HomePageProps {
 
 const HomePage: React.FC<HomePageProps> = ({ location }) => {
     const [offers, setOffers] = useState<Offer[]>([]);
-    const [activeOffers, setActiveOffers] = useState<Offer[]>([]);
+    const [limitedTimeOffers, setLimitedTimeOffers] = useState<Offer[]>([]);
     const [topRestaurants, setTopRestaurants] = useState<Restaurant[]>([]);
     
     const [foods, setFoods] = useState<Food[]>([]);
@@ -45,9 +45,9 @@ const HomePage: React.FC<HomePageProps> = ({ location }) => {
         resetFoodFeed();
         setTopRestaurants([]);
         setOffers([]);
-        setActiveOffers([]);
+        setLimitedTimeOffers([]);
         api.getOffers().then(setOffers);
-        api.getActiveOffers().then(setActiveOffers);
+        api.getLimitedTimeOffers(3).then(setLimitedTimeOffers);
         api.getTopRestaurants(location).then(setTopRestaurants);
     }, [location, resetFoodFeed]);
 
@@ -146,7 +146,7 @@ const HomePage: React.FC<HomePageProps> = ({ location }) => {
                         restaurants={topRestaurants} 
                         onRestaurantClick={onRestaurantClick} 
                     />
-                    <OffersCarousel offers={activeOffers} />
+                    <OffersCarousel offers={limitedTimeOffers} />
                     <FoodFeed 
                         foods={foods} 
                         onLoadMore={loadMoreFoods} 
