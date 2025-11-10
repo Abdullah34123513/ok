@@ -10,6 +10,10 @@ const mockUserPasswords = new Map<string, string>([
     ['alex.doe@example.com', 'password123']
 ]);
 
+// Helper to create future expiry dates
+const createExpiryDate = (days: number): string => new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString();
+
+
 // Mock data generation
 const createMockFood = (id: number, restaurant: Restaurant): Food => ({
   id: `food-${id}`,
@@ -40,29 +44,31 @@ const mockOffers: Offer[] = [
   {
     id: 'offer-1',
     imageUrl: 'https://picsum.photos/seed/banner1/1200/400',
-    title: '50% Off Weekend',
-    description: 'Get 50% off on all orders this weekend.',
+    title: '50% Off This Weekend',
+    description: 'Get a massive 50% off on all orders this weekend. Don\'t miss out!',
     discountType: 'PERCENTAGE',
     discountValue: 50,
     applicableTo: 'ALL',
     couponCode: 'WEEKEND50',
-    minOrderValue: 20
+    minOrderValue: 20,
+    expiry: createExpiryDate(2),
   },
   {
     id: 'offer-2',
     imageUrl: 'https://picsum.photos/seed/banner2/1200/400',
-    title: 'Free Delivery Today',
-    description: 'Enjoy free delivery on orders above $20.',
+    title: 'Free Delivery Today Only',
+    description: 'Enjoy free delivery on any orders above $20. A perfect day to order in.',
     discountType: 'FIXED',
     discountValue: 5.99,
     minOrderValue: 20,
     applicableTo: 'ALL',
+    expiry: createExpiryDate(1),
   },
   {
     id: 'offer-3',
     imageUrl: 'https://picsum.photos/seed/banner3/1200/400',
     title: 'Special Combo Deals',
-    description: 'Special combo deals starting from $15.'
+    description: 'Special combo deals starting from $15. Explore our menu for details.',
   },
   {
     id: 'offer-r1-10off',
@@ -72,7 +78,8 @@ const mockOffers: Offer[] = [
     discountType: 'PERCENTAGE',
     discountValue: 10,
     applicableTo: { type: 'RESTAURANT', id: 'restaurant-1' },
-    couponCode: 'HUB10'
+    couponCode: 'HUB10',
+    expiry: createExpiryDate(5),
   },
   {
     id: 'offer-r2-5flat',
@@ -165,7 +172,8 @@ export const search = (query: string, location: string): Promise<SearchResult> =
 
 export const getActiveOffers = (): Promise<Offer[]> => {
     console.log('API: Fetching active offers...');
-    return simulateNetwork(mockOffers.slice(0, 5).map(o => ({...o, id: `active-${o.id}`})));
+    // Return all offers for the homepage section as requested by the user.
+    return simulateNetwork(mockOffers);
 };
 
 export const getRestaurants = (location: string, page: number, filters: Record<string, any> = {}, limit = 12): Promise<PaginatedRestaurants> => {

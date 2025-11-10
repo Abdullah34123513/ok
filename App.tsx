@@ -13,6 +13,8 @@ import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
 import OrderTrackingPage from './pages/OrderTrackingPage';
 import OrderConfirmationPage from './pages/OrderConfirmationPage';
+// FIX: Changed the named import for OffersPage to a default import to match its export type and resolve the module loading error.
+import OffersPage from './pages/OffersPage';
 import BottomNav from './components/BottomNav';
 import { CartProvider } from './contexts/CartContext';
 import { NotificationProvider } from './contexts/NotificationContext';
@@ -20,7 +22,7 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import Notification from './components/Notification';
 
 
-export type View = 'home' | 'restaurants' | 'restaurantDetail' | 'foodDetail' | 'cart' | 'checkout' | 'profile' | 'login' | 'signup' | 'orderTracking' | 'orderConfirmation';
+export type View = 'home' | 'restaurants' | 'restaurantDetail' | 'foodDetail' | 'cart' | 'checkout' | 'profile' | 'login' | 'signup' | 'orderTracking' | 'orderConfirmation' | 'offers';
 
 interface Route {
     view: View;
@@ -44,6 +46,7 @@ const parseHash = (): Route => {
         case 'signup': return { view: 'signup' };
         case 'track': return { view: 'orderTracking', id };
         case 'confirmation': return { view: 'orderConfirmation', id };
+        case 'offers': return { view: 'offers' };
         case 'home':
         default:
             return { view: 'home' };
@@ -95,6 +98,8 @@ const AppContent: React.FC = () => {
                 return <Header title={`Track Order #${id}`} />;
             case 'orderConfirmation':
                  return <Header title="Order Confirmed" />;
+            case 'offers':
+                return <Header title="Limited-Time Offers" />;
             case 'login':
             case 'signup':
                 return null;
@@ -138,6 +143,8 @@ const AppContent: React.FC = () => {
             case 'orderConfirmation':
                 if (!id) { window.location.hash = '#/home'; return null; }
                 return <OrderConfirmationPage orderId={id} />;
+            case 'offers':
+                return <OffersPage />;
             case 'home':
             default:
                 return <HomePage location={location} />;
