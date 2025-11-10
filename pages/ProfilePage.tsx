@@ -5,6 +5,8 @@ import { useNotification } from '../contexts/NotificationContext';
 import { useAuth } from '../contexts/AuthContext';
 import { UserCircleIcon, TrashIcon } from '../components/Icons';
 import AddressModal from '../components/AddressModal';
+import SupportModal from '../components/SupportModal';
+import ChatWindow from '../components/ChatWindow';
 
 interface ProfilePageProps {
     onChangeLocation: () => void;
@@ -22,7 +24,14 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ onChangeLocation }) => {
     const [isLoading, setIsLoading] = useState(true);
     const [orderFilter, setOrderFilter] = useState<OrderFilter>('ongoing');
     const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
+    const [isSupportModalOpen, setIsSupportModalOpen] = useState(false);
+    const [isChatWindowOpen, setIsChatWindowOpen] = useState(false);
     const { logout } = useAuth();
+
+    const handleStartChat = () => {
+        setIsSupportModalOpen(false);
+        setIsChatWindowOpen(true);
+    };
 
     useEffect(() => {
         const loadAllData = async () => {
@@ -68,63 +77,73 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ onChangeLocation }) => {
     }
 
     return (
-        <div className="container mx-auto px-4 py-6">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-                {/* Sidebar/Tabs */}
-                <aside className="md:col-span-1">
-                    <div className="bg-white p-4 rounded-lg shadow-md sticky top-24">
-                        <div className="text-center mb-4">
-                           <UserCircleIcon className="w-20 h-20 mx-auto text-gray-400"/>
-                           <h2 className="mt-2 text-xl font-bold">{user?.name}</h2>
-                           <p className="text-sm text-gray-500">{user?.email}</p>
+        <>
+            <div className="container mx-auto px-4 py-6">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+                    {/* Sidebar/Tabs */}
+                    <aside className="md:col-span-1">
+                        <div className="bg-white p-4 rounded-lg shadow-md sticky top-24">
+                            <div className="text-center mb-4">
+                               <UserCircleIcon className="w-20 h-20 mx-auto text-gray-400"/>
+                               <h2 className="mt-2 text-xl font-bold">{user?.name}</h2>
+                               <p className="text-sm text-gray-500">{user?.email}</p>
+                            </div>
+                            <nav className="flex flex-col space-y-2">
+                                <TabButton id="profile" label="Profile Info" activeTab={activeTab} onClick={setActiveTab} />
+                                <TabButton id="addresses" label="My Addresses" activeTab={activeTab} onClick={setActiveTab} />
+                                <TabButton id="orders" label="Order History" activeTab={activeTab} onClick={setActiveTab} />
+                                <TabButton id="favorites" label="Saved Restaurants" activeTab={activeTab} onClick={setActiveTab} />
+                            </nav>
+                            <div className="mt-6 pt-4 border-t">
+                                <button
+                                    onClick={() => setIsSupportModalOpen(true)}
+                                    className="w-full text-left px-4 py-2 rounded-md font-semibold transition hover:bg-gray-100 mb-2"
+                                >
+                                    Customer Support
+                                </button>
+                                 <button 
+                                    onClick={onChangeLocation}
+                                    className="w-full text-left px-4 py-2 rounded-md font-semibold transition hover:bg-gray-100 mb-2"
+                                >
+                                    Change Location
+                                </button>
+                                <button 
+                                    onClick={logout}
+                                    className="w-full text-left px-4 py-2 rounded-md font-semibold transition text-red-500 hover:bg-red-50"
+                                >
+                                    Logout
+                                </button>
+                            </div>
                         </div>
-                        <nav className="flex flex-col space-y-2">
-                            <TabButton id="profile" label="Profile Info" activeTab={activeTab} onClick={setActiveTab} />
-                            <TabButton id="addresses" label="My Addresses" activeTab={activeTab} onClick={setActiveTab} />
-                            <TabButton id="orders" label="Order History" activeTab={activeTab} onClick={setActiveTab} />
-                            <TabButton id="favorites" label="Saved Restaurants" activeTab={activeTab} onClick={setActiveTab} />
-                        </nav>
-                        <div className="mt-6 pt-4 border-t">
-                             <button 
-                                onClick={onChangeLocation}
-                                className="w-full text-left px-4 py-2 rounded-md font-semibold transition hover:bg-gray-100 mb-2"
-                            >
-                                Change Location
-                            </button>
-                            <button 
-                                onClick={logout}
-                                className="w-full text-left px-4 py-2 rounded-md font-semibold transition text-red-500 hover:bg-red-50"
-                            >
-                                Logout
-                            </button>
-                        </div>
-                    </div>
-                </aside>
+                    </aside>
 
-                {/* Content */}
-                <main className="md:col-span-3">
-                    <div className="bg-white p-6 rounded-lg shadow-md min-h-[60vh]">
-                        {activeTab === 'profile' && user && <ProfileInfoSection user={user} />}
-                        {activeTab === 'addresses' && (
-                            <AddressSection 
-                                addresses={addresses}
-                                onAddClick={() => setIsAddressModalOpen(true)}
-                                onRemoveClick={handleRemoveAddress}
-                            />
-                        )}
-                        {activeTab === 'orders' && (
-                            <OrdersSection 
-                                orders={orders} 
-                                filter={orderFilter}
-                                onFilterChange={setOrderFilter}
-                            />
-                        )}
-                        {activeTab === 'favorites' && <FavoritesSection restaurants={favoriteRestaurants} />}
-                    </div>
-                </main>
+                    {/* Content */}
+                    <main className="md:col-span-3">
+                        <div className="bg-white p-6 rounded-lg shadow-md min-h-[60vh]">
+                            {activeTab === 'profile' && user && <ProfileInfoSection user={user} />}
+                            {activeTab === 'addresses' && (
+                                <AddressSection 
+                                    addresses={addresses}
+                                    onAddClick={() => setIsAddressModalOpen(true)}
+                                    onRemoveClick={handleRemoveAddress}
+                                />
+                            )}
+                            {activeTab === 'orders' && (
+                                <OrdersSection 
+                                    orders={orders} 
+                                    filter={orderFilter}
+                                    onFilterChange={setOrderFilter}
+                                />
+                            )}
+                            {activeTab === 'favorites' && <FavoritesSection restaurants={favoriteRestaurants} />}
+                        </div>
+                    </main>
+                </div>
             </div>
             {isAddressModalOpen && <AddressModal onClose={() => setIsAddressModalOpen(false)} onAddressAdded={handleAddressAdded} />}
-        </div>
+            {isSupportModalOpen && <SupportModal onClose={() => setIsSupportModalOpen(false)} onStartChat={handleStartChat} />}
+            {isChatWindowOpen && <ChatWindow onClose={() => setIsChatWindowOpen(false)} />}
+        </>
     );
 };
 

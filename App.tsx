@@ -18,9 +18,6 @@ import { CartProvider } from './contexts/CartContext';
 import { NotificationProvider } from './contexts/NotificationContext';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import Notification from './components/Notification';
-import SupportButton from './components/SupportButton';
-import SupportModal from './components/SupportModal';
-import ChatWindow from './components/ChatWindow';
 
 
 export type View = 'home' | 'restaurants' | 'restaurantDetail' | 'foodDetail' | 'cart' | 'checkout' | 'profile' | 'login' | 'signup' | 'orderTracking' | 'orderConfirmation';
@@ -58,8 +55,6 @@ const AppContent: React.FC = () => {
     const [location, setLocation] = useLocalStorage<string | null>('user-location', null);
     const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
     const [route, setRoute] = useState<Route>(parseHash());
-    const [isSupportModalOpen, setIsSupportModalOpen] = useState(false);
-    const [isChatWindowOpen, setIsChatWindowOpen] = useState(false);
     
     useEffect(() => {
         const handleHashChange = () => {
@@ -79,11 +74,6 @@ const AppContent: React.FC = () => {
     const handleLocationSet = (newLocation: string) => {
         setLocation(newLocation);
         setIsLocationModalOpen(false);
-    };
-
-    const handleStartChat = () => {
-        setIsSupportModalOpen(false);
-        setIsChatWindowOpen(true);
     };
 
     const renderHeader = () => {
@@ -162,13 +152,6 @@ const AppContent: React.FC = () => {
                 {renderView()}
             </main>
             <BottomNav />
-            {currentUser && (
-                <>
-                    <SupportButton onClick={() => setIsSupportModalOpen(true)} />
-                    {isSupportModalOpen && <SupportModal onClose={() => setIsSupportModalOpen(false)} onStartChat={handleStartChat} />}
-                    {isChatWindowOpen && <ChatWindow onClose={() => setIsChatWindowOpen(false)} />}
-                </>
-            )}
         </div>
     );
 };
