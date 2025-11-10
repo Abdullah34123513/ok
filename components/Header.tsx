@@ -57,7 +57,7 @@ const Header: React.FC<HeaderProps> = ({ searchQuery, onSearchChange, title }) =
           <a href="#/cart" className="relative p-2 rounded-full hover:bg-gray-100 transition">
             <CartIcon />
             {cartCount > 0 && (
-                <span className="absolute top-0 right-0 block h-5 w-5 rounded-full bg-red-500 text-white text-xs flex items-center justify-center transform translate-x-1/2 -translate-y-1/2">
+                <span className="absolute top-0 right-0 block h-5 min-w-[1.25rem] px-1 rounded-full bg-red-500 text-white text-xs flex items-center justify-center transform translate-x-1/2 -translate-y-1/2">
                     {cartCount}
                 </span>
             )}

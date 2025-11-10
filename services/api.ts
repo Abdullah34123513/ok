@@ -1,4 +1,4 @@
-import type { Offer, Restaurant, Food, PaginatedFoods, SearchResult, PaginatedRestaurants, MenuCategory, Review, CartItem, MenuItem, Address, Order, AddressSuggestion, AddressDetails, User, LoginCredentials, SignupData, AuthResponse, LocationPoint } from '../types';
+import type { Offer, Restaurant, Food, PaginatedFoods, SearchResult, PaginatedRestaurants, MenuCategory, Review, CartItem, MenuItem, Address, Order, AddressSuggestion, AddressDetails, User, LoginCredentials, SignupData, AuthResponse, LocationPoint, SupportInfo, ChatMessage } from '../types';
 
 // --- Mock Databases ---
 let mockUsers: User[] = [
@@ -418,3 +418,49 @@ export const getRiderLocation = (orderId: string): Promise<LocationPoint | null>
     riderLocations.set(orderId, newLoc);
     return simulateNetwork(newLoc, 100);
 }
+
+// --- Support Mock Data ---
+const mockSupportInfo: SupportInfo = {
+    phoneNumber: '1-800-FOOD-FAST'
+};
+
+let mockChatHistory: ChatMessage[] = [
+    { id: 'chat-1', text: 'Hello! How can I help you today?', sender: 'support', timestamp: new Date(Date.now() - 60000 * 5).toISOString() },
+    { id: 'chat-2', text: 'Hi, I have a question about my last order.', sender: 'user', timestamp: new Date(Date.now() - 60000 * 4).toISOString() },
+    { id: 'chat-3', text: 'Of course, I can help with that. What is the order ID?', sender: 'support', timestamp: new Date(Date.now() - 60000 * 3).toISOString() },
+];
+
+// --- Support APIs ---
+export const getSupportInfo = (): Promise<SupportInfo> => {
+    console.log('API: Fetching support info...');
+    return simulateNetwork(mockSupportInfo);
+};
+
+export const getChatHistory = (userId: string): Promise<ChatMessage[]> => {
+    console.log(`API: Fetching chat history for user ${userId}...`);
+    return simulateNetwork([...mockChatHistory]);
+};
+
+export const sendChatMessage = (messageText: string, userId: string): Promise<ChatMessage> => {
+    console.log(`API: Sending chat message for user ${userId}`);
+    const userMessage: ChatMessage = {
+        id: `chat-${Date.now()}`,
+        text: messageText,
+        sender: 'user',
+        timestamp: new Date().toISOString()
+    };
+    mockChatHistory.push(userMessage);
+
+    // Simulate support agent replying after a short delay
+    setTimeout(() => {
+        const supportReply: ChatMessage = {
+            id: `chat-${Date.now() + 1}`,
+            text: 'Thank you for your message. An agent will be with you shortly.',
+            sender: 'support',
+            timestamp: new Date().toISOString()
+        };
+        mockChatHistory.push(supportReply);
+    }, 1500);
+
+    return simulateNetwork(userMessage);
+};

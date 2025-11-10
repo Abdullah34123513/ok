@@ -151,3 +151,14 @@ export interface AuthResponse {
     user: User;
     token: string;
 }
+
+export interface ChatMessage {
+    id: string;
+    text: string;
+    sender: 'user' | 'support';
+    timestamp: string;
+}
+
+export interface SupportInfo {
+    phoneNumber: string;
+}
