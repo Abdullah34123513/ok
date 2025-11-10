@@ -15,6 +15,48 @@ interface ProfilePageProps {
 type ProfileTab = 'profile' | 'addresses' | 'orders' | 'favorites';
 type OrderFilter = 'ongoing' | 'past' | 'cancelled';
 
+const ProfilePageSkeleton = () => (
+    <div className="container mx-auto px-4 py-6 animate-pulse">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+            {/* Sidebar Skeleton */}
+            <aside className="md:col-span-1">
+                <div className="bg-white p-4 rounded-lg shadow-md sticky top-24">
+                    <div className="text-center mb-4">
+                       <div className="w-20 h-20 mx-auto bg-gray-200 rounded-full"></div>
+                       <div className="mt-2 h-6 bg-gray-200 rounded w-3/4 mx-auto"></div>
+                       <div className="mt-1 h-4 bg-gray-200 rounded w-1/2 mx-auto"></div>
+                    </div>
+                    <div className="flex flex-col space-y-2">
+                        <div className="h-10 bg-gray-200 rounded"></div>
+                        <div className="h-10 bg-gray-200 rounded"></div>
+                        <div className="h-10 bg-gray-200 rounded"></div>
+                        <div className="h-10 bg-gray-200 rounded"></div>
+                    </div>
+                    <div className="mt-6 pt-4 border-t space-y-2">
+                        <div className="h-10 bg-gray-200 rounded"></div>
+                        <div className="h-10 bg-gray-200 rounded"></div>
+                        <div className="h-10 bg-gray-200 rounded"></div>
+                    </div>
+                </div>
+            </aside>
+
+            {/* Content Skeleton */}
+            <main className="md:col-span-3">
+                <div className="bg-white p-6 rounded-lg shadow-md min-h-[60vh]">
+                    <div className="h-8 bg-gray-200 rounded w-1/3 mb-6"></div>
+                    <div className="space-y-4">
+                        <div className="h-12 bg-gray-200 rounded"></div>
+                        <div className="h-12 bg-gray-200 rounded"></div>
+                        <div className="h-12 bg-gray-200 rounded"></div>
+                    </div>
+                     <div className="mt-6 h-12 w-32 bg-gray-200 rounded-lg"></div>
+                </div>
+            </main>
+        </div>
+    </div>
+);
+
+
 const ProfilePage: React.FC<ProfilePageProps> = ({ onChangeLocation }) => {
     const [activeTab, setActiveTab] = useState<ProfileTab>('profile');
     const [user, setUser] = useState<User | null>(null);
@@ -73,7 +115,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ onChangeLocation }) => {
     };
     
     if (isLoading) {
-        return <div className="text-center p-10">Loading your profile...</div>;
+        return <ProfilePageSkeleton />;
     }
 
     return (

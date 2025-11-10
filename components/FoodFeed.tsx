@@ -25,7 +25,8 @@ const FoodFeedSkeleton: React.FC = () => (
 );
 
 const FoodFeed: React.FC<FoodFeedProps> = ({ foods, onLoadMore, hasMore, isLoading, onFoodClick }) => {
-    const observer = useRef<IntersectionObserver>();
+    // FIX: Correctly initialize useRef with null. The empty overload is deprecated and can cause type issues.
+    const observer = useRef<IntersectionObserver | null>(null);
     const lastFoodElementRef = useCallback((node: HTMLDivElement) => {
         if (isLoading) return;
         if (observer.current) observer.current.disconnect();

@@ -39,6 +39,39 @@ const CartItemRow: React.FC<{ item: CartItem }> = ({ item }) => {
     );
 };
 
+const CartPageSkeleton = () => (
+    <div className="container mx-auto px-4 py-6 animate-pulse">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="lg:col-span-2 bg-white p-6 rounded-lg shadow-md space-y-4">
+                <div className="h-8 bg-gray-200 rounded w-1/3 mb-4 border-b pb-3"></div>
+                {Array.from({ length: 3 }).map((_, i) => (
+                    <div key={i} className="flex items-center py-4 border-b space-x-4">
+                        <div className="w-20 h-20 rounded-md bg-gray-200"></div>
+                        <div className="flex-grow space-y-2">
+                            <div className="h-5 bg-gray-200 rounded w-3/4"></div>
+                            <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+                        </div>
+                        <div className="h-10 w-32 bg-gray-200 rounded-full"></div>
+                        <div className="h-6 w-20 bg-gray-200 rounded"></div>
+                    </div>
+                ))}
+            </div>
+            <div className="lg:col-span-1">
+                <div className="bg-white p-6 rounded-lg shadow-md sticky top-24">
+                    <div className="h-8 bg-gray-200 rounded w-1/2 mb-4 border-b pb-3"></div>
+                    <div className="space-y-3">
+                       <div className="flex justify-between"><div className="h-5 bg-gray-200 rounded w-1/4"></div><div className="h-5 bg-gray-200 rounded w-1/3"></div></div>
+                       <div className="flex justify-between"><div className="h-5 bg-gray-200 rounded w-1/3"></div><div className="h-5 bg-gray-200 rounded w-1/4"></div></div>
+                       <div className="border-t pt-3 mt-3 flex justify-between"><div className="h-6 bg-gray-200 rounded w-1/4"></div><div className="h-6 bg-gray-200 rounded w-1/3"></div></div>
+                    </div>
+                    <div className="mt-6 h-12 bg-gray-200 rounded-lg w-full"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+);
+
+
 const CartPage: React.FC<CartPageProps> = () => {
     const { cartItems, cartTotal, deliveryFee, grandTotal, isLoading, numberOfRestaurants } = useCart();
 
@@ -57,7 +90,7 @@ const CartPage: React.FC<CartPageProps> = () => {
     }, [cartItems]);
 
     if (isLoading) {
-        return <div className="text-center p-10">Loading cart...</div>;
+        return <CartPageSkeleton />;
     }
 
     if (cartItems.length === 0) {

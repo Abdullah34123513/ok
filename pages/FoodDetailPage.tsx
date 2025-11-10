@@ -11,6 +11,49 @@ interface FoodDetailPageProps {
     location: string;
 }
 
+const FoodDetailSkeleton = () => (
+    <div className="container mx-auto px-4 py-6 animate-pulse">
+        <div className="bg-white p-6 rounded-lg shadow-lg">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                {/* Left side: Image */}
+                <div className="w-full h-96 bg-gray-200 rounded-lg"></div>
+
+                {/* Right side: Details */}
+                <div className="flex flex-col space-y-4">
+                    <div className="h-10 bg-gray-200 rounded w-3/4"></div>
+                    <div className="h-6 bg-gray-200 rounded w-1/3"></div>
+                    <div className="space-y-2 flex-grow">
+                        <div className="h-4 bg-gray-200 rounded"></div>
+                        <div className="h-4 bg-gray-200 rounded"></div>
+                        <div className="h-4 bg-gray-200 rounded w-5/6"></div>
+                    </div>
+                    <div className="flex justify-between items-center">
+                        <div className="h-10 bg-gray-200 rounded w-1/3"></div>
+                        <div className="h-12 bg-gray-200 rounded-lg w-48"></div>
+                    </div>
+                    <div className="border-t pt-4">
+                        <div className="h-8 bg-gray-200 rounded-lg"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        {/* Reviews & Related Skeleton */}
+        <div className="mt-8">
+            <div className="h-8 bg-gray-200 rounded w-1/4 mb-4"></div>
+            <div className="bg-white p-4 rounded-lg shadow h-24"></div>
+        </div>
+         <div className="mt-8">
+            <div className="h-8 bg-gray-200 rounded w-1/4 mb-4"></div>
+            <div className="flex space-x-4">
+                 <div className="w-80 h-64 bg-white p-4 rounded-lg shadow"></div>
+                 <div className="w-80 h-64 bg-white p-4 rounded-lg shadow"></div>
+                 <div className="w-80 h-64 bg-white p-4 rounded-lg shadow"></div>
+            </div>
+        </div>
+    </div>
+);
+
 const FoodDetailPage: React.FC<FoodDetailPageProps> = ({ foodId, location }) => {
     const [food, setFood] = useState<Food | null>(null);
     const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
@@ -68,14 +111,23 @@ const FoodDetailPage: React.FC<FoodDetailPageProps> = ({ foodId, location }) => 
     };
     
     if (isLoading) {
-        return <div className="text-center p-20">Loading...</div>;
+        return <FoodDetailSkeleton />;
     }
 
     if (!food) {
         return <div className="text-center p-20">Food item not found.</div>;
     }
 
-    const menuItem: MenuItem = { ...food };
+    // FIX: Construct a valid MenuItem object from the Food object, ensuring all required properties are present.
+    const menuItem: MenuItem = {
+        id: food.id,
+        name: food.name,
+        description: food.description,
+        price: food.price,
+        imageUrl: food.imageUrl,
+        restaurantId: food.restaurantId,
+        restaurantName: food.vendor.name,
+    };
 
     return (
         <div className="container mx-auto px-4 py-6">

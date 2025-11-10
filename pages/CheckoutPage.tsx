@@ -7,6 +7,20 @@ import { useNotification } from '../contexts/NotificationContext';
 
 interface CheckoutPageProps {}
 
+const AddressSectionSkeleton = () => (
+    <div className="space-y-3 animate-pulse">
+        {Array.from({ length: 2 }).map((_, i) => (
+            <div key={i} className="p-4 border rounded-lg flex items-start space-x-4">
+                <div className="w-5 h-5 bg-gray-200 rounded-full mt-1 flex-shrink-0"></div>
+                <div className="flex-1 space-y-2">
+                    <div className="h-5 bg-gray-200 rounded w-1/4"></div>
+                    <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                </div>
+            </div>
+        ))}
+    </div>
+);
+
 const CheckoutPage: React.FC<CheckoutPageProps> = () => {
     const { cartItems, cartTotal, clearCart, deliveryFee, numberOfRestaurants } = useCart();
     const { showNotification } = useNotification();
@@ -16,6 +30,7 @@ const CheckoutPage: React.FC<CheckoutPageProps> = () => {
     const [paymentOption, setPaymentOption] = useState('cod');
     const [isPlacingOrder, setIsPlacingOrder] = useState(false);
     const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
+    const [isAddressLoading, setIsAddressLoading] = useState(true);
 
     const currentDeliveryFee = useMemo(() => {
         return deliveryOption === 'home' ? deliveryFee : 0;
@@ -41,22 +56,28 @@ const CheckoutPage: React.FC<CheckoutPageProps> = () => {
 
 
     useEffect(() => {
+        setIsAddressLoading(true);
         api.getAddresses().then(data => {
             setAddresses(data);
             if (data.length > 0) {
                 setSelectedAddress(data[0].id);
             }
+        }).finally(() => {
+            setIsAddressLoading(false);
         });
     }, []);
 
     const handleAddressAdded = () => {
         setIsAddressModalOpen(false);
+        setIsAddressLoading(true);
         api.getAddresses().then(data => {
             setAddresses(data);
             if(data.length > 0) {
                 // Select the newly added address, which will be the last one in the list
                 setSelectedAddress(data[data.length - 1].id);
             }
+        }).finally(() => {
+            setIsAddressLoading(false);
         });
     };
     
@@ -112,17 +133,21 @@ const CheckoutPage: React.FC<CheckoutPageProps> = () => {
                         {/* Delivery Address */}
                         <div className="bg-white p-6 rounded-lg shadow-md">
                             <h2 className="text-xl font-bold mb-4">Delivery Address</h2>
-                            <div className="space-y-3">
-                                {addresses.map(address => (
-                                    <label key={address.id} className={`flex items-start p-4 border rounded-lg cursor-pointer transition ${selectedAddress === address.id ? 'border-red-500 bg-red-50' : ''}`}>
-                                        <input type="radio" name="address" value={address.id} checked={selectedAddress === address.id} onChange={(e) => setSelectedAddress(e.target.value)} className="mt-1 mr-4 flex-shrink-0" />
-                                        <div>
-                                            <p className="font-semibold">{address.label}</p>
-                                            <p className="text-gray-600 text-sm">{address.details}</p>
-                                        </div>
-                                    </label>
-                                ))}
-                            </div>
+                            {isAddressLoading ? (
+                                <AddressSectionSkeleton />
+                            ) : (
+                                <div className="space-y-3">
+                                    {addresses.map(address => (
+                                        <label key={address.id} className={`flex items-start p-4 border rounded-lg cursor-pointer transition ${selectedAddress === address.id ? 'border-red-500 bg-red-50' : ''}`}>
+                                            <input type="radio" name="address" value={address.id} checked={selectedAddress === address.id} onChange={(e) => setSelectedAddress(e.target.value)} className="mt-1 mr-4 flex-shrink-0" />
+                                            <div>
+                                                <p className="font-semibold">{address.label}</p>
+                                                <p className="text-gray-600 text-sm">{address.details}</p>
+                                            </div>
+                                        </label>
+                                    ))}
+                                </div>
+                            )}
                             <button onClick={() => setIsAddressModalOpen(true)} className="mt-4 text-red-500 font-semibold hover:text-red-600 transition">+ Add New Address</button>
                         </div>
 

@@ -32,6 +32,52 @@ const StickyCartSummary: React.FC = () => {
     );
 };
 
+const RestaurantDetailSkeleton = () => (
+    <div className="animate-pulse">
+        {/* Banner Skeleton */}
+        <div className="h-64 bg-gray-200 relative">
+            <div className="absolute bottom-0 left-0 p-6 w-full">
+                <div className="h-10 bg-gray-300 rounded w-3/4 mb-2"></div>
+                <div className="h-5 bg-gray-300 rounded w-1/2 mb-2"></div>
+                <div className="h-5 bg-gray-300 rounded w-2/3"></div>
+            </div>
+        </div>
+        
+        {/* Tabs Skeleton */}
+        <div className="sticky top-[68px] bg-white z-10 shadow-sm">
+            <div className="container mx-auto flex space-x-4 p-2">
+                <div className="h-10 w-24 bg-gray-200 rounded"></div>
+                <div className="h-10 w-24 bg-gray-200 rounded"></div>
+                <div className="h-10 w-24 bg-gray-200 rounded"></div>
+            </div>
+        </div>
+
+        {/* Menu Content Skeleton */}
+        <div className="container mx-auto p-4 sm:p-6">
+            <div className="mb-8">
+                <div className="h-8 bg-gray-200 rounded w-1/3 mb-4"></div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {Array.from({ length: 4 }).map((_, i) => (
+                        <div key={i} className="bg-white p-4 rounded-lg shadow flex space-x-4">
+                            <div className="w-24 h-24 rounded-md bg-gray-200"></div>
+                            <div className="flex-1 space-y-2">
+                                <div className="h-5 bg-gray-200 rounded w-3/4"></div>
+                                <div className="h-4 bg-gray-200 rounded w-full"></div>
+                                <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+                            </div>
+                            <div className="w-24 flex flex-col items-end justify-between">
+                                <div className="h-5 bg-gray-200 rounded w-3/4"></div>
+                                <div className="h-8 bg-gray-200 rounded-full w-full"></div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        </div>
+    </div>
+);
+
+
 const RestaurantDetailPage: React.FC<RestaurantDetailPageProps> = ({ restaurantId }) => {
     const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
     const [menu, setMenu] = useState<MenuCategory[]>([]);
@@ -83,7 +129,7 @@ const RestaurantDetailPage: React.FC<RestaurantDetailPageProps> = ({ restaurantI
     };
 
     if (isLoading) {
-        return <div className="text-center py-20">Loading restaurant details...</div>;
+        return <RestaurantDetailSkeleton />;
     }
 
     if (!restaurant) {

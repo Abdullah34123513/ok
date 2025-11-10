@@ -57,7 +57,8 @@ const RestaurantListPage: React.FC<RestaurantListPageProps> = ({ location }) => 
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [location]);
 
-    const observer = useRef<IntersectionObserver>();
+    // FIX: Correctly initialize useRef with null. The empty overload is deprecated and can cause type issues.
+    const observer = useRef<IntersectionObserver | null>(null);
     const lastRestaurantElementRef = useCallback((node: HTMLDivElement) => {
         if (isLoading) return;
         if (observer.current) observer.current.disconnect();
