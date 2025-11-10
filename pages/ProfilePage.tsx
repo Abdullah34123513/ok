@@ -1,21 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import * as api from '../services/api';
 import type { User, Address, Order, Restaurant } from '../types';
-import type { View } from '../App';
 import { useNotification } from '../contexts/NotificationContext';
 import { useAuth } from '../contexts/AuthContext';
 import { UserCircleIcon, TrashIcon } from '../components/Icons';
 import AddressModal from '../components/AddressModal';
 
 interface ProfilePageProps {
-    onNavigate: (view: View, context?: any) => void;
     onChangeLocation: () => void;
 }
 
 type ProfileTab = 'profile' | 'addresses' | 'orders' | 'favorites';
 type OrderFilter = 'ongoing' | 'past' | 'cancelled';
 
-const ProfilePage: React.FC<ProfilePageProps> = ({ onNavigate, onChangeLocation }) => {
+const ProfilePage: React.FC<ProfilePageProps> = ({ onChangeLocation }) => {
     const [activeTab, setActiveTab] = useState<ProfileTab>('profile');
     const [user, setUser] = useState<User | null>(null);
     const [addresses, setAddresses] = useState<Address[]>([]);
@@ -119,10 +117,9 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ onNavigate, onChangeLocation 
                                 orders={orders} 
                                 filter={orderFilter}
                                 onFilterChange={setOrderFilter}
-                                onNavigate={onNavigate}
                             />
                         )}
-                        {activeTab === 'favorites' && <FavoritesSection restaurants={favoriteRestaurants} onNavigate={onNavigate} />}
+                        {activeTab === 'favorites' && <FavoritesSection restaurants={favoriteRestaurants} />}
                     </div>
                 </main>
             </div>
@@ -225,7 +222,7 @@ const AddressSection: React.FC<{ addresses: Address[], onAddClick: () => void, o
 );
 
 // Orders Section
-const OrdersSection: React.FC<{ orders: Order[], filter: OrderFilter, onFilterChange: (filter: OrderFilter) => void, onNavigate: ProfilePageProps['onNavigate'] }> = ({ orders, filter, onFilterChange, onNavigate }) => (
+const OrdersSection: React.FC<{ orders: Order[], filter: OrderFilter, onFilterChange: (filter: OrderFilter) => void }> = ({ orders, filter, onFilterChange }) => (
     <div>
         <h2 className="text-2xl font-bold mb-4">Order History</h2>
         <div className="border-b mb-4">
@@ -251,12 +248,12 @@ const OrdersSection: React.FC<{ orders: Order[], filter: OrderFilter, onFilterCh
                     </div>
                     {filter === 'ongoing' && (
                         <div className="mt-4 pt-4 border-t text-right">
-                            <button 
-                                onClick={() => onNavigate('orderTracking', { orderId: order.id })}
-                                className="px-4 py-2 bg-red-500 text-white font-semibold rounded-lg hover:bg-red-600 transition"
+                            <a 
+                                href={`#/track/${order.id}`}
+                                className="px-4 py-2 bg-red-500 text-white font-semibold rounded-lg hover:bg-red-600 transition inline-block"
                             >
                                 Track Order
-                            </button>
+                            </a>
                         </div>
                     )}
                 </div>
@@ -273,18 +270,18 @@ const OrderFilterButton: React.FC<{ label: string, id: OrderFilter, activeFilter
 
 
 // Favorites Section
-const FavoritesSection: React.FC<{ restaurants: Restaurant[], onNavigate: ProfilePageProps['onNavigate'] }> = ({ restaurants, onNavigate }) => (
+const FavoritesSection: React.FC<{ restaurants: Restaurant[] }> = ({ restaurants }) => (
     <div>
         <h2 className="text-2xl font-bold mb-6">Saved Restaurants</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             {restaurants.length > 0 ? restaurants.map(r => (
-                <div key={r.id} onClick={() => onNavigate('restaurantDetail', { id: r.id })} className="p-4 border rounded-lg flex items-center space-x-4 cursor-pointer hover:bg-gray-50 transition">
+                <a key={r.id} href={`#/restaurant/${r.id}`} className="p-4 border rounded-lg flex items-center space-x-4 cursor-pointer hover:bg-gray-50 transition">
                     <img src={r.logoUrl} alt={r.name} className="w-16 h-16 rounded-full object-cover" />
                     <div>
                         <p className="font-bold">{r.name}</p>
                         <p className="text-sm text-gray-600">{r.cuisine}</p>
                     </div>
-                </div>
+                </a>
             )) : <p>You haven't saved any restaurants yet.</p>}
         </div>
     </div>

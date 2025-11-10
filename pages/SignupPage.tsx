@@ -1,14 +1,11 @@
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotification } from '../contexts/NotificationContext';
-import type { View } from '../App';
 import { LogoIcon } from '../components/Icons';
 
-interface SignupPageProps {
-    onNavigate: (view: View) => void;
-}
+interface SignupPageProps {}
 
-const SignupPage: React.FC<SignupPageProps> = ({ onNavigate }) => {
+const SignupPage: React.FC<SignupPageProps> = () => {
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [phone, setPhone] = useState('');
@@ -71,9 +68,9 @@ const SignupPage: React.FC<SignupPageProps> = ({ onNavigate }) => {
 
                 <p className="text-center text-sm text-gray-600">
                     Already have an account?{' '}
-                    <button onClick={() => onNavigate('login')} className="font-medium text-red-600 hover:text-red-500">
+                    <a href="#/login" className="font-medium text-red-600 hover:text-red-500">
                         Sign in
-                    </button>
+                    </a>
                 </p>
             </div>
         </div>

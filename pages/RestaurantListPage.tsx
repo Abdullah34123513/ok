@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import type { Restaurant } from '../types';
 import * as api from '../services/api';
@@ -7,7 +6,6 @@ import { FilterIcon } from '../components/Icons';
 
 interface RestaurantListPageProps {
     location: string;
-    onRestaurantClick: (id: string) => void;
 }
 
 const RestaurantCardSkeleton: React.FC = () => (
@@ -25,12 +23,16 @@ const RestaurantCardSkeleton: React.FC = () => (
 );
 
 
-const RestaurantListPage: React.FC<RestaurantListPageProps> = ({ location, onRestaurantClick }) => {
+const RestaurantListPage: React.FC<RestaurantListPageProps> = ({ location }) => {
     const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
     const [page, setPage] = useState(1);
     const [hasMore, setHasMore] = useState(true);
     const [isLoading, setIsLoading] = useState(false);
     const [showFilters, setShowFilters] = useState(false);
+    
+    const onRestaurantClick = (id: string) => {
+        window.location.hash = `#/restaurant/${id}`;
+    };
     
     const loadMoreRestaurants = useCallback(() => {
         if (isLoading || !hasMore) return;
@@ -52,6 +54,7 @@ const RestaurantListPage: React.FC<RestaurantListPageProps> = ({ location, onRes
         setHasMore(true);
         // We need to wrap in a timeout to allow state to clear before loading
         setTimeout(() => loadMoreRestaurants(), 0);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [location]);
 
     const observer = useRef<IntersectionObserver>();

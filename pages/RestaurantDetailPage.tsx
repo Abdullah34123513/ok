@@ -4,17 +4,14 @@ import * as api from '../services/api';
 import { StarIcon, HeartIcon } from '../components/Icons';
 import { useCart } from '../contexts/CartContext';
 import QuantityControl from '../components/QuantityControl';
-import type { View } from '../App';
 
 interface RestaurantDetailPageProps {
     restaurantId: string;
-    onNavigate: (view: View, context?: any) => void;
-    onFoodClick: (id: string) => void;
 }
 
 type Tab = 'menu' | 'reviews' | 'about';
 
-const StickyCartSummary: React.FC<{ onNavigate: (view: View) => void }> = ({ onNavigate }) => {
+const StickyCartSummary: React.FC = () => {
     const { cartCount, cartTotal } = useCart();
     if (cartCount === 0) return null;
 
@@ -26,21 +23,25 @@ const StickyCartSummary: React.FC<{ onNavigate: (view: View) => void }> = ({ onN
                 </div>
                 <div className="flex items-center space-x-4">
                     <p className="font-extrabold text-xl">${cartTotal.toFixed(2)}</p>
-                    <button onClick={() => onNavigate('cart')} className="bg-white text-red-500 font-bold py-2 px-6 rounded-full hover:bg-red-100 transition">
+                    <a href="#/cart" className="bg-white text-red-500 font-bold py-2 px-6 rounded-full hover:bg-red-100 transition">
                         View Cart
-                    </button>
+                    </a>
                 </div>
             </div>
         </div>
     );
 };
 
-const RestaurantDetailPage: React.FC<RestaurantDetailPageProps> = ({ restaurantId, onNavigate, onFoodClick }) => {
+const RestaurantDetailPage: React.FC<RestaurantDetailPageProps> = ({ restaurantId }) => {
     const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
     const [menu, setMenu] = useState<MenuCategory[]>([]);
     const [reviews, setReviews] = useState<Review[]>([]);
     const [activeTab, setActiveTab] = useState<Tab>('menu');
     const [isLoading, setIsLoading] = useState(true);
+    
+    const onFoodClick = (id: string) => {
+        window.location.hash = `#/food/${id}`;
+    };
     
     useEffect(() => {
         const fetchData = async () => {
@@ -67,7 +68,6 @@ const RestaurantDetailPage: React.FC<RestaurantDetailPageProps> = ({ restaurantI
         if (!restaurant) return;
         
         const newFavoriteStatus = !restaurant.isFavorite;
-        // Optimistic update for better UX
         setRestaurant(prev => prev ? { ...prev, isFavorite: newFavoriteStatus } : null);
 
         try {
@@ -78,7 +78,6 @@ const RestaurantDetailPage: React.FC<RestaurantDetailPageProps> = ({ restaurantI
             }
         } catch (error) {
             console.error("Failed to update favorite status", error);
-            // Revert on error
             setRestaurant(prev => prev ? { ...prev, isFavorite: !newFavoriteStatus } : null);
         }
     };
@@ -136,7 +135,7 @@ const RestaurantDetailPage: React.FC<RestaurantDetailPageProps> = ({ restaurantI
                 {activeTab === 'about' && <AboutSection restaurant={restaurant} />}
             </div>
 
-            <StickyCartSummary onNavigate={onNavigate} />
+            <StickyCartSummary />
         </div>
     );
 };

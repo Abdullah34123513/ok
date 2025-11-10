@@ -8,17 +8,12 @@ import OffersCarousel from '../components/OffersCarousel';
 import FoodFeed from '../components/FoodFeed';
 import FoodCard from '../components/FoodCard';
 import { SearchIcon, StarIcon } from '../components/Icons';
-import type { View } from '../App';
 
 interface HomePageProps {
     location: string;
-    onViewAllRestaurants: () => void;
-    onRestaurantClick: (id: string) => void;
-    onFoodClick: (id: string) => void;
-    onNavigate: (view: View) => void;
 }
 
-const HomePage: React.FC<HomePageProps> = ({ location, onViewAllRestaurants, onRestaurantClick, onFoodClick, onNavigate }) => {
+const HomePage: React.FC<HomePageProps> = ({ location }) => {
     const [offers, setOffers] = useState<Offer[]>([]);
     const [activeOffers, setActiveOffers] = useState<Offer[]>([]);
     const [topRestaurants, setTopRestaurants] = useState<Restaurant[]>([]);
@@ -31,6 +26,14 @@ const HomePage: React.FC<HomePageProps> = ({ location, onViewAllRestaurants, onR
     const [searchQuery, setSearchQuery] = useState('');
     const [searchResults, setSearchResults] = useState<SearchResult | null>(null);
     const [isSearching, setIsSearching] = useState(false);
+    
+    const onRestaurantClick = (id: string) => {
+        window.location.hash = `#/restaurant/${id}`;
+    };
+    
+    const onFoodClick = (id: string) => {
+        window.location.hash = `#/food/${id}`;
+    };
 
     const resetFoodFeed = useCallback(() => {
         setFoods([]);
@@ -135,14 +138,13 @@ const HomePage: React.FC<HomePageProps> = ({ location, onViewAllRestaurants, onR
     
     return (
         <>
-            <Header searchQuery={searchQuery} onSearchChange={setSearchQuery} onNavigate={onNavigate} />
+            <Header searchQuery={searchQuery} onSearchChange={setSearchQuery} />
             {searchQuery.trim() !== '' ? renderSearchResults() : (
                 <>
                     <HeroBanner offers={offers} />
                     <TopRestaurants 
                         restaurants={topRestaurants} 
                         onRestaurantClick={onRestaurantClick} 
-                        onViewAllClick={onViewAllRestaurants}
                     />
                     <OffersCarousel offers={activeOffers} />
                     <FoodFeed 

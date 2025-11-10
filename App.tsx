@@ -12,33 +12,60 @@ import ProfilePage from './pages/ProfilePage';
 import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
 import OrderTrackingPage from './pages/OrderTrackingPage';
+import OrderConfirmationPage from './pages/OrderConfirmationPage';
+import BottomNav from './components/BottomNav';
 import { CartProvider } from './contexts/CartContext';
 import { NotificationProvider } from './contexts/NotificationContext';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import Notification from './components/Notification';
 
 
-export type View = 'home' | 'restaurants' | 'restaurantDetail' | 'foodDetail' | 'cart' | 'checkout' | 'profile' | 'login' | 'signup' | 'orderTracking';
+export type View = 'home' | 'restaurants' | 'restaurantDetail' | 'foodDetail' | 'cart' | 'checkout' | 'profile' | 'login' | 'signup' | 'orderTracking' | 'orderConfirmation';
 
-interface NavigationContext {
+interface Route {
+    view: View;
     id?: string;
-    orderId?: string;
 }
+
+const parseHash = (): Route => {
+    const hash = window.location.hash.substring(2) || 'home'; // remove '#/'
+    const parts = hash.split('/');
+    const view = parts[0];
+    const id = parts[1];
+
+    switch (view) {
+        case 'restaurants': return { view: 'restaurants' };
+        case 'restaurant': return { view: 'restaurantDetail', id };
+        case 'food': return { view: 'foodDetail', id };
+        case 'cart': return { view: 'cart' };
+        case 'checkout': return { view: 'checkout' };
+        case 'profile': return { view: 'profile' };
+        case 'login': return { view: 'login' };
+        case 'signup': return { view: 'signup' };
+        case 'track': return { view: 'orderTracking', id };
+        case 'confirmation': return { view: 'orderConfirmation', id };
+        case 'home':
+        default:
+            return { view: 'home' };
+    }
+};
 
 const AppContent: React.FC = () => {
     const { currentUser } = useAuth();
     const [location, setLocation] = useLocalStorage<string | null>('user-location', null);
     const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
-
-    // Navigation state
-    const [view, setView] = useState<View>('home');
-    const [currentRestaurantId, setCurrentRestaurantId] = useState<string | null>(null);
-    const [currentFoodId, setCurrentFoodId] = useState<string | null>(null);
-    const [currentOrderId, setCurrentOrderId] = useState<string | null>(null);
-    const [history, setHistory] = useState<View[]>(['home']);
+    const [route, setRoute] = useState<Route>(parseHash());
     
     useEffect(() => {
-        // If user is logged in but has no location, show the modal.
+        const handleHashChange = () => {
+            setRoute(parseHash());
+            window.scrollTo(0, 0);
+        };
+        window.addEventListener('hashchange', handleHashChange);
+        return () => window.removeEventListener('hashchange', handleHashChange);
+    }, []);
+    
+    useEffect(() => {
         if (currentUser && !location) {
             setIsLocationModalOpen(true);
         }
@@ -49,51 +76,25 @@ const AppContent: React.FC = () => {
         setIsLocationModalOpen(false);
     };
 
-    const navigate = (targetView: View, context?: NavigationContext) => {
-        // Reset state when navigating to auth pages
-        if (targetView === 'login' || targetView === 'signup') {
-            setHistory([targetView]);
-            setView(targetView);
-            return;
-        }
-
-        if (targetView === 'restaurantDetail' && context?.id) {
-            setCurrentRestaurantId(context.id);
-        }
-        if (targetView === 'foodDetail' && context?.id) {
-            setCurrentFoodId(context.id);
-        }
-        if (targetView === 'orderTracking' && context?.orderId) {
-            setCurrentOrderId(context.orderId);
-        }
-        setHistory(prev => [...prev, targetView]);
-        setView(targetView);
-    };
-
-    const goBack = () => {
-        const newHistory = [...history];
-        newHistory.pop();
-        const previousView = newHistory[newHistory.length - 1] || (currentUser ? 'home' : 'login');
-        setHistory(newHistory);
-        setView(previousView);
-    };
-
     const renderHeader = () => {
+        const { view, id } = route;
         switch (view) {
             case 'restaurants':
-                return <Header title={`Restaurants in ${location}`} onBack={goBack} onNavigate={navigate} />;
+                return <Header title={`Restaurants in ${location}`} />;
             case 'restaurantDetail':
-                return <Header title="Restaurant Details" onBack={goBack} onNavigate={navigate} />;
+                return <Header title="Restaurant Details" />;
             case 'foodDetail':
-                return <Header title="Food Details" onBack={goBack} onNavigate={navigate} />;
+                return <Header title="Food Details" />;
             case 'cart':
-                return <Header title="Your Cart" onBack={goBack} onNavigate={navigate} />;
+                return <Header title="Your Cart" />;
             case 'checkout':
-                return <Header title="Checkout" onBack={goBack} onNavigate={navigate} />;
+                return <Header title="Checkout" />;
             case 'profile':
-                return <Header title="My Profile" onBack={goBack} onNavigate={navigate} />;
+                return <Header title="My Profile" />;
             case 'orderTracking':
-                return <Header title={`Track Order #${currentOrderId}`} onBack={goBack} onNavigate={navigate} />;
+                return <Header title={`Track Order #${id}`} />;
+            case 'orderConfirmation':
+                 return <Header title="Order Confirmed" />;
             case 'login':
             case 'signup':
                 return null;
@@ -105,42 +106,41 @@ const AppContent: React.FC = () => {
     };
     
     if (!currentUser) {
-        if (view === 'signup') {
-            return <SignupPage onNavigate={navigate} />;
+        if (route.view === 'signup') {
+            return <SignupPage />;
         }
-        return <LoginPage onNavigate={navigate} />;
+        return <LoginPage />;
     }
 
     const renderView = () => {
         if (!location) return null;
+        
+        const { view, id } = route;
 
         switch (view) {
             case 'restaurants':
-                return <RestaurantListPage location={location} onRestaurantClick={(id) => navigate('restaurantDetail', { id })} />;
+                return <RestaurantListPage location={location} />;
             case 'restaurantDetail':
-                if (!currentRestaurantId) {
-                    navigate('restaurants'); return null;
-                }
-                return <RestaurantDetailPage restaurantId={currentRestaurantId} onNavigate={navigate} onFoodClick={(id) => navigate('foodDetail', { id })} />;
+                if (!id) { window.location.hash = '#/restaurants'; return null; }
+                return <RestaurantDetailPage restaurantId={id} />;
             case 'foodDetail':
-                 if (!currentFoodId) {
-                    navigate('home'); return null;
-                }
-                return <FoodDetailPage foodId={currentFoodId} location={location} onNavigate={navigate} onRestaurantClick={(id) => navigate('restaurantDetail', { id })} onFoodClick={(id) => navigate('foodDetail', { id })} />;
+                 if (!id) { window.location.hash = '#/home'; return null; }
+                return <FoodDetailPage foodId={id} location={location} />;
             case 'cart':
-                return <CartPage onNavigate={navigate} />;
+                return <CartPage />;
             case 'checkout':
-                return <CheckoutPage onOrderPlaced={(orderId) => navigate('orderTracking', { orderId })} />;
+                return <CheckoutPage />;
              case 'profile':
-                return <ProfilePage onNavigate={navigate} onChangeLocation={() => setIsLocationModalOpen(true)} />;
+                return <ProfilePage onChangeLocation={() => setIsLocationModalOpen(true)} />;
             case 'orderTracking':
-                if (!currentOrderId) {
-                    navigate('home'); return null;
-                }
-                return <OrderTrackingPage orderId={currentOrderId} />;
+                if (!id) { window.location.hash = '#/home'; return null; }
+                return <OrderTrackingPage orderId={id} />;
+            case 'orderConfirmation':
+                if (!id) { window.location.hash = '#/home'; return null; }
+                return <OrderConfirmationPage orderId={id} />;
             case 'home':
             default:
-                return <HomePage location={location} onViewAllRestaurants={() => navigate('restaurants')} onRestaurantClick={(id) => navigate('restaurantDetail', { id })} onFoodClick={(id) => navigate('foodDetail', { id })} onNavigate={navigate} />;
+                return <HomePage location={location} />;
         }
     };
 
@@ -151,6 +151,7 @@ const AppContent: React.FC = () => {
             <main className="pb-24">
                 {renderView()}
             </main>
+            <BottomNav />
         </div>
     );
 };

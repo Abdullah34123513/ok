@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import * as api from '../services/api';
-// FIX: The 'View' type is defined in App.tsx, not types.ts.
 import type { Food, Restaurant, Review, MenuItem } from '../types';
-import type { View } from '../App';
 import { StarIcon } from '../components/Icons';
 import { useCart } from '../contexts/CartContext';
 import QuantityControl from '../components/QuantityControl';
@@ -11,12 +9,9 @@ import RelatedFoods from '../components/RelatedFoods';
 interface FoodDetailPageProps {
     foodId: string;
     location: string;
-    onNavigate: (view: View, context?: { id?: string }) => void;
-    onRestaurantClick: (id: string) => void;
-    onFoodClick: (id: string) => void;
 }
 
-const FoodDetailPage: React.FC<FoodDetailPageProps> = ({ foodId, location, onNavigate, onRestaurantClick, onFoodClick }) => {
+const FoodDetailPage: React.FC<FoodDetailPageProps> = ({ foodId, location }) => {
     const [food, setFood] = useState<Food | null>(null);
     const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
     const [reviews, setReviews] = useState<Review[]>([]);
@@ -25,6 +20,10 @@ const FoodDetailPage: React.FC<FoodDetailPageProps> = ({ foodId, location, onNav
 
     const { cartItems, addItem, updateQuantity, removeItem } = useCart();
     const cartItem = food ? cartItems.find(item => item.id === food.id) : undefined;
+    
+    const onFoodClick = (id: string) => {
+        window.location.hash = `#/food/${id}`;
+    };
 
     useEffect(() => {
         const fetchData = async () => {
@@ -33,13 +32,11 @@ const FoodDetailPage: React.FC<FoodDetailPageProps> = ({ foodId, location, onNav
             try {
                 const foodDetails = await api.getFoodDetails(foodId);
                 if (!foodDetails) {
-                    // Handle case where food is not found
                     setIsLoading(false);
                     return;
                 }
                 setFood(foodDetails);
 
-                // Fetch other details in parallel
                 const [restaurantData, reviewsData, relatedData] = await Promise.all([
                     api.getRestaurantDetails(foodDetails.restaurantId),
                     api.getFoodReviews(foodId),
@@ -123,8 +120,8 @@ const FoodDetailPage: React.FC<FoodDetailPageProps> = ({ foodId, location, onNav
                         {restaurant && (
                             <div className="border-t pt-4">
                                 <h3 className="font-semibold text-gray-800 mb-2">From Restaurant:</h3>
-                                <div 
-                                    onClick={() => onRestaurantClick(restaurant.id)} 
+                                <a 
+                                    href={`#/restaurant/${restaurant.id}`} 
                                     className="p-3 bg-gray-50 rounded-lg flex items-center justify-between cursor-pointer hover:bg-gray-100 transition"
                                 >
                                     <div>
@@ -132,7 +129,7 @@ const FoodDetailPage: React.FC<FoodDetailPageProps> = ({ foodId, location, onNav
                                         <p className="text-sm text-gray-500">{restaurant.deliveryTime} &bull; ${restaurant.deliveryFee.toFixed(2)} Fee</p>
                                     </div>
                                     <span className="text-red-500 font-bold">&rarr;</span>
-                                </div>
+                                </a>
                             </div>
                         )}
                     </div>

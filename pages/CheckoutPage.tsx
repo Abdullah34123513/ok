@@ -5,11 +5,9 @@ import type { Address, Order, CartItem } from '../types';
 import AddressModal from '../components/AddressModal';
 import { useNotification } from '../contexts/NotificationContext';
 
-interface CheckoutPageProps {
-    onOrderPlaced: (orderId: string) => void;
-}
+interface CheckoutPageProps {}
 
-const CheckoutPage: React.FC<CheckoutPageProps> = ({ onOrderPlaced }) => {
+const CheckoutPage: React.FC<CheckoutPageProps> = () => {
     const { cartItems, cartTotal, clearCart, deliveryFee, numberOfRestaurants } = useCart();
     const { showNotification } = useNotification();
     const [addresses, setAddresses] = useState<Address[]>([]);
@@ -28,7 +26,6 @@ const CheckoutPage: React.FC<CheckoutPageProps> = ({ onOrderPlaced }) => {
     }, [cartTotal, currentDeliveryFee]);
 
     const groupedItems = useMemo(() => {
-        // FIX: Provide a generic type argument to `reduce` to correctly type the accumulator.
         return cartItems.reduce<Record<string, { restaurantName: string, items: CartItem[] }>>((acc, item) => {
             const restaurantId = item.restaurantId;
             if (!acc[restaurantId]) {
@@ -94,7 +91,7 @@ const CheckoutPage: React.FC<CheckoutPageProps> = ({ onOrderPlaced }) => {
         try {
             const newOrder = await api.createOrder(orderPayload);
             clearCart();
-            onOrderPlaced(newOrder.id);
+            window.location.hash = `#/confirmation/${newOrder.id}`;
         } catch (error) {
             console.error("Failed to place order:", error);
             showNotification("There was an issue placing your order. Please try again.", "error");
@@ -156,10 +153,11 @@ const CheckoutPage: React.FC<CheckoutPageProps> = ({ onOrderPlaced }) => {
                         <div className="bg-white p-6 rounded-lg shadow-md sticky top-24">
                             <h2 className="text-xl font-bold mb-4 border-b pb-3">Order Summary</h2>
                             <div className="space-y-4 max-h-48 overflow-y-auto pr-2 mb-3">
-                            {Object.entries(groupedItems).map(([restaurantId, group]) => (
+                            {/* FIX: Use Object.keys() for type-safe iteration over groupedItems. */}
+                            {Object.keys(groupedItems).map((restaurantId) => (
                                 <div key={restaurantId}>
-                                    <h4 className="font-semibold text-sm text-gray-600 mb-1">{group.restaurantName}</h4>
-                                    {group.items.map(item => (
+                                    <h4 className="font-semibold text-sm text-gray-600 mb-1">{groupedItems[restaurantId].restaurantName}</h4>
+                                    {groupedItems[restaurantId].items.map(item => (
                                         <div key={item.id} className="flex justify-between text-sm ml-2">
                                             <span className="truncate pr-2">{item.quantity} x {item.name}</span>
                                             <span className="font-semibold">${(item.price * item.quantity).toFixed(2)}</span>

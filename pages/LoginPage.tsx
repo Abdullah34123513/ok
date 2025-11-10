@@ -1,14 +1,11 @@
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotification } from '../contexts/NotificationContext';
-import type { View } from '../App';
 import { LogoIcon } from '../components/Icons';
 
-interface LoginPageProps {
-    onNavigate: (view: View) => void;
-}
+interface LoginPageProps {}
 
-const LoginPage: React.FC<LoginPageProps> = ({ onNavigate }) => {
+const LoginPage: React.FC<LoginPageProps> = () => {
     const [email, setEmail] = useState('alex.doe@example.com');
     const [password, setPassword] = useState('password123');
     const [isLoading, setIsLoading] = useState(false);
@@ -88,9 +85,9 @@ const LoginPage: React.FC<LoginPageProps> = ({ onNavigate }) => {
 
                 <p className="text-center text-sm text-gray-600">
                     Don't have an account?{' '}
-                    <button onClick={() => onNavigate('signup')} className="font-medium text-red-600 hover:text-red-500">
+                    <a href="#/signup" className="font-medium text-red-600 hover:text-red-500">
                         Sign up
-                    </button>
+                    </a>
                 </p>
             </div>
         </div>

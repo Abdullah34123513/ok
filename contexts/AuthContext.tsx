@@ -35,6 +35,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const userWithToken = { ...user, authToken: token };
     setCurrentUser(userWithToken);
     localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(userWithToken));
+    window.location.hash = '#/home';
   };
 
   const login = useCallback(async (credentials: LoginCredentials) => {
@@ -50,9 +51,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logout = useCallback(() => {
     setCurrentUser(null);
     localStorage.removeItem(USER_STORAGE_KEY);
-     // Also clear location to force re-selection for a new user
     localStorage.removeItem('user-location');
-    // We can't directly navigate here, but the App component will react to currentUser being null
+    window.location.hash = '#/login';
   }, []);
 
   const value = {

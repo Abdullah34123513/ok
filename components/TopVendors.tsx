@@ -1,4 +1,3 @@
-
 import React from 'react';
 import type { Restaurant } from '../types';
 import { StarIcon } from './Icons';
@@ -25,17 +24,16 @@ const RestaurantMiniCard: React.FC<RestaurantCardProps> = ({ restaurant, onClick
 interface TopRestaurantsProps {
     restaurants: Restaurant[];
     onRestaurantClick: (id: string) => void;
-    onViewAllClick: () => void;
 }
 
-const TopRestaurants: React.FC<TopRestaurantsProps> = ({ restaurants, onRestaurantClick, onViewAllClick }) => {
+const TopRestaurants: React.FC<TopRestaurantsProps> = ({ restaurants, onRestaurantClick }) => {
   return (
     <div className="container mx-auto px-4 py-6">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-2xl font-bold text-gray-800">Top Restaurants</h2>
-        <button onClick={onViewAllClick} className="text-red-500 font-semibold hover:text-red-700 transition">
+        <a href="#/restaurants" className="text-red-500 font-semibold hover:text-red-700 transition">
             View All &rarr;
-        </button>
+        </a>
       </div>
       <div className="flex overflow-x-auto pb-4 -mx-2">
         {restaurants.length > 0

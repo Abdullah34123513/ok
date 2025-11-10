@@ -2,10 +2,9 @@ import React from 'react';
 
 interface OrderConfirmationPageProps {
     orderId: string;
-    onGoHome: () => void;
 }
 
-const OrderConfirmationPage: React.FC<OrderConfirmationPageProps> = ({ orderId, onGoHome }) => {
+const OrderConfirmationPage: React.FC<OrderConfirmationPageProps> = ({ orderId }) => {
     return (
         <div className="min-h-[calc(100vh-80px)] flex items-center justify-center">
             <div className="bg-white p-8 sm:p-12 rounded-lg shadow-xl text-center max-w-lg animate-fade-in-up">
@@ -18,12 +17,12 @@ const OrderConfirmationPage: React.FC<OrderConfirmationPageProps> = ({ orderId, 
                     <p className="text-sm text-gray-500">Your Order ID is:</p>
                     <p className="text-xl font-mono font-bold text-gray-800 tracking-wider">{orderId}</p>
                 </div>
-                <button 
-                    onClick={onGoHome}
-                    className="w-full mt-8 bg-red-500 text-white font-bold py-3 px-6 rounded-lg hover:bg-red-600 transition duration-300"
+                <a 
+                    href="#/home"
+                    className="block w-full mt-8 bg-red-500 text-white font-bold py-3 px-6 rounded-lg hover:bg-red-600 transition duration-300"
                 >
                     Back to Home
-                </button>
+                </a>
             </div>
         </div>
     );

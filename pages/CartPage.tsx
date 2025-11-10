@@ -2,12 +2,9 @@ import React, { useMemo } from 'react';
 import { useCart } from '../contexts/CartContext';
 import { TrashIcon } from '../components/Icons';
 import QuantityControl from '../components/QuantityControl';
-import type { View } from '../App';
 import type { CartItem } from '../types';
 
-interface CartPageProps {
-    onNavigate: (view: View) => void;
-}
+interface CartPageProps {}
 
 const CartItemRow: React.FC<{ item: CartItem }> = ({ item }) => {
     const { updateQuantity, removeItem } = useCart();
@@ -42,11 +39,10 @@ const CartItemRow: React.FC<{ item: CartItem }> = ({ item }) => {
     );
 };
 
-const CartPage: React.FC<CartPageProps> = ({ onNavigate }) => {
+const CartPage: React.FC<CartPageProps> = () => {
     const { cartItems, cartTotal, deliveryFee, grandTotal, isLoading, numberOfRestaurants } = useCart();
 
     const groupedItems = useMemo(() => {
-        // FIX: Provide a generic type argument to `reduce` to correctly type the accumulator.
         return cartItems.reduce<Record<string, { restaurantName: string, items: CartItem[] }>>((acc, item) => {
             const restaurantId = item.restaurantId;
             if (!acc[restaurantId]) {
@@ -69,9 +65,9 @@ const CartPage: React.FC<CartPageProps> = ({ onNavigate }) => {
             <div className="text-center p-10 container mx-auto">
                 <h2 className="text-2xl font-bold mb-4">Your cart is empty</h2>
                 <p className="text-gray-600 mb-6">Looks like you haven't added anything to your cart yet.</p>
-                <button onClick={() => onNavigate('home')} className="bg-red-500 text-white font-bold py-3 px-6 rounded-lg hover:bg-red-600 transition">
+                <a href="#/home" className="bg-red-500 text-white font-bold py-3 px-6 rounded-lg hover:bg-red-600 transition">
                     Continue Shopping
-                </button>
+                </a>
             </div>
         );
     }
@@ -82,10 +78,11 @@ const CartPage: React.FC<CartPageProps> = ({ onNavigate }) => {
                 <div className="lg:col-span-2 bg-white p-6 rounded-lg shadow-md">
                     <h2 className="text-2xl font-bold mb-4 border-b pb-3">Your Order</h2>
                     <div>
-                        {Object.entries(groupedItems).map(([restaurantId, group]) => (
+                        {/* FIX: Use Object.keys() for type-safe iteration over groupedItems. */}
+                        {Object.keys(groupedItems).map((restaurantId) => (
                             <div key={restaurantId} className="mb-8">
-                                <h3 className="text-xl font-bold text-gray-800 mb-2">{group.restaurantName}</h3>
-                                {group.items.map(item => <CartItemRow key={item.id} item={item} />)}
+                                <h3 className="text-xl font-bold text-gray-800 mb-2">{groupedItems[restaurantId].restaurantName}</h3>
+                                {groupedItems[restaurantId].items.map(item => <CartItemRow key={item.id} item={item} />)}
                             </div>
                         ))}
                     </div>
@@ -107,9 +104,9 @@ const CartPage: React.FC<CartPageProps> = ({ onNavigate }) => {
                                <span>${grandTotal.toFixed(2)}</span>
                            </div>
                         </div>
-                        <button onClick={() => onNavigate('checkout')} className="w-full mt-6 bg-red-500 text-white font-bold py-3 px-4 rounded-lg hover:bg-red-600 transition duration-300">
+                        <a href="#/checkout" className="block text-center w-full mt-6 bg-red-500 text-white font-bold py-3 px-4 rounded-lg hover:bg-red-600 transition duration-300">
                             Proceed to Checkout
-                        </button>
+                        </a>
                     </div>
                 </div>
             </div>
