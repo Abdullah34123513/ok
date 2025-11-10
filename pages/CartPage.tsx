@@ -73,7 +73,7 @@ const CartPageSkeleton = () => (
 
 
 const CartPage: React.FC<CartPageProps> = () => {
-    const { cartItems, cartTotal, deliveryFee, grandTotal, isLoading, numberOfRestaurants, appliedOffer, removeOffer, discountAmount } = useCart();
+    const { cartItems, cartTotal, deliveryFee, grandTotal, isLoading, numberOfRestaurants, appliedOffer, discountAmount, removeOffer } = useCart();
 
     const groupedItems = useMemo(() => {
         return cartItems.reduce<Record<string, { restaurantName: string, items: CartItem[] }>>((acc, item) => {
@@ -128,19 +128,19 @@ const CartPage: React.FC<CartPageProps> = () => {
                                <span>Subtotal</span>
                                <span className="font-semibold">${cartTotal.toFixed(2)}</span>
                            </div>
-                            <div className="flex justify-between">
-                               <span>Delivery Fee {numberOfRestaurants > 1 ? `(${numberOfRestaurants} restaurants)`: ''}</span>
-                               <span className="font-semibold">${deliveryFee.toFixed(2)}</span>
-                           </div>
                            {appliedOffer && (
                                <div className="flex justify-between text-green-600">
-                                   <div className="flex items-center">
-                                     <span>Discount <span className="font-semibold">({appliedOffer.code})</span></span>
-                                     <button onClick={removeOffer} className="ml-2 text-red-500 font-bold text-xs">[Remove]</button>
-                                   </div>
+                                    <div>
+                                        <span className="font-semibold">Discount</span>
+                                        <button onClick={removeOffer} className="ml-2 text-xs text-red-500 hover:underline">[Remove]</button>
+                                    </div>
                                    <span className="font-semibold">-${discountAmount.toFixed(2)}</span>
                                </div>
                            )}
+                           <div className="flex justify-between">
+                               <span>Delivery Fee {numberOfRestaurants > 1 ? `(${numberOfRestaurants} restaurants)`: ''}</span>
+                               <span className="font-semibold">${deliveryFee.toFixed(2)}</span>
+                           </div>
                            <div className="border-t pt-3 mt-3 flex justify-between font-bold text-xl text-black">
                                <span>Total</span>
                                <span>${grandTotal.toFixed(2)}</span>

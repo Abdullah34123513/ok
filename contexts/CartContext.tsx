@@ -1,6 +1,7 @@
 import React, { createContext, useState, useContext, useEffect, useMemo } from 'react';
-import type { CartItem, MenuItem, Offer } from '../types';
+import type { CartItem, MenuItem, Offer, AppliedOffer } from '../types';
 import * as api from '../services/api';
+import { useNotification } from './NotificationContext';
 
 export const DELIVERY_FEE = 5.99;
 
@@ -16,7 +17,7 @@ interface CartContextType {
   deliveryFee: number;
   grandTotal: number;
   numberOfRestaurants: number;
-  appliedOffer: Offer | null;
+  appliedOffer: AppliedOffer | null;
   applyOffer: (offer: Offer) => boolean;
   removeOffer: () => void;
   discountAmount: number;
@@ -27,7 +28,8 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [appliedOffer, setAppliedOffer] = useState<Offer | null>(null);
+  const [appliedOffer, setAppliedOffer] = useState<AppliedOffer | null>(null);
+  const { showNotification } = useNotification();
 
   useEffect(() => {
     setIsLoading(true);
@@ -35,23 +37,6 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       .then(setCartItems)
       .finally(() => setIsLoading(false));
   }, []);
-
-  const cartTotal = useMemo(() => cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0), [cartItems]);
-
-  const applyOffer = (offer: Offer) => {
-    if (offer.minOrderValue && cartTotal < offer.minOrderValue) {
-        return false; // Cart total doesn't meet minimum requirement
-    }
-    if (offer.restaurantId && !cartItems.some(item => item.restaurantId === offer.restaurantId)) {
-        return false; // Offer is for a specific restaurant not in the cart
-    }
-    setAppliedOffer(offer);
-    return true;
-  };
-
-  const removeOffer = () => {
-      setAppliedOffer(null);
-  };
 
   const addItem = async (item: MenuItem, restaurantId: string) => {
     const updatedCart = await api.addToCart(item, restaurantId);
@@ -68,6 +53,10 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setCartItems(updatedCart);
   };
   
+  const removeOffer = () => {
+    setAppliedOffer(null);
+  };
+
   const clearCart = () => {
       // In a real app this would call an API
       setCartItems([]);
@@ -83,30 +72,73 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const deliveryFee = useMemo(() => {
     return numberOfRestaurants > 0 ? DELIVERY_FEE * numberOfRestaurants : 0;
   }, [numberOfRestaurants]);
-  
-  const discountAmount = useMemo(() => {
-    if (!appliedOffer || cartTotal === 0) return 0;
 
-    let applicableTotal = cartTotal;
-    // If offer is for a specific restaurant, calculate total for only its items
-    if (appliedOffer.restaurantId) {
-        applicableTotal = cartItems
-            .filter(item => item.restaurantId === appliedOffer.restaurantId)
+  const cartTotal = useMemo(() => cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0), [cartItems]);
+  
+  const calculateDiscount = (offer: Offer, items: CartItem[], subtotal: number): number => {
+    let applicableSubtotal = 0;
+    if (offer.applicableTo === 'ALL') {
+        applicableSubtotal = subtotal;
+    // FIX: Use a more explicit type guard (typeof offer.applicableTo === 'object') to help TypeScript correctly narrow the union type and prevent the error.
+    } else if (offer.applicableTo && typeof offer.applicableTo === 'object') {
+        applicableSubtotal = items
+            .filter(item => item.restaurantId === offer.applicableTo.id)
             .reduce((sum, item) => sum + item.price * item.quantity, 0);
     }
 
+    if (applicableSubtotal === 0) return 0;
+
     let discount = 0;
-    if (appliedOffer.discountType === 'percentage') {
-        discount = applicableTotal * (appliedOffer.discountValue / 100);
-    } else if (appliedOffer.discountType === 'fixed') {
-        discount = appliedOffer.discountValue;
+    if (offer.discountType === 'PERCENTAGE' && offer.discountValue) {
+        discount = applicableSubtotal * (offer.discountValue / 100);
+    } else if (offer.discountType === 'FIXED' && offer.discountValue) {
+        discount = offer.discountValue;
+    }
+
+    return Math.min(discount, applicableSubtotal);
+  };
+  
+  const applyOffer = (offer: Offer) => {
+    if (offer.id === appliedOffer?.id) {
+        showNotification('This offer is already applied.', 'error');
+        return false;
+    }
+
+    if (offer.minOrderValue && cartTotal < offer.minOrderValue) {
+        showNotification(`Minimum order of $${offer.minOrderValue.toFixed(2)} required.`, 'error');
+        return false;
     }
     
-    return Math.min(discount, applicableTotal);
-  }, [appliedOffer, cartItems, cartTotal]);
+    const discountAmount = calculateDiscount(offer, cartItems, cartTotal);
+
+    if (discountAmount <= 0) {
+        showNotification(`This offer isn't applicable to any items in your cart.`, 'error');
+        return false;
+    }
+    
+    setAppliedOffer({ ...offer, discountAmount });
+    showNotification(`Offer "${offer.title}" applied successfully!`, 'success');
+    return true;
+  };
+
+  useEffect(() => {
+    // Re-validate applied offer if cart changes
+    if (appliedOffer) {
+        const discountAmount = calculateDiscount(appliedOffer, cartItems, cartTotal);
+        if (discountAmount > 0 && (!appliedOffer.minOrderValue || cartTotal >= appliedOffer.minOrderValue)) {
+            setAppliedOffer(prev => prev ? { ...prev, discountAmount } : null);
+        } else {
+            removeOffer();
+            showNotification('An applied offer is no longer valid for your cart and has been removed.', 'error');
+        }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cartItems, cartTotal]);
+
 
   const cartCount = useMemo(() => cartItems.reduce((sum, item) => sum + item.quantity, 0), [cartItems]);
-  const grandTotal = useMemo(() => Math.max(0, cartTotal - discountAmount + deliveryFee), [cartTotal, discountAmount, deliveryFee]);
+  const discountAmount = useMemo(() => appliedOffer?.discountAmount || 0, [appliedOffer]);
+  const grandTotal = useMemo(() => Math.max(0, cartTotal + deliveryFee - discountAmount), [cartTotal, deliveryFee, discountAmount]);
 
   const value = {
     cartItems,

@@ -36,55 +36,55 @@ const createMockRestaurant = (id: number): Restaurant => ({
   address: `${120 + id} Flavor St, Food City`,
 });
 
-const futureDate = (days: number) => new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString();
-
 const mockOffers: Offer[] = [
-  { 
-    id: 'offer-1', 
-    imageUrl: 'https://picsum.photos/seed/banner1/1200/400', 
-    title: '🔥 50% Off Weekend Special', 
-    description: 'Get 50% off on all orders from Restaurant Hub 1 this weekend.',
-    expiresAt: futureDate(2),
-    restaurantId: 'restaurant-1',
-    restaurantName: 'Restaurant Hub 1',
+  {
+    id: 'offer-1',
+    imageUrl: 'https://picsum.photos/seed/banner1/1200/400',
+    title: '50% Off Weekend',
+    description: 'Get 50% off on all orders this weekend.',
+    discountType: 'PERCENTAGE',
     discountValue: 50,
-    discountType: 'percentage',
-    code: 'WEEKEND50',
+    applicableTo: 'ALL',
+    couponCode: 'WEEKEND50',
+    minOrderValue: 20
   },
-  { 
-    id: 'offer-2', 
-    imageUrl: 'https://picsum.photos/seed/banner2/1200/400', 
-    title: 'Free Delivery', 
-    description: 'Enjoy free delivery on any order above $20. The discount will cover the fee for one restaurant.',
+  {
+    id: 'offer-2',
+    imageUrl: 'https://picsum.photos/seed/banner2/1200/400',
+    title: 'Free Delivery Today',
+    description: 'Enjoy free delivery on orders above $20.',
+    discountType: 'FIXED',
     discountValue: 5.99,
-    discountType: 'fixed',
-    code: 'FREEDEL',
     minOrderValue: 20,
+    applicableTo: 'ALL',
   },
-  { 
-    id: 'offer-3', 
-    imageUrl: 'https://picsum.photos/seed/banner3/1200/400', 
-    title: '$10 Off Combo Deals', 
-    description: 'Special combo deals starting from $15. Get a flat $10 discount on your order.',
-    expiresAt: futureDate(10),
+  {
+    id: 'offer-3',
+    imageUrl: 'https://picsum.photos/seed/banner3/1200/400',
+    title: 'Special Combo Deals',
+    description: 'Special combo deals starting from $15.'
+  },
+  {
+    id: 'offer-r1-10off',
+    imageUrl: 'https://picsum.photos/seed/offerR1/600/300',
+    title: '10% Off Restaurant Hub 1',
+    description: 'Enjoy 10% off on all items from Restaurant Hub 1.',
+    discountType: 'PERCENTAGE',
     discountValue: 10,
-    discountType: 'fixed',
-    code: 'COMBO10',
+    applicableTo: { type: 'RESTAURANT', id: 'restaurant-1' },
+    couponCode: 'HUB10'
   },
-    {
-    id: 'offer-4',
-    imageUrl: 'https://picsum.photos/seed/banner4/1200/400',
-    title: 'Indian Feast 25% Off',
-    description: 'A massive 25% off all delicious items from Restaurant Hub 3.',
-    expiresAt: futureDate(5),
-    restaurantId: 'restaurant-3',
-    restaurantName: 'Restaurant Hub 3',
-    discountValue: 25,
-    discountType: 'percentage',
-    code: 'INDIAN25',
+  {
+    id: 'offer-r2-5flat',
+    imageUrl: 'https://picsum.photos/seed/offerR2/600/300',
+    title: '$5 Flat Off at Restaurant Hub 2',
+    description: 'Get a flat $5 discount on orders above $30 from Restaurant Hub 2.',
+    discountType: 'FIXED',
+    discountValue: 5,
+    minOrderValue: 30,
+    applicableTo: { type: 'RESTAURANT', id: 'restaurant-2' }
   },
 ];
-
 
 const allMockRestaurants: Restaurant[] = Array.from({ length: 50 }, (_, i) => createMockRestaurant(i + 1));
 const mockTopRestaurants: Restaurant[] = allMockRestaurants.slice(0, 10);
@@ -126,24 +126,9 @@ export const login = (credentials: LoginCredentials): Promise<AuthResponse> => {
 
 
 export const getOffers = (): Promise<Offer[]> => {
-  console.log('API: Fetching banner offers...');
-  return simulateNetwork(mockOffers.slice(0, 3));
+  console.log('API: Fetching offers...');
+  return simulateNetwork(mockOffers);
 };
-
-export const getLimitedTimeOffers = (limit?: number): Promise<Offer[]> => {
-    console.log('API: Fetching limited time offers...');
-    const now = new Date();
-    const limited = mockOffers.filter(o => o.expiresAt && new Date(o.expiresAt) > now);
-    const result = limit ? limited.slice(0, limit) : limited;
-    return simulateNetwork(result);
-}
-
-export const getAllActiveOffers = (): Promise<Offer[]> => {
-    console.log('API: Fetching all active offers...');
-    const now = new Date();
-    const active = mockOffers.filter(o => !o.expiresAt || new Date(o.expiresAt) > now);
-    return simulateNetwork(active);
-}
 
 export const getTopRestaurants = (location: string): Promise<Restaurant[]> => {
   console.log(`API: Fetching top restaurants for ${location}...`);
@@ -534,4 +519,20 @@ export const submitOrderReview = (review: OrderReview): Promise<{ success: boole
         return simulateNetwork({ success: true }, 1000);
     }
     return simulateError('Order not found for review.');
+};
+
+// --- New Offer APIs ---
+export const getOffersForRestaurant = (restaurantId: string): Promise<Offer[]> => {
+  console.log(`API: Fetching offers for restaurant ${restaurantId}...`);
+  const restaurantOffers = mockOffers.filter(
+    offer => offer.applicableTo && typeof offer.applicableTo === 'object' && offer.applicableTo.id === restaurantId
+  );
+  return simulateNetwork(restaurantOffers);
+};
+
+export const validateCoupon = (code: string): Promise<Offer | null> => {
+    console.log(`API: Validating coupon code "${code}"...`);
+    if (!code) return simulateNetwork(null);
+    const offer = mockOffers.find(o => o.couponCode?.toUpperCase() === code.toUpperCase());
+    return simulateNetwork(offer || null);
 };

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import type { Restaurant, MenuCategory, Review, MenuItem } from '../types';
+import type { Restaurant, MenuCategory, Review, MenuItem, Offer } from '../types';
 import * as api from '../services/api';
 import { StarIcon, HeartIcon } from '../components/Icons';
 import { useCart } from '../contexts/CartContext';
@@ -12,7 +12,7 @@ interface RestaurantDetailPageProps {
 type Tab = 'menu' | 'reviews' | 'about';
 
 const StickyCartSummary: React.FC = () => {
-    const { cartCount, cartTotal } = useCart();
+    const { cartCount, grandTotal } = useCart();
     if (cartCount === 0) return null;
 
     return (
@@ -22,7 +22,7 @@ const StickyCartSummary: React.FC = () => {
                     <p className="font-bold text-lg">{cartCount} {cartCount > 1 ? 'items' : 'item'} in cart</p>
                 </div>
                 <div className="flex items-center space-x-4">
-                    <p className="font-extrabold text-xl">${cartTotal.toFixed(2)}</p>
+                    <p className="font-extrabold text-xl">${grandTotal.toFixed(2)}</p>
                     <a href="#/cart" className="bg-white text-red-500 font-bold py-2 px-6 rounded-full hover:bg-red-100 transition">
                         View Cart
                     </a>
@@ -82,8 +82,10 @@ const RestaurantDetailPage: React.FC<RestaurantDetailPageProps> = ({ restaurantI
     const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
     const [menu, setMenu] = useState<MenuCategory[]>([]);
     const [reviews, setReviews] = useState<Review[]>([]);
+    const [restaurantOffers, setRestaurantOffers] = useState<Offer[]>([]);
     const [activeTab, setActiveTab] = useState<Tab>('menu');
     const [isLoading, setIsLoading] = useState(true);
+    const { applyOffer } = useCart();
     
     const onFoodClick = (id: string) => {
         window.location.hash = `#/food/${id}`;
@@ -93,14 +95,16 @@ const RestaurantDetailPage: React.FC<RestaurantDetailPageProps> = ({ restaurantI
         const fetchData = async () => {
             setIsLoading(true);
             try {
-                const [details, menuData, reviewsData] = await Promise.all([
+                const [details, menuData, reviewsData, offersData] = await Promise.all([
                     api.getRestaurantDetails(restaurantId),
                     api.getRestaurantMenu(restaurantId),
-                    api.getRestaurantReviews(restaurantId)
+                    api.getRestaurantReviews(restaurantId),
+                    api.getOffersForRestaurant(restaurantId)
                 ]);
                 setRestaurant(details || null);
                 setMenu(menuData);
                 setReviews(reviewsData);
+                setRestaurantOffers(offersData);
             } catch (error) {
                 console.error("Failed to fetch restaurant data", error);
             } finally {
@@ -125,6 +129,12 @@ const RestaurantDetailPage: React.FC<RestaurantDetailPageProps> = ({ restaurantI
         } catch (error) {
             console.error("Failed to update favorite status", error);
             setRestaurant(prev => prev ? { ...prev, isFavorite: !newFavoriteStatus } : null);
+        }
+    };
+    
+    const handleApplyOffer = (offer: Offer) => {
+        if (applyOffer(offer)) {
+            window.location.hash = '#/cart';
         }
     };
 
@@ -164,6 +174,26 @@ const RestaurantDetailPage: React.FC<RestaurantDetailPageProps> = ({ restaurantI
                     </div>
                 </div>
             </div>
+
+            {/* Available Offers Section */}
+            {restaurantOffers.length > 0 && (
+                <div className="container mx-auto px-4 sm:px-6 py-4 bg-red-50 border-y border-red-100">
+                    <h2 className="text-xl font-bold mb-3 text-gray-800">Available Offers</h2>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {restaurantOffers.map(offer => (
+                            <div key={offer.id} className="bg-white p-4 rounded-lg border border-dashed border-red-300 flex flex-col sm:flex-row justify-between sm:items-center shadow-sm">
+                                <div className="mb-3 sm:mb-0">
+                                    <h3 className="font-bold text-red-600">{offer.title}</h3>
+                                    <p className="text-sm text-gray-700">{offer.description}</p>
+                                </div>
+                                <button onClick={() => handleApplyOffer(offer)} className="bg-red-500 text-white font-bold py-2 px-4 rounded-full hover:bg-red-600 transition flex-shrink-0 self-start sm:self-center">
+                                    Apply Offer
+                                </button>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
             
             {/* Tabs */}
             <div className="sticky top-[68px] bg-white z-10 shadow-sm">

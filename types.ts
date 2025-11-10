@@ -3,13 +3,16 @@ export interface Offer {
   imageUrl: string;
   title: string;
   description: string;
-  expiresAt?: string; // ISO 8601 format
-  restaurantId?: string;
-  restaurantName?: string;
-  discountValue: number;
-  discountType: 'percentage' | 'fixed';
-  code: string;
+  expiry?: string; // ISO 8601 string
+  discountType?: 'PERCENTAGE' | 'FIXED';
+  discountValue?: number;
   minOrderValue?: number;
+  applicableTo?: 'ALL' | { type: 'RESTAURANT', id: string };
+  couponCode?: string;
+}
+
+export interface AppliedOffer extends Offer {
+    discountAmount: number;
 }
 
 export interface Restaurant {
@@ -121,6 +124,8 @@ export interface Order {
     subtotal: number;
     deliveryFee: number;
     total: number;
+    discount?: number;
+    appliedOfferId?: string;
     address: Address;
     paymentMethod: string;
     deliveryOption: string;

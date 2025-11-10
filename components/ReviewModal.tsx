@@ -17,11 +17,12 @@ interface ItemReviewState {
 }
 
 const ReviewModal: React.FC<ReviewModalProps> = ({ order, onClose, onSubmit }) => {
+  // FIX: Explicitly provide the generic type to the 'reduce' method to ensure the accumulator 'acc' and the resulting state 'reviews' are correctly typed. This resolves downstream errors where properties of the review object were being accessed on an 'unknown' type.
   const [reviews, setReviews] = useState<Record<string, ItemReviewState>>(
-    order.items.reduce((acc, item) => {
+    order.items.reduce<Record<string, ItemReviewState>>((acc, item) => {
       acc[item.id] = { rating: 0, comment: '' };
       return acc;
-    }, {} as Record<string, ItemReviewState>)
+    }, {})
   );
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { showNotification } = useNotification();
@@ -34,8 +35,7 @@ const ReviewModal: React.FC<ReviewModalProps> = ({ order, onClose, onSubmit }) =
     setReviews(prev => ({ ...prev, [itemId]: { ...prev[itemId], comment } }));
   };
   
-  // FIX: Cast `r` to `ItemReviewState` to access the `rating` property.
-  const canSubmit = Object.values(reviews).some(r => (r as ItemReviewState).rating > 0);
+  const canSubmit = Object.values(reviews).some(r => r.rating > 0);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -49,14 +49,11 @@ const ReviewModal: React.FC<ReviewModalProps> = ({ order, onClose, onSubmit }) =
     const reviewPayload: OrderReview = {
         orderId: order.id,
         itemReviews: Object.entries(reviews)
-            // FIX: Cast `review` to `ItemReviewState` to access the `rating` property.
-            .filter(([, review]) => (review as ItemReviewState).rating > 0)
+            .filter(([, review]) => review.rating > 0)
             .map(([itemId, review]) => ({
                 itemId,
-                // FIX: Cast `review` to `ItemReviewState` to access the `rating` property.
-                rating: (review as ItemReviewState).rating,
-                // FIX: Cast `review` to `ItemReviewState` to access the `comment` property.
-                comment: (review as ItemReviewState).comment || undefined,
+                rating: review.rating,
+                comment: review.comment || undefined,
             }))
     };
     

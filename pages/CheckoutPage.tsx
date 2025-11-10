@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useCart } from '../contexts/CartContext';
 import * as api from '../services/api';
-import type { Address, Order, CartItem } from '../types';
+import type { Address, Order, CartItem, Offer } from '../types';
 import AddressModal from '../components/AddressModal';
 import { useNotification } from '../contexts/NotificationContext';
 
@@ -22,7 +22,7 @@ const AddressSectionSkeleton = () => (
 );
 
 const CheckoutPage: React.FC<CheckoutPageProps> = () => {
-    const { cartItems, cartTotal, clearCart, deliveryFee, grandTotal, numberOfRestaurants, appliedOffer, removeOffer, discountAmount } = useCart();
+    const { cartItems, cartTotal, clearCart, deliveryFee, numberOfRestaurants, appliedOffer, applyOffer, removeOffer, discountAmount } = useCart();
     const { showNotification } = useNotification();
     const [addresses, setAddresses] = useState<Address[]>([]);
     const [selectedAddress, setSelectedAddress] = useState<string | null>(null);
@@ -31,14 +31,16 @@ const CheckoutPage: React.FC<CheckoutPageProps> = () => {
     const [isPlacingOrder, setIsPlacingOrder] = useState(false);
     const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
     const [isAddressLoading, setIsAddressLoading] = useState(true);
+    const [couponCode, setCouponCode] = useState('');
+    const [isApplyingCoupon, setIsApplyingCoupon] = useState(false);
 
     const currentDeliveryFee = useMemo(() => {
         return deliveryOption === 'home' ? deliveryFee : 0;
     }, [deliveryOption, deliveryFee]);
 
     const currentGrandTotal = useMemo(() => {
-        return Math.max(0, cartTotal - discountAmount + currentDeliveryFee);
-    }, [cartTotal, discountAmount, currentDeliveryFee]);
+        return Math.max(0, cartTotal + currentDeliveryFee - discountAmount);
+    }, [cartTotal, currentDeliveryFee, discountAmount]);
 
     const groupedItems = useMemo(() => {
         return cartItems.reduce<Record<string, { restaurantName: string, items: CartItem[] }>>((acc, item) => {
@@ -81,6 +83,24 @@ const CheckoutPage: React.FC<CheckoutPageProps> = () => {
         });
     };
     
+    const handleApplyCoupon = async () => {
+        if (!couponCode.trim()) return;
+        setIsApplyingCoupon(true);
+        try {
+            const offer = await api.validateCoupon(couponCode.trim());
+            if (offer) {
+                applyOffer(offer);
+                setCouponCode('');
+            } else {
+                showNotification('Invalid or expired coupon code.', 'error');
+            }
+        } catch (error) {
+            showNotification('Could not apply coupon. Please try again.', 'error');
+        } finally {
+            setIsApplyingCoupon(false);
+        }
+    };
+    
     const handlePlaceOrder = async () => {
         if (!selectedAddress) {
             showNotification("Please select a delivery address.", "error");
@@ -104,6 +124,8 @@ const CheckoutPage: React.FC<CheckoutPageProps> = () => {
             subtotal: cartTotal,
             deliveryFee: currentDeliveryFee,
             total: currentGrandTotal,
+            discount: discountAmount,
+            appliedOfferId: appliedOffer?.id,
             address,
             paymentMethod: paymentOption,
             deliveryOption,
@@ -196,24 +218,46 @@ const CheckoutPage: React.FC<CheckoutPageProps> = () => {
                                     <span>Subtotal</span>
                                     <span className="font-semibold">${cartTotal.toFixed(2)}</span>
                                 </div>
+                                {appliedOffer && (
+                                   <div className="flex justify-between text-sm text-green-600">
+                                       <span className="font-semibold">{appliedOffer.title}</span>
+                                       <span className="font-semibold">-${discountAmount.toFixed(2)}</span>
+                                   </div>
+                                )}
                                 <div className="flex justify-between text-sm">
-                                    <span>Delivery Fee {numberOfRestaurants > 1 ? `(${numberOfRestaurants} restaurants)`: ''}</span>
+                                    <span>Delivery Fee {numberOfRestaurants > 1 && deliveryOption === 'home' ? `(${numberOfRestaurants} restaurants)`: ''}</span>
                                     <span className="font-semibold">${currentDeliveryFee.toFixed(2)}</span>
                                 </div>
-                                 {appliedOffer && (
-                                    <div className="flex justify-between text-sm text-green-600">
-                                       <div className="flex items-center">
-                                            <span>Discount</span>
-                                            <button onClick={removeOffer} className="ml-2 text-red-500 font-bold text-xs">[Remove]</button>
-                                       </div>
-                                        <span className="font-semibold">-${discountAmount.toFixed(2)}</span>
-                                    </div>
-                                )}
                                 <div className="flex justify-between font-bold text-lg text-black mt-2 pt-2 border-t">
                                     <span>Total</span>
                                     <span>${currentGrandTotal.toFixed(2)}</span>
                                 </div>
                             </div>
+
+                            <div className="border-t pt-4 mt-4">
+                                {appliedOffer ? (
+                                    <div className="flex justify-between items-center p-2 bg-green-50 rounded-md">
+                                        <p className="text-sm font-semibold text-green-700">
+                                            Applied: <span className="font-bold">{appliedOffer.couponCode || appliedOffer.title}</span>
+                                        </p>
+                                        <button onClick={removeOffer} className="text-xs text-red-500 hover:underline font-semibold">Remove</button>
+                                    </div>
+                                ) : (
+                                    <div className="flex space-x-2">
+                                        <input 
+                                            type="text" 
+                                            placeholder="Enter coupon code" 
+                                            value={couponCode}
+                                            onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                                            className="flex-1 px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-red-400"
+                                        />
+                                        <button onClick={handleApplyCoupon} disabled={isApplyingCoupon} className="px-4 py-2 bg-gray-800 text-white text-sm font-semibold rounded-md hover:bg-black disabled:bg-gray-400">
+                                            {isApplyingCoupon ? '...' : 'Apply'}
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+
                             <button 
                                 onClick={handlePlaceOrder}
                                 disabled={isPlacingOrder || !selectedAddress}
