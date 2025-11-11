@@ -17,12 +17,12 @@ interface ItemReviewState {
 }
 
 const ReviewModal: React.FC<ReviewModalProps> = ({ order, onClose, onSubmit }) => {
-  // Fix: Explicitly typed the accumulator in the 'reduce' method to ensure the initial state 'reviews' is correctly typed.
+  // FIX: Correctly typed the initial value for the `reduce` method to ensure proper type inference for the `reviews` state.
   const [reviews, setReviews] = useState<Record<string, ItemReviewState>>(
-    order.items.reduce((acc: Record<string, ItemReviewState>, item) => {
+    order.items.reduce((acc, item) => {
       acc[item.baseItem.id] = { rating: 0, comment: '' };
       return acc;
-    }, {})
+    }, {} as Record<string, ItemReviewState>)
   );
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { showNotification } = useNotification();
