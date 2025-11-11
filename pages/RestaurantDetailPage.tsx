@@ -236,14 +236,15 @@ const TabButton: React.FC<{ name: string, id: Tab, activeTab: Tab, setActiveTab:
 
 const MenuItemCard: React.FC<{ item: MenuItem, restaurantId: string, onFoodClick: (id: string) => void }> = ({ item, restaurantId, onFoodClick }) => {
     const { cartItems, addItem, updateQuantity, removeItem } = useCart();
-    const cartItem = cartItems.find(ci => ci.id === item.id);
+    const cartItem = cartItems.find(ci => ci.baseItem.id === item.id && ci.selectedCustomizations.length === 0);
+    const hasCustomizations = item.customizationOptions && item.customizationOptions.length > 0;
 
     const handleDecrement = () => {
         if (cartItem) {
             if (cartItem.quantity > 1) {
-                updateQuantity(cartItem.id, cartItem.quantity - 1);
+                updateQuantity(cartItem.cartItemId, cartItem.quantity - 1);
             } else {
-                removeItem(cartItem.id);
+                removeItem(cartItem.cartItemId);
             }
         }
     };
@@ -257,17 +258,22 @@ const MenuItemCard: React.FC<{ item: MenuItem, restaurantId: string, onFoodClick
             <div className="flex-1">
                 <h3 className="font-bold text-lg">{item.name}</h3>
                 <p className="text-sm text-gray-500">{item.description}</p>
+                 {item.isPackage && <span className="text-xs font-bold text-white bg-green-500 px-2 py-1 rounded-full mt-2 inline-block">PACKAGE</span>}
             </div>
             <div onClick={(e) => e.stopPropagation()} className="text-right flex flex-col justify-between items-end">
-                <p className="font-bold text-gray-800">${item.price.toFixed(2)}</p>
-                {cartItem ? (
+                <p className="font-bold text-gray-800">${item.price.toFixed(2)}{hasCustomizations ? '+' : ''}</p>
+                {hasCustomizations ? (
+                    <button onClick={() => onFoodClick(item.id)} className="bg-gray-100 text-gray-700 font-bold py-1 px-3 text-sm rounded-full hover:bg-gray-200 transition">
+                        Customize
+                    </button>
+                ) : cartItem ? (
                     <QuantityControl 
                         quantity={cartItem.quantity}
-                        onIncrement={() => updateQuantity(cartItem.id, cartItem.quantity + 1)}
+                        onIncrement={() => updateQuantity(cartItem.cartItemId, cartItem.quantity + 1)}
                         onDecrement={handleDecrement}
                     />
                 ) : (
-                    <button onClick={() => addItem(item, restaurantId)} className="bg-red-100 text-red-600 font-bold py-1 px-3 text-sm rounded-full hover:bg-red-500 hover:text-white transition">
+                    <button onClick={() => addItem(item, 1, [], item.price)} className="bg-red-100 text-red-600 font-bold py-1 px-3 text-sm rounded-full hover:bg-red-500 hover:text-white transition">
                         Add
                     </button>
                 )}

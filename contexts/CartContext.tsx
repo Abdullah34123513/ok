@@ -1,5 +1,5 @@
 import React, { createContext, useState, useContext, useEffect, useMemo } from 'react';
-import type { CartItem, MenuItem, Offer, AppliedOffer } from '../types';
+import type { CartItem, MenuItem, Offer, AppliedOffer, SelectedCustomization } from '../types';
 import * as api from '../services/api';
 import * as tracking from '../services/tracking';
 import { useNotification } from './NotificationContext';
@@ -8,9 +8,9 @@ export const DELIVERY_FEE = 5.99;
 
 interface CartContextType {
   cartItems: CartItem[];
-  addItem: (item: MenuItem, restaurantId: string) => void;
-  removeItem: (itemId: string) => void;
-  updateQuantity: (itemId: string, quantity: number) => void;
+  addItem: (item: MenuItem, quantity: number, customizations: SelectedCustomization[], totalPrice: number) => void;
+  removeItem: (cartItemId: string) => void;
+  updateQuantity: (cartItemId: string, quantity: number) => void;
   clearCart: () => void;
   isLoading: boolean;
   cartCount: number;
@@ -39,34 +39,35 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       .finally(() => setIsLoading(false));
   }, []);
 
-  const addItem = async (item: MenuItem, restaurantId: string) => {
-    const updatedCart = await api.addToCart(item, restaurantId);
+  const addItem = async (item: MenuItem, quantity: number, customizations: SelectedCustomization[], totalPrice: number) => {
+    const updatedCart = await api.addToCart(item, quantity, customizations, totalPrice);
     tracking.trackEvent('add_to_cart', {
         itemId: item.id,
         itemName: item.name,
-        price: item.price,
+        price: totalPrice,
         restaurantId: item.restaurantId,
         restaurantName: item.restaurantName,
+        customizations: customizations,
     });
     setCartItems(updatedCart);
   };
 
-  const removeItem = async (itemId: string) => {
-    const itemToRemove = cartItems.find(item => item.id === itemId);
-    const updatedCart = await api.removeCartItem(itemId);
+  const removeItem = async (cartItemId: string) => {
+    const itemToRemove = cartItems.find(item => item.cartItemId === cartItemId);
+    const updatedCart = await api.removeCartItem(cartItemId);
     if(itemToRemove) {
         tracking.trackEvent('remove_from_cart', {
-            itemId: itemToRemove.id,
-            itemName: itemToRemove.name,
-            price: itemToRemove.price,
-            restaurantId: itemToRemove.restaurantId
+            itemId: itemToRemove.baseItem.id,
+            itemName: itemToRemove.baseItem.name,
+            price: itemToRemove.totalPrice,
+            restaurantId: itemToRemove.baseItem.restaurantId
         });
     }
     setCartItems(updatedCart);
   };
 
-  const updateQuantity = async (itemId: string, quantity: number) => {
-    const updatedCart = await api.updateCartItemQuantity(itemId, quantity);
+  const updateQuantity = async (cartItemId: string, quantity: number) => {
+    const updatedCart = await api.updateCartItemQuantity(cartItemId, quantity);
     setCartItems(updatedCart);
   };
   
@@ -82,7 +83,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const numberOfRestaurants = useMemo(() => {
     if (cartItems.length === 0) return 0;
-    const restaurantIds = new Set(cartItems.map(item => item.restaurantId));
+    const restaurantIds = new Set(cartItems.map(item => item.baseItem.restaurantId));
     return restaurantIds.size;
   }, [cartItems]);
 
@@ -90,17 +91,17 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return numberOfRestaurants > 0 ? DELIVERY_FEE * numberOfRestaurants : 0;
   }, [numberOfRestaurants]);
 
-  const cartTotal = useMemo(() => cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0), [cartItems]);
+  const cartTotal = useMemo(() => cartItems.reduce((sum, item) => sum + item.totalPrice, 0), [cartItems]);
   
   const calculateDiscount = (offer: Offer, items: CartItem[], subtotal: number): number => {
     let applicableSubtotal = 0;
     if (offer.applicableTo === 'ALL') {
         applicableSubtotal = subtotal;
     // FIX: Use a more explicit type guard (`typeof offer.applicableTo === 'object'`) to help TypeScript correctly narrow the union type and prevent the error.
-    } else if (offer.applicableTo && typeof offer.applicableTo === 'object') {
+    } else if (offer.applicableTo && typeof offer.applicableTo === 'object' && offer.applicableTo.type === 'RESTAURANT') {
         applicableSubtotal = items
-            .filter(item => item.restaurantId === offer.applicableTo.id)
-            .reduce((sum, item) => sum + item.price * item.quantity, 0);
+            .filter(item => item.baseItem.restaurantId === offer.applicableTo.id)
+            .reduce((sum, item) => sum + item.totalPrice, 0);
     }
 
     if (applicableSubtotal === 0) return 0;

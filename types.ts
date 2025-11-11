@@ -28,17 +28,32 @@ export interface Restaurant {
   isFavorite?: boolean;
 }
 
+export interface CustomizationChoice {
+    name: string;
+    price: number; // Price difference, can be 0
+}
+
+export interface CustomizationOption {
+    id: string;
+    name: string; // e.g., "Size", "Toppings"
+    type: 'SINGLE' | 'MULTIPLE'; // SINGLE for radio, MULTIPLE for checkbox
+    required: boolean;
+    choices: CustomizationChoice[];
+}
+
 export interface Food {
   id: string;
   imageUrl: string;
   name: string;
-  price: number;
+  price: number; // Base price
   rating: number;
   restaurantId: string;
   description: string;
   vendor: {
     name: string;
   };
+  customizationOptions?: CustomizationOption[];
+  isPackage?: boolean;
 }
 
 export interface MenuItem {
@@ -49,10 +64,23 @@ export interface MenuItem {
     imageUrl: string;
     restaurantId: string;
     restaurantName: string;
+    customizationOptions?: CustomizationOption[];
+    isPackage?: boolean;
 }
 
-export interface CartItem extends MenuItem {
+export interface SelectedCustomization {
+    optionId: string;
+    optionName: string;
+    choices: CustomizationChoice[];
+}
+
+// CartItem is now a more complex object to handle unique configurations
+export interface CartItem {
+    cartItemId: string; // A unique ID for this specific cart entry, e.g., `food-1-a8b3f`
     quantity: number;
+    baseItem: MenuItem;
+    selectedCustomizations: SelectedCustomization[];
+    totalPrice: number; // (base price + customization prices) * quantity
 }
 
 

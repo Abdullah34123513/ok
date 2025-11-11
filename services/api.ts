@@ -1,4 +1,4 @@
-import type { Offer, Restaurant, Food, PaginatedFoods, SearchResult, PaginatedRestaurants, MenuCategory, Review, CartItem, MenuItem, Address, Order, AddressSuggestion, AddressDetails, User, LoginCredentials, SignupData, AuthResponse, LocationPoint, SupportInfo, ChatMessage, OrderReview } from '../types';
+import type { Offer, Restaurant, Food, PaginatedFoods, SearchResult, PaginatedRestaurants, MenuCategory, Review, CartItem, MenuItem, Address, Order, AddressSuggestion, AddressDetails, User, LoginCredentials, SignupData, AuthResponse, LocationPoint, SupportInfo, ChatMessage, OrderReview, SelectedCustomization, CustomizationOption } from '../types';
 
 // --- Location-based data simulation helpers ---
 
@@ -129,6 +129,84 @@ const mockOffers: Offer[] = [
 
 const allMockRestaurants: Restaurant[] = Array.from({ length: 50 }, (_, i) => createMockRestaurant(i + 1));
 const allMockFoods: Food[] = Array.from({ length: 100 }, (_, i) => createMockFood(i + 1, allMockRestaurants[(i % 10)]));
+
+
+// --- Add Customizable Pizza ---
+const pizzaCustomizations: CustomizationOption[] = [
+    {
+        id: 'size',
+        name: 'Size',
+        type: 'SINGLE',
+        required: true,
+        choices: [
+            { name: 'Medium (12")', price: 0 },
+            { name: 'Large (14")', price: 3.50 },
+            { name: 'Extra Large (16")', price: 6.00 },
+        ]
+    },
+    {
+        id: 'crust',
+        name: 'Crust',
+        type: 'SINGLE',
+        required: true,
+        choices: [
+            { name: 'Classic', price: 0 },
+            { name: 'Thin Crust', price: 0 },
+            { name: 'Stuffed Crust', price: 2.50 },
+        ]
+    },
+    {
+        id: 'toppings',
+        name: 'Toppings',
+        type: 'MULTIPLE',
+        required: false,
+        choices: [
+            { name: 'Extra Cheese', price: 1.50 },
+            { name: 'Pepperoni', price: 1.00 },
+            { name: 'Mushrooms', price: 0.75 },
+            { name: 'Onions', price: 0.50 },
+            { name: 'Olives', price: 0.75 },
+        ]
+    }
+];
+
+allMockFoods.unshift({
+  id: 'food-pizza-1',
+  imageUrl: 'https://picsum.photos/seed/pizza1/400/300',
+  name: 'Margherita Pizza',
+  price: 12.99,
+  rating: 4.8,
+  restaurantId: allMockRestaurants[0].id,
+  description: 'Classic delight with 100% real mozzarella cheese, fresh tomatoes, and a savory tomato sauce base. Customize it to your liking!',
+  vendor: { name: allMockRestaurants[0].name },
+  customizationOptions: pizzaCustomizations,
+});
+
+// --- Add Combo and Family Packages ---
+allMockFoods.push({
+  id: 'food-combo-1',
+  imageUrl: 'https://picsum.photos/seed/combo1/400/300',
+  name: 'Solo Combo Deal',
+  price: 18.99,
+  rating: 4.5,
+  restaurantId: allMockRestaurants[1].id,
+  description: 'The perfect meal for one! Includes a classic cheeseburger, medium fries, and a soft drink of your choice.',
+  vendor: { name: allMockRestaurants[1].name },
+  isPackage: true,
+});
+
+allMockFoods.push({
+  id: 'food-family-pack-1',
+  imageUrl: 'https://picsum.photos/seed/familypack1/400/300',
+  name: 'Family Pizza Night Package',
+  price: 39.99,
+  rating: 4.7,
+  restaurantId: allMockRestaurants[0].id,
+  description: 'Everything you need for a family feast. Includes two large classic pizzas, a large portion of garlic bread, and a 2-liter soft drink.',
+  vendor: { name: allMockRestaurants[0].name },
+  isPackage: true,
+});
+
 
 // --- Location-aware data helpers ---
 const getRestaurantsForLocation = (location: string): Restaurant[] => {
@@ -284,21 +362,30 @@ export const getRestaurantDetails = (id: string): Promise<Restaurant | undefined
 export const getRestaurantMenu = (id: string): Promise<MenuCategory[]> => {
     console.log(`API: Fetching menu for restaurant ${id}...`);
     const restaurant = allMockRestaurants.find(r => r.id === id);
-    const restaurantName = restaurant ? restaurant.name : 'Unknown Restaurant';
-    const menu: MenuCategory[] = [
-        {
-            name: 'Appetizers',
-            items: Array.from({length: 5}, (_, i) => ({ id: `menu-a-${i}-${id}`, name: `Starter Dish ${i+1}`, description: 'A tasty beginning to your meal.', price: 8.99 + i, imageUrl: `https://picsum.photos/seed/menuA${i}/200/200`, restaurantId: id, restaurantName }))
-        },
-        {
-            name: 'Main Courses',
-            items: Array.from({length: 8}, (_, i) => ({ id: `menu-m-${i}-${id}`, name: `Main Course ${i+1}`, description: 'Hearty and delicious main courses.', price: 15.99 + i, imageUrl: `https://picsum.photos/seed/menuM${i}/200/200`, restaurantId: id, restaurantName }))
-        },
-        {
-            name: 'Desserts',
-            items: Array.from({length: 4}, (_, i) => ({ id: `menu-d-${i}-${id}`, name: `Sweet Treat ${i+1}`, description: 'The perfect end to any meal.', price: 7.50 + i, imageUrl: `https://picsum.photos/seed/menuD${i}/200/200`, restaurantId: id, restaurantName }))
-        }
-    ];
+    if (!restaurant) return simulateNetwork([]);
+
+    const itemsForRestaurant = allMockFoods
+        .filter(food => food.restaurantId === id)
+        .map(food => ({
+            id: food.id,
+            name: food.name,
+            description: food.description,
+            price: food.price,
+            imageUrl: food.imageUrl,
+            restaurantId: food.restaurantId,
+            restaurantName: restaurant.name,
+            customizationOptions: food.customizationOptions,
+            isPackage: food.isPackage,
+        }));
+
+    // Simple categorization for the mock
+    const appetizers = itemsForRestaurant.slice(0, 5);
+    const mains = itemsForRestaurant.slice(5);
+
+    const menu: MenuCategory[] = [];
+    if (appetizers.length > 0) menu.push({ name: 'Popular Items', items: appetizers });
+    if (mains.length > 0) menu.push({ name: 'Main Menu', items: mains });
+
     return simulateNetwork(menu);
 };
 
@@ -349,11 +436,11 @@ let mockAddresses: Address[] = [
     { id: 'addr-2', label: 'Work', details: '456 Business Ave, Suite 500, Food City, 12345' }
 ];
 let mockOrders: Order[] = [
-    { id: 'order-1', items: allMockFoods.slice(10,12).map(f => ({...f, quantity: 1, restaurantName: f.vendor.name })), subtotal: 45.50, deliveryFee: 5.99, total: 51.49, address: mockAddresses[0], paymentMethod: 'cod', deliveryOption: 'home', status: 'Delivered', restaurantName: 'Restaurant Hub 1', date: '2023-10-26', isReviewed: false },
+    { id: 'order-1', items: [], subtotal: 45.50, deliveryFee: 5.99, total: 51.49, address: mockAddresses[0], paymentMethod: 'cod', deliveryOption: 'home', status: 'Delivered', restaurantName: 'Restaurant Hub 1', date: '2023-10-26', isReviewed: false },
     { id: 'order-2', items: [], subtotal: 22.00, deliveryFee: 5.99, total: 27.99, address: mockAddresses[1], paymentMethod: 'online', deliveryOption: 'home', status: 'Cancelled', restaurantName: 'Restaurant Hub 3', date: '2023-10-25' },
     { 
         id: 'order-3', 
-        items: allMockFoods.slice(0,2).map(f => ({...f, quantity: 1, restaurantName: f.vendor.name })),
+        items: [],
         subtotal: 31.80, 
         deliveryFee: 5.99, 
         total: 37.79, 
@@ -374,7 +461,7 @@ let mockOrders: Order[] = [
             location: { lat: 34.0572, lng: -118.2487 },
         }
     },
-    { id: 'order-4', items: allMockFoods.slice(20,21).map(f => ({...f, quantity: 2, restaurantName: f.vendor.name })), subtotal: 25.00, deliveryFee: 5.99, total: 30.99, address: mockAddresses[0], paymentMethod: 'online', deliveryOption: 'home', status: 'Delivered', restaurantName: 'Restaurant Hub 4', date: '2023-10-24', isReviewed: true },
+    { id: 'order-4', items: [], subtotal: 25.00, deliveryFee: 5.99, total: 30.99, address: mockAddresses[0], paymentMethod: 'online', deliveryOption: 'home', status: 'Delivered', restaurantName: 'Restaurant Hub 4', date: '2023-10-24', isReviewed: true },
 ];
 let riderLocations = new Map<string, LocationPoint>([
     ['order-3', { lat: 34.0572, lng: -118.2487 }]
@@ -386,33 +473,40 @@ export const getCart = (): Promise<CartItem[]> => {
     return simulateNetwork([...mockCart], 100);
 }
 
-export const addToCart = (item: MenuItem, restaurantId: string): Promise<CartItem[]> => {
-    console.log(`API: Adding item ${item.id} to cart`);
-    const existingItem = mockCart.find(cartItem => cartItem.id === item.id);
-    if (existingItem) {
-        existingItem.quantity += 1;
-    } else {
-        mockCart.push({ ...item, quantity: 1 });
-    }
+export const addToCart = (item: MenuItem, quantity: number, customizations: SelectedCustomization[], totalPrice: number): Promise<CartItem[]> => {
+    console.log(`API: Adding item ${item.id} to cart with customizations`);
+    
+    const newCartItem: CartItem = {
+        cartItemId: `${item.id}-${Math.random().toString(36).substr(2, 9)}`,
+        baseItem: item,
+        quantity: quantity,
+        selectedCustomizations: customizations,
+        totalPrice: totalPrice * quantity,
+    };
+
+    mockCart.push(newCartItem);
     return simulateNetwork([...mockCart]);
 }
 
-export const updateCartItemQuantity = (itemId: string, quantity: number): Promise<CartItem[]> => {
-    console.log(`API: Updating item ${itemId} quantity to ${quantity}`);
-    const itemIndex = mockCart.findIndex(cartItem => cartItem.id === itemId);
+export const updateCartItemQuantity = (cartItemId: string, quantity: number): Promise<CartItem[]> => {
+    console.log(`API: Updating item ${cartItemId} quantity to ${quantity}`);
+    const itemIndex = mockCart.findIndex(cartItem => cartItem.cartItemId === cartItemId);
     if (itemIndex > -1) {
         if (quantity <= 0) {
             mockCart.splice(itemIndex, 1);
         } else {
-            mockCart[itemIndex].quantity = quantity;
+            const item = mockCart[itemIndex];
+            const pricePerItem = item.totalPrice / item.quantity;
+            item.quantity = quantity;
+            item.totalPrice = pricePerItem * quantity;
         }
     }
     return simulateNetwork([...mockCart]);
 }
 
-export const removeCartItem = (itemId: string): Promise<CartItem[]> => {
-    console.log(`API: Removing item ${itemId} from cart`);
-    mockCart = mockCart.filter(item => item.id !== itemId);
+export const removeCartItem = (cartItemId: string): Promise<CartItem[]> => {
+    console.log(`API: Removing item ${cartItemId} from cart`);
+    mockCart = mockCart.filter(item => item.cartItemId !== cartItemId);
     return simulateNetwork([...mockCart]);
 }
 
@@ -423,7 +517,7 @@ export const getAddresses = (): Promise<Address[]> => {
 
 export const createOrder = (orderPayload: Omit<Order, 'id' | 'status' | 'restaurantName' | 'date'>): Promise<Order> => {
     console.log('API: Creating order with payload:', orderPayload);
-    const restaurantNames = [...new Set(orderPayload.items.map(item => item.restaurantName))].join(', ');
+    const restaurantNames = [...new Set(orderPayload.items.map(item => item.baseItem.restaurantName))].join(', ');
 
     const newOrder: Order = {
         ...orderPayload,

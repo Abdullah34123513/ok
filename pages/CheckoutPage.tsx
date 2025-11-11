@@ -49,10 +49,10 @@ const CheckoutPage: React.FC<CheckoutPageProps> = () => {
 
     const groupedItems = useMemo(() => {
         return cartItems.reduce<Record<string, { restaurantName: string, items: CartItem[] }>>((acc, item) => {
-            const restaurantId = item.restaurantId;
+            const restaurantId = item.baseItem.restaurantId;
             if (!acc[restaurantId]) {
                 acc[restaurantId] = {
-                    restaurantName: item.restaurantName,
+                    restaurantName: item.baseItem.restaurantName,
                     items: []
                 };
             }
@@ -147,7 +147,7 @@ const CheckoutPage: React.FC<CheckoutPageProps> = () => {
                 deliveryFee: newOrder.deliveryFee,
                 discount: newOrder.discount,
                 itemCount: cartItems.reduce((acc, item) => acc + item.quantity, 0),
-                restaurantIds: [...new Set(cartItems.map(item => item.restaurantId))],
+                restaurantIds: [...new Set(cartItems.map(item => item.baseItem.restaurantId))],
             });
             clearCart();
             window.location.hash = `#/confirmation/${newOrder.id}`;
@@ -221,9 +221,16 @@ const CheckoutPage: React.FC<CheckoutPageProps> = () => {
                                 <div key={restaurantId}>
                                     <h4 className="font-semibold text-sm text-gray-600 mb-1">{groupedItems[restaurantId].restaurantName}</h4>
                                     {groupedItems[restaurantId].items.map(item => (
-                                        <div key={item.id} className="flex justify-between text-sm ml-2">
-                                            <span className="truncate pr-2">{item.quantity} x {item.name}</span>
-                                            <span className="font-semibold">${(item.price * item.quantity).toFixed(2)}</span>
+                                        <div key={item.cartItemId} className="ml-2">
+                                            <div className="flex justify-between text-sm">
+                                                <span className="truncate pr-2">{item.quantity} x {item.baseItem.name}</span>
+                                                <span className="font-semibold">${item.totalPrice.toFixed(2)}</span>
+                                            </div>
+                                            {item.selectedCustomizations.length > 0 && (
+                                                <div className="text-xs text-gray-500 pl-2">
+                                                    {item.selectedCustomizations.map(cust => cust.choices.map(c => c.name).join(', ')).join(' • ')}
+                                                </div>
+                                            )}
                                         </div>
                                     ))}
                                 </div>

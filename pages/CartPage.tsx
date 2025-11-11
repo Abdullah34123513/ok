@@ -11,27 +11,38 @@ const CartItemRow: React.FC<{ item: CartItem }> = ({ item }) => {
     
     const handleDecrement = () => {
         if (item.quantity > 1) {
-            updateQuantity(item.id, item.quantity - 1);
+            updateQuantity(item.cartItemId, item.quantity - 1);
         } else {
-            removeItem(item.id);
+            removeItem(item.cartItemId);
         }
     };
 
+    const pricePerItem = item.totalPrice / item.quantity;
+
     return (
-        <div className="flex items-center py-4 border-b">
-            <img src={item.imageUrl} alt={item.name} className="w-20 h-20 rounded-md object-cover mr-4" />
+        <div className="flex items-start py-4 border-b">
+            <img src={item.baseItem.imageUrl} alt={item.baseItem.name} className="w-20 h-20 rounded-md object-cover mr-4" />
             <div className="flex-grow">
-                <h3 className="font-bold text-lg">{item.name}</h3>
-                <p className="text-gray-600 font-semibold">${item.price.toFixed(2)}</p>
+                <h3 className="font-bold text-lg">{item.baseItem.name}</h3>
+                {item.selectedCustomizations.length > 0 && (
+                    <div className="text-xs text-gray-500 mt-1">
+                        {item.selectedCustomizations.map(cust => (
+                            <div key={cust.optionId}>
+                                <strong>{cust.optionName}:</strong> {cust.choices.map(c => c.name).join(', ')}
+                            </div>
+                        ))}
+                    </div>
+                )}
+                <p className="text-gray-600 font-semibold mt-1">${pricePerItem.toFixed(2)}</p>
             </div>
             <div className="flex items-center space-x-4">
                 <QuantityControl
                     quantity={item.quantity}
-                    onIncrement={() => updateQuantity(item.id, item.quantity + 1)}
+                    onIncrement={() => updateQuantity(item.cartItemId, item.quantity + 1)}
                     onDecrement={handleDecrement}
                 />
-                <p className="font-bold w-20 text-right">${(item.price * item.quantity).toFixed(2)}</p>
-                <button onClick={() => removeItem(item.id)} className="text-gray-500 hover:text-red-500 p-2">
+                <p className="font-bold w-20 text-right">${item.totalPrice.toFixed(2)}</p>
+                <button onClick={() => removeItem(item.cartItemId)} className="text-gray-500 hover:text-red-500 p-2">
                     <TrashIcon />
                 </button>
             </div>
@@ -77,10 +88,10 @@ const CartPage: React.FC<CartPageProps> = () => {
 
     const groupedItems = useMemo(() => {
         return cartItems.reduce<Record<string, { restaurantName: string, items: CartItem[] }>>((acc, item) => {
-            const restaurantId = item.restaurantId;
+            const restaurantId = item.baseItem.restaurantId;
             if (!acc[restaurantId]) {
                 acc[restaurantId] = {
-                    restaurantName: item.restaurantName,
+                    restaurantName: item.baseItem.restaurantName,
                     items: []
                 };
             }
@@ -115,7 +126,7 @@ const CartPage: React.FC<CartPageProps> = () => {
                         {Object.keys(groupedItems).map((restaurantId) => (
                             <div key={restaurantId} className="mb-8">
                                 <h3 className="text-xl font-bold text-gray-800 mb-2">{groupedItems[restaurantId].restaurantName}</h3>
-                                {groupedItems[restaurantId].items.map(item => <CartItemRow key={item.id} item={item} />)}
+                                {groupedItems[restaurantId].items.map(item => <CartItemRow key={item.cartItemId} item={item} />)}
                             </div>
                         ))}
                     </div>

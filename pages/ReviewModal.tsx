@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import type { Order, OrderReview } from '../types';
 import * as api from '../services/api';
-import { CloseIcon } from './Icons';
-import StarRatingInput from './StarRatingInput';
+import { CloseIcon } from '../components/Icons';
+import StarRatingInput from '../components/StarRatingInput';
 import { useNotification } from '../contexts/NotificationContext';
 
 interface ReviewModalProps {
@@ -19,9 +19,7 @@ interface ItemReviewState {
 const ReviewModal: React.FC<ReviewModalProps> = ({ order, onClose, onSubmit }) => {
   // FIX: Explicitly type the accumulator in the 'reduce' method to ensure the initial state 'reviews' is correctly typed. This resolves downstream errors where properties of the review object were being accessed on an 'unknown' type.
   const [reviews, setReviews] = useState<Record<string, ItemReviewState>>(
-    // FIX: Explicitly type the accumulator in the 'reduce' method to ensure the initial state 'reviews' is correctly typed. This resolves downstream errors where properties of the review object were being accessed on an 'unknown' type.
     order.items.reduce((acc: Record<string, ItemReviewState>, item) => {
-      // FIX: Use `item.baseItem.id` as the key, because a `CartItem` (`item`) itself doesn't have an `id`.
       acc[item.baseItem.id] = { rating: 0, comment: '' };
       return acc;
     }, {})
@@ -83,13 +81,11 @@ const ReviewModal: React.FC<ReviewModalProps> = ({ order, onClose, onSubmit }) =
         <form onSubmit={handleSubmit}>
             <main className="p-6 space-y-6 max-h-[70vh] overflow-y-auto">
                 {order.items.map(item => (
-                    // FIX: Use the unique `cartItemId` for the key and access display properties via `baseItem`.
                     <div key={item.cartItemId} className="flex space-x-4 pb-4 border-b last:border-b-0">
                         <img src={item.baseItem.imageUrl} alt={item.baseItem.name} className="w-24 h-24 rounded-md object-cover flex-shrink-0"/>
                         <div className="flex-1 space-y-2">
                             <h3 className="font-bold">{item.baseItem.name}</h3>
                             <StarRatingInput 
-                                // FIX: Use the `baseItem.id` to look up the review state.
                                 rating={reviews[item.baseItem.id]?.rating || 0}
                                 onRatingChange={(rating) => handleRatingChange(item.baseItem.id, rating)}
                             />
