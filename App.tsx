@@ -15,6 +15,7 @@ import OrderTrackingPage from './pages/OrderTrackingPage';
 import OrderConfirmationPage from './pages/OrderConfirmationPage';
 // FIX: Changed the named import for OffersPage to a default import to match its export type and resolve the module loading error.
 import OffersPage from './pages/OffersPage';
+import OfferDetailPage from './pages/OfferDetailPage';
 import BottomNav from './components/BottomNav';
 import { CartProvider } from './contexts/CartContext';
 import { NotificationProvider } from './contexts/NotificationContext';
@@ -22,7 +23,7 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import Notification from './components/Notification';
 
 
-export type View = 'home' | 'restaurants' | 'restaurantDetail' | 'foodDetail' | 'cart' | 'checkout' | 'profile' | 'login' | 'signup' | 'orderTracking' | 'orderConfirmation' | 'offers';
+export type View = 'home' | 'restaurants' | 'restaurantDetail' | 'foodDetail' | 'cart' | 'checkout' | 'profile' | 'login' | 'signup' | 'orderTracking' | 'orderConfirmation' | 'offers' | 'offerDetail';
 
 interface Route {
     view: View;
@@ -48,6 +49,7 @@ const parseHash = (): Route => {
         case 'track': return { view: 'orderTracking', id };
         case 'confirmation': return { view: 'orderConfirmation', id };
         case 'offers': return { view: 'offers' };
+        case 'offer': return { view: 'offerDetail', id };
         case 'home':
         default:
             return { view: 'home' };
@@ -116,6 +118,8 @@ const AppContent: React.FC = () => {
                  return <Header title="Order Confirmed" />;
             case 'offers':
                 return <Header title="Limited-Time Offers" />;
+            case 'offerDetail':
+                return <Header title="Special Offer" />;
             case 'login':
             case 'signup':
                 return null;
@@ -153,6 +157,9 @@ const AppContent: React.FC = () => {
             case 'offers':
                 // FIX: Pass location prop to OffersPage to allow fetching of location-specific offers.
                 return <OffersPage location={location} />;
+            case 'offerDetail':
+                if (!id) { window.location.hash = '#/offers'; return null; }
+                return <OfferDetailPage offerId={id} location={location} />;
             case 'home':
             default:
                 return <HomePage location={location} />;

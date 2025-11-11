@@ -9,6 +9,7 @@ export interface Offer {
   minOrderValue?: number;
   applicableTo?: 'ALL' | { type: 'RESTAURANT', id: string };
   couponCode?: string;
+  applicableFoods?: string[]; // New: Array of food IDs this offer applies to
 }
 
 export interface AppliedOffer extends Offer {

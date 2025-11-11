@@ -2,30 +2,16 @@ import React, { useState, useEffect } from 'react';
 import type { Offer } from '../types';
 import * as api from '../services/api';
 import CountdownTimer from '../components/CountdownTimer';
-import { useCart } from '../contexts/CartContext';
 
 const OfferCard: React.FC<{ offer: Offer }> = ({ offer }) => {
-    const { applyOffer } = useCart();
-    
-    const handleApply = (e: React.MouseEvent) => {
-        e.stopPropagation();
-        if(applyOffer(offer)) {
-            // window.location.hash = '#/cart';
-        }
-    };
-
     const handleCardClick = () => {
-        if (offer.applicableTo && typeof offer.applicableTo === 'object' && offer.applicableTo.type === 'RESTAURANT') {
-            window.location.hash = `#/restaurant/${offer.applicableTo.id}`;
-        }
+        window.location.hash = `#/offer/${offer.id}`;
     };
-
-    const isRestaurantOffer = offer.applicableTo && typeof offer.applicableTo === 'object' && offer.applicableTo.type === 'RESTAURANT';
 
     return (
         <div 
-            onClick={isRestaurantOffer ? handleCardClick : undefined}
-            className={`bg-white rounded-lg overflow-hidden shadow-lg group transform hover:-translate-y-1 transition-transform duration-300 flex flex-col ${isRestaurantOffer ? 'cursor-pointer' : ''}`}
+            onClick={handleCardClick}
+            className="bg-white rounded-lg overflow-hidden shadow-lg group transform hover:-translate-y-1 transition-transform duration-300 flex flex-col cursor-pointer"
         >
             <img src={offer.imageUrl.replace('/1200/400', '/600/300')} alt={offer.title} className="w-full h-48 object-cover" />
             <div className="p-4 flex flex-col flex-grow">
@@ -37,11 +23,6 @@ const OfferCard: React.FC<{ offer: Offer }> = ({ offer }) => {
                          <CountdownTimer expiry={offer.expiry} />
                      </div>
                 )}
-            </div>
-             <div className="p-4 bg-gray-50">
-                 <button onClick={handleApply} className="w-full bg-red-500 text-white font-bold py-2 px-4 rounded-full hover:bg-red-600 transition">
-                    Apply Offer
-                </button>
             </div>
         </div>
     );
@@ -99,9 +80,6 @@ const OffersPage: React.FC<OffersPageProps> = ({ location }) => {
                                     <div className="h-4 bg-gray-200 rounded w-1/4 mb-2"></div>
                                     <div className="h-6 bg-gray-200 rounded w-3/4"></div>
                                  </div>
-                            </div>
-                             <div className="p-4 bg-gray-50">
-                                <div className="h-10 bg-gray-200 rounded-full w-full"></div>
                             </div>
                         </div>
                     ))}

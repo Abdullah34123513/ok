@@ -102,7 +102,8 @@ const mockOffers: Offer[] = [
     id: 'offer-3',
     imageUrl: 'https://picsum.photos/seed/banner3/1200/400',
     title: 'Special Combo Deals',
-    description: 'Special combo deals starting from $15. Explore our menu for details.',
+    description: 'Check out our new combo and family packages for great value!',
+    applicableFoods: ['food-combo-1', 'food-family-pack-1'],
   },
   {
     id: 'offer-r1-10off',
@@ -131,7 +132,7 @@ const allMockRestaurants: Restaurant[] = Array.from({ length: 50 }, (_, i) => cr
 const allMockFoods: Food[] = Array.from({ length: 100 }, (_, i) => createMockFood(i + 1, allMockRestaurants[(i % 10)]));
 
 
-// --- Add Customizable Pizza ---
+// --- Add More Customizable Items ---
 const pizzaCustomizations: CustomizationOption[] = [
     {
         id: 'size',
@@ -170,6 +171,31 @@ const pizzaCustomizations: CustomizationOption[] = [
     }
 ];
 
+const burgerCustomizations: CustomizationOption[] = [
+    {
+        id: 'addons',
+        name: 'Add-ons',
+        type: 'MULTIPLE',
+        required: false,
+        choices: [
+            { name: 'Extra Patty', price: 3.00 },
+            { name: 'Bacon', price: 1.50 },
+            { name: 'Avocado', price: 1.25 },
+        ]
+    },
+    {
+        id: 'side',
+        name: 'Choose a Side',
+        type: 'SINGLE',
+        required: true,
+        choices: [
+            { name: 'French Fries', price: 0 },
+            { name: 'Onion Rings', price: 1.00 },
+            { name: 'Side Salad', price: 1.50 },
+        ]
+    }
+];
+
 allMockFoods.unshift({
   id: 'food-pizza-1',
   imageUrl: 'https://picsum.photos/seed/pizza1/400/300',
@@ -181,6 +207,21 @@ allMockFoods.unshift({
   vendor: { name: allMockRestaurants[0].name },
   customizationOptions: pizzaCustomizations,
 });
+
+// Add a customizable burger
+const burgerRestaurant = allMockRestaurants.find(r => r.cuisine === 'American') || allMockRestaurants[5];
+allMockFoods.push({
+    id: `food-burger-1`,
+    imageUrl: `https://picsum.photos/seed/burger1/400/300`,
+    name: `The Classic Burger`,
+    price: 9.99,
+    rating: 4.6,
+    restaurantId: burgerRestaurant.id,
+    description: 'A juicy, all-beef patty with lettuce, tomato, and our special sauce on a toasted bun. Customize it with your favorite sides and add-ons!',
+    vendor: { name: burgerRestaurant.name },
+    customizationOptions: burgerCustomizations,
+});
+
 
 // --- Add Combo and Family Packages ---
 allMockFoods.push({
@@ -278,7 +319,7 @@ export const getOffers = (location: string): Promise<Offer[]> => {
       if (offer.applicableTo && typeof offer.applicableTo === 'object' && 'id' in offer.applicableTo) {
           return locationRestaurantIds.has(offer.applicableTo.id);
       }
-      // Show generic offers that are not tied to any specific restaurant
+      // Show offers that are not tied to any specific restaurant (e.g., food-specific offers)
       if (!offer.applicableTo) {
           return true;
       }
@@ -708,8 +749,9 @@ export const submitOrderReview = (review: OrderReview): Promise<{ success: boole
 // --- New Offer APIs ---
 export const getOffersForRestaurant = (restaurantId: string): Promise<Offer[]> => {
   console.log(`API: Fetching offers for restaurant ${restaurantId}...`);
+  // FIX: Use a more explicit type guard (`'id' in offer.applicableTo`) to help TypeScript correctly narrow the union type and prevent the error.
   const restaurantOffers = mockOffers.filter(
-    offer => offer.applicableTo && typeof offer.applicableTo === 'object' && offer.applicableTo.id === restaurantId
+    offer => offer.applicableTo && typeof offer.applicableTo === 'object' && 'id' in offer.applicableTo && offer.applicableTo.id === restaurantId
   );
   return simulateNetwork(restaurantOffers);
 };
@@ -719,6 +761,31 @@ export const validateCoupon = (code: string): Promise<Offer | null> => {
     if (!code) return simulateNetwork(null);
     const offer = mockOffers.find(o => o.couponCode?.toUpperCase() === code.toUpperCase());
     return simulateNetwork(offer || null);
+};
+
+export const getOfferDetails = (offerId: string): Promise<Offer | undefined> => {
+    console.log(`API: Fetching details for offer ${offerId}...`);
+    return simulateNetwork(mockOffers.find(o => o.id === offerId));
+};
+
+export const getFoodsForOffer = (offerId: string, location: string): Promise<Food[]> => {
+    console.log(`API: Fetching foods for offer ${offerId} in ${location}...`);
+    const offer = mockOffers.find(o => o.id === offerId);
+    if (!offer) {
+        return simulateNetwork([]);
+    }
+
+    const locationFoods = getFoodsForLocation(location);
+    let offerFoods: Food[] = [];
+
+    if (offer.applicableFoods) {
+        const applicableFoodIds = new Set(offer.applicableFoods);
+        offerFoods = locationFoods.filter(food => applicableFoodIds.has(food.id));
+    } else if (offer.applicableTo && typeof offer.applicableTo === 'object' && offer.applicableTo.type === 'RESTAURANT') {
+        offerFoods = locationFoods.filter(food => food.restaurantId === offer.applicableTo.id);
+    }
+
+    return simulateNetwork(offerFoods);
 };
 
 // --- New Tracking API ---

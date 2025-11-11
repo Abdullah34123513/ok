@@ -98,7 +98,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (offer.applicableTo === 'ALL') {
         applicableSubtotal = subtotal;
     // FIX: Use a more explicit type guard (`typeof offer.applicableTo === 'object'`) to help TypeScript correctly narrow the union type and prevent the error.
-    } else if (offer.applicableTo && typeof offer.applicableTo === 'object' && offer.applicableTo.type === 'RESTAURANT') {
+    } else if (offer.applicableTo && typeof offer.applicableTo === 'object' && 'type' in offer.applicableTo && offer.applicableTo.type === 'RESTAURANT') {
         applicableSubtotal = items
             .filter(item => item.baseItem.restaurantId === offer.applicableTo.id)
             .reduce((sum, item) => sum + item.totalPrice, 0);

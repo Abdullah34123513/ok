@@ -94,6 +94,7 @@ const ReviewModal: React.FC<ReviewModalProps> = ({ order, onClose, onSubmit }) =
                                 onRatingChange={(rating) => handleRatingChange(item.baseItem.id, rating)}
                             />
                             <textarea
+                                // FIX: Use the `baseItem.id` to look up the review state.
                                 value={reviews[item.baseItem.id]?.comment || ''}
                                 onChange={(e) => handleCommentChange(item.baseItem.id, e.target.value)}
                                 placeholder="Optional: Tell us more about your experience..."
