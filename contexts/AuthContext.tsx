@@ -51,7 +51,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logout = useCallback(() => {
     setCurrentUser(null);
     localStorage.removeItem(USER_STORAGE_KEY);
-    localStorage.removeItem('user-location');
     window.location.hash = '#/login';
   }, []);
 

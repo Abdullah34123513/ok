@@ -32,6 +32,7 @@ interface Route {
 const parseHash = (): Route => {
     const hash = window.location.hash.substring(2) || 'home'; // remove '#/'
     const parts = hash.split('/');
+    // FIX: Changed type assertion from `as View` to a simple string to allow the switch statement to handle URL parts that are not directly part of the View type (e.g., 'restaurant' maps to 'restaurantDetail').
     const view = parts[0];
     const id = parts[1];
 
@@ -56,7 +57,6 @@ const parseHash = (): Route => {
 const AppContent: React.FC = () => {
     const { currentUser } = useAuth();
     const [location, setLocation] = useLocalStorage<string | null>('user-location', null);
-    const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
     const [route, setRoute] = useState<Route>(parseHash());
     
     useEffect(() => {
@@ -67,17 +67,33 @@ const AppContent: React.FC = () => {
         window.addEventListener('hashchange', handleHashChange);
         return () => window.removeEventListener('hashchange', handleHashChange);
     }, []);
-    
-    useEffect(() => {
-        if (currentUser && !location) {
-            setIsLocationModalOpen(true);
-        }
-    }, [currentUser, location]);
 
-    const handleLocationSet = (newLocation: string) => {
-        setLocation(newLocation);
-        setIsLocationModalOpen(false);
-    };
+    // Primary gate: Location. If no location, nothing else matters.
+    if (!location) {
+        return <LocationModal onLocationSet={setLocation} />;
+    }
+
+    const protectedViews: View[] = ['profile', 'checkout', 'orderTracking', 'orderConfirmation'];
+    const authViews: View[] = ['login', 'signup'];
+
+    // Handle routing logic based on auth status and current route
+    if (!currentUser) {
+        // Redirect guests from protected views to login
+        if (protectedViews.includes(route.view)) {
+            window.location.hash = '#/login';
+            return null;
+        }
+        // Render auth pages for guests
+        if (route.view === 'login') return <LoginPage />;
+        if (route.view === 'signup') return <SignupPage />;
+    } else {
+        // Redirect logged-in users from auth views to home
+        if (authViews.includes(route.view)) {
+            window.location.hash = '#/home';
+            return null;
+        }
+    }
+
 
     const renderHeader = () => {
         const { view, id } = route;
@@ -110,16 +126,7 @@ const AppContent: React.FC = () => {
         }
     };
     
-    if (!currentUser) {
-        if (route.view === 'signup') {
-            return <SignupPage />;
-        }
-        return <LoginPage />;
-    }
-
     const renderView = () => {
-        if (!location) return null;
-        
         const { view, id } = route;
 
         switch (view) {
@@ -136,7 +143,7 @@ const AppContent: React.FC = () => {
             case 'checkout':
                 return <CheckoutPage />;
              case 'profile':
-                return <ProfilePage onChangeLocation={() => setIsLocationModalOpen(true)} />;
+                return <ProfilePage onChangeLocation={() => setLocation(null)} />;
             case 'orderTracking':
                 if (!id) { window.location.hash = '#/home'; return null; }
                 return <OrderTrackingPage orderId={id} />;
@@ -154,7 +161,6 @@ const AppContent: React.FC = () => {
 
     return (
         <div className="bg-gray-50 min-h-screen font-sans">
-            {isLocationModalOpen && <LocationModal onLocationSet={handleLocationSet} />}
             {renderHeader()}
             <main className="pb-24">
                 {renderView()}

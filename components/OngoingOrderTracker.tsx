@@ -2,13 +2,19 @@ import React, { useState, useEffect } from 'react';
 import * as api from '../services/api';
 import type { Order } from '../types';
 import { MotorcycleIcon, CloseIcon } from './Icons';
+import { useAuth } from '../contexts/AuthContext';
 
 const OngoingOrderTracker: React.FC = () => {
+    const { currentUser } = useAuth();
     const [ongoingOrder, setOngoingOrder] = useState<Order | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [isVisible, setIsVisible] = useState(false);
 
     useEffect(() => {
+        if (!currentUser) {
+            setIsLoading(false);
+            return;
+        }
         api.getOrders('ongoing')
             .then(orders => {
                 if (orders.length > 0) {
@@ -22,7 +28,7 @@ const OngoingOrderTracker: React.FC = () => {
             })
             .catch(console.error)
             .finally(() => setIsLoading(false));
-    }, []);
+    }, [currentUser]);
 
     const handleDismiss = (e: React.MouseEvent) => {
         e.stopPropagation();
