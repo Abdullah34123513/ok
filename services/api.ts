@@ -1,3 +1,4 @@
+
 import type { Offer, Restaurant, Food, PaginatedFoods, SearchResult, PaginatedRestaurants, MenuCategory, Review, CartItem, MenuItem, Address, Order, AddressSuggestion, AddressDetails, User, LoginCredentials, SignupData, AuthResponse, LocationPoint, SupportInfo, ChatMessage, OrderReview, SelectedCustomization, CustomizationOption } from '../types';
 
 // --- Location-based data simulation helpers ---
@@ -704,6 +705,40 @@ export const addAddress = (label: string, details: AddressDetails): Promise<Addr
     return simulateNetwork([...mockAddresses]);
 };
 
+const mockCities = [
+    { name: 'Riyadh', lat: 24.7136, lng: 46.6753 },
+    { name: 'New York', lat: 40.7128, lng: -74.0060 },
+    { name: 'London', lat: 51.5074, lng: -0.1278 },
+    { name: 'Tokyo', lat: 35.6895, lng: 139.6917 },
+];
+
+// Simple distance calculation (not geographically accurate, but fine for a mock)
+const calculateDistance = (lat1: number, lng1: number, lat2: number, lng2: number) => {
+    return Math.sqrt(Math.pow(lat1 - lat2, 2) + Math.pow(lng1 - lng2, 2));
+};
+
+export const reverseGeocode = (lat: number, lng: number): Promise<string> => {
+    console.log(`API: Reverse geocoding for lat: ${lat}, lng: ${lng}`);
+    
+    let closestCity = null;
+    let minDistance = Infinity;
+
+    for (const city of mockCities) {
+        const distance = calculateDistance(lat, lng, city.lat, city.lng);
+        if (distance < minDistance) {
+            minDistance = distance;
+            closestCity = city;
+        }
+    }
+    
+    // If the closest city is reasonably close (e.g., within ~500km, which is roughly 5 degrees), use it.
+    if (closestCity && minDistance < 5) {
+        return simulateNetwork(`${closestCity.name} (Auto)`, 750);
+    }
+    
+    return simulateNetwork(`Your Location (Auto)`, 750);
+};
+
 
 // --- Profile Page & Order Tracking APIs ---
 
@@ -838,7 +873,7 @@ export const submitOrderReview = (review: OrderReview): Promise<{ success: boole
 // --- New Offer APIs ---
 export const getOffersForRestaurant = (restaurantId: string): Promise<Offer[]> => {
   console.log(`API: Fetching offers for restaurant ${restaurantId}...`);
-  // FIX: Use a more explicit type guard (`'id' in offer.applicableTo`) to help TypeScript correctly narrow the union type and prevent the error.
+  // Fix: Added explicit type guard to safely access properties on the 'applicableTo' union type.
   const restaurantOffers = mockOffers.filter(
     offer => offer.applicableTo && typeof offer.applicableTo === 'object' && 'id' in offer.applicableTo && offer.applicableTo.id === restaurantId
   );

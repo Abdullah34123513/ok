@@ -1,6 +1,12 @@
 
 import React, { useState } from 'react';
 import { LocationIcon } from './Icons';
+import * as api from '../services/api';
+// Assuming Capacitor is set up in the project
+// In a real project: npm install @capacitor/core @capacitor/geolocation
+import { Capacitor } from '@capacitor/core';
+import { Geolocation } from '@capacitor/geolocation';
+
 
 interface LocationModalProps {
   onLocationSet: (location: string) => void;
@@ -11,24 +17,62 @@ const LocationModal: React.FC<LocationModalProps> = ({ onLocationSet }) => {
   const [isDetecting, setIsDetecting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleDetectLocation = () => {
+  const handleDetectLocation = async () => {
     setIsDetecting(true);
     setError(null);
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        // In a real app, you would use a reverse geocoding service.
-        // For this demo, we'll just use a mock city.
-        console.log('Detected coordinates:', position.coords);
-        onLocationSet('Riyadh (Auto)'); 
+
+    const getPosition = async (): Promise<{ latitude: number; longitude: number }> => {
+      // Check if running on a native platform (iOS/Android)
+      if (Capacitor.isNativePlatform()) {
+        // Check and request permissions for native
+        const permissions = await Geolocation.checkPermissions();
+        if (permissions.location !== 'granted' && permissions.coarseLocation !== 'granted') {
+            const request = await Geolocation.requestPermissions();
+            if (request.location !== 'granted' && request.coarseLocation !== 'granted') {
+                throw new Error('Location permission not granted.');
+            }
+        }
+        const position = await Geolocation.getCurrentPosition();
+        return {
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+        };
+      } else {
+        // Fallback to browser's Geolocation API for web
+        return new Promise((resolve, reject) => {
+          if (!navigator.geolocation) {
+              return reject(new Error('Geolocation is not supported by your browser.'));
+          }
+          navigator.geolocation.getCurrentPosition(
+            (position) => resolve({
+              latitude: position.coords.latitude,
+              longitude: position.coords.longitude,
+            }),
+            (err) => reject(err),
+            { timeout: 10000, enableHighAccuracy: true }
+          );
+        });
+      }
+    };
+
+    try {
+      const { latitude, longitude } = await getPosition();
+      const locationName = await api.reverseGeocode(latitude, longitude);
+      onLocationSet(locationName);
+    } catch (err) {
+      console.error('Location detection error:', err);
+      let errorMessage = 'Could not detect location. Please enable location services or enter manually.';
+      if (err instanceof Error) {
+        if (err.message.includes('permission') || err.message.includes('denied')) {
+          errorMessage = 'Location permission denied. Please enable it in your device settings.';
+        } else if (err.message.includes('timeout')) {
+            errorMessage = 'Could not get location in time. Please try again.';
+        }
+      }
+      setError(errorMessage);
+    } finally {
         setIsDetecting(false);
-      },
-      (err) => {
-        console.error(err);
-        setError('Could not detect location. Please enable location services or enter manually.');
-        setIsDetecting(false);
-      },
-      { timeout: 10000 }
-    );
+    }
   };
 
   const handleManualSubmit = (e: React.FormEvent) => {
@@ -78,7 +122,7 @@ const LocationModal: React.FC<LocationModalProps> = ({ onLocationSet }) => {
           className="w-full flex items-center justify-center bg-gray-100 text-gray-700 font-bold py-3 px-4 rounded-lg hover:bg-gray-200 transition duration-300 disabled:opacity-50"
         >
           <LocationIcon className="mr-2"/>
-          {isDetecting ? 'Detecting...' : 'Use current location'}
+          {isDetecting ? 'Identifying location...' : 'Use current location'}
         </button>
 
         {error && <p className="text-red-500 text-sm mt-4 text-center">{error}</p>}
