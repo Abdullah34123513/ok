@@ -175,12 +175,22 @@ const OrderTrackingPage: React.FC<OrderTrackingPageProps> = ({ orderId }) => {
                     <p className="font-bold text-red-500 text-xl mb-4">{order.estimatedDeliveryTime}</p>
                     
                     <div className="flex space-x-3">
-                        <button className="flex-1 flex items-center justify-center py-2 px-3 bg-white border border-gray-300 rounded-lg text-sm font-semibold hover:bg-gray-100 transition">
+                        <a 
+                            href={order.restaurantPhone ? `tel:${order.restaurantPhone}` : undefined}
+                            className={`flex-1 flex items-center justify-center py-2 px-3 border rounded-lg text-sm font-semibold transition ${order.restaurantPhone ? 'bg-white border-gray-300 hover:bg-gray-100' : 'bg-gray-100 border-gray-200 text-gray-400 cursor-not-allowed'}`}
+                            aria-disabled={!order.restaurantPhone}
+                            onClick={(e) => !order.restaurantPhone && e.preventDefault()}
+                        >
                             <PhoneIcon className="mr-2"/> Call Vendor
-                        </button>
-                        <button className="flex-1 flex items-center justify-center py-2 px-3 bg-white border border-gray-300 rounded-lg text-sm font-semibold hover:bg-gray-100 transition">
+                        </a>
+                        <a 
+                            href={order.rider?.phone ? `tel:${order.rider.phone}` : undefined}
+                            className={`flex-1 flex items-center justify-center py-2 px-3 border rounded-lg text-sm font-semibold transition ${order.rider?.phone ? 'bg-white border-gray-300 hover:bg-gray-100' : 'bg-gray-100 border-gray-200 text-gray-400 cursor-not-allowed'}`}
+                            aria-disabled={!order.rider?.phone}
+                            onClick={(e) => !order.rider?.phone && e.preventDefault()}
+                        >
                             <PhoneIcon className="mr-2"/> Call Rider
-                        </button>
+                        </a>
                     </div>
                  </div>
             </div>
