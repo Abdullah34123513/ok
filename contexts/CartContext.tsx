@@ -1,6 +1,7 @@
 import React, { createContext, useState, useContext, useEffect, useMemo } from 'react';
 import type { CartItem, MenuItem, Offer, AppliedOffer } from '../types';
 import * as api from '../services/api';
+import * as tracking from '../services/tracking';
 import { useNotification } from './NotificationContext';
 
 export const DELIVERY_FEE = 5.99;
@@ -40,11 +41,27 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const addItem = async (item: MenuItem, restaurantId: string) => {
     const updatedCart = await api.addToCart(item, restaurantId);
+    tracking.trackEvent('add_to_cart', {
+        itemId: item.id,
+        itemName: item.name,
+        price: item.price,
+        restaurantId: item.restaurantId,
+        restaurantName: item.restaurantName,
+    });
     setCartItems(updatedCart);
   };
 
   const removeItem = async (itemId: string) => {
+    const itemToRemove = cartItems.find(item => item.id === itemId);
     const updatedCart = await api.removeCartItem(itemId);
+    if(itemToRemove) {
+        tracking.trackEvent('remove_from_cart', {
+            itemId: itemToRemove.id,
+            itemName: itemToRemove.name,
+            price: itemToRemove.price,
+            restaurantId: itemToRemove.restaurantId
+        });
+    }
     setCartItems(updatedCart);
   };
 
@@ -118,6 +135,12 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     setAppliedOffer({ ...offer, discountAmount });
     showNotification(`Offer "${offer.title}" applied successfully!`, 'success');
+    tracking.trackEvent('apply_offer', {
+        offerId: offer.id,
+        offerTitle: offer.title,
+        couponCode: offer.couponCode,
+        discountAmount,
+    });
     return true;
   };
 

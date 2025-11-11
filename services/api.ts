@@ -36,7 +36,7 @@ const shuffleArray = <T,>(array: T[], seed: number): T[] => {
 
 // --- Mock Databases ---
 let mockUsers: User[] = [
-    { name: 'Alex Doe', email: 'alex.doe@example.com', phone: '123-456-7890' }
+    { name: 'Alex Doe', email: 'alex.doe@example.com', phone: '123-456-7890', age: 30, gender: 'male' }
 ];
 
 // In a real app, passwords would be hashed. For this mock, we'll store them in a separate map.
@@ -158,7 +158,13 @@ export const signup = (data: SignupData): Promise<AuthResponse> => {
     if (mockUsers.some(u => u.email === data.email)) {
         return simulateError('A user with this email already exists.');
     }
-    const newUser: User = { name: data.name, email: data.email, phone: data.phone };
+    const newUser: User = { 
+        name: data.name, 
+        email: data.email, 
+        phone: data.phone, 
+        age: data.age, 
+        gender: data.gender 
+    };
     mockUsers.push(newUser);
     mockUserPasswords.set(data.email, data.password);
 
@@ -619,4 +625,18 @@ export const validateCoupon = (code: string): Promise<Offer | null> => {
     if (!code) return simulateNetwork(null);
     const offer = mockOffers.find(o => o.couponCode?.toUpperCase() === code.toUpperCase());
     return simulateNetwork(offer || null);
+};
+
+// --- New Tracking API ---
+export const logTrackingEvent = (eventName: string, payload: Record<string, any>, userEmail?: string): Promise<{ success: boolean }> => {
+    // In a real backend, you'd save this event to a database/analytics service.
+    // Here we just log it to the console to simulate the process.
+    console.log(
+        `[USER TRACKING EVENT]
+        User: ${userEmail || 'anonymous'}
+        Event: ${eventName}
+        Payload: ${JSON.stringify(payload, null, 2)}
+        Timestamp: ${new Date().toISOString()}`
+    );
+    return simulateNetwork({ success: true }, 50); // Simulate a quick network request
 };

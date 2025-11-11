@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import type { Restaurant, MenuCategory, Review, MenuItem, Offer } from '../types';
 import * as api from '../services/api';
+import * as tracking from '../services/tracking';
 import { StarIcon, HeartIcon } from '../components/Icons';
 import { useCart } from '../contexts/CartContext';
 import QuantityControl from '../components/QuantityControl';
@@ -102,6 +103,14 @@ const RestaurantDetailPage: React.FC<RestaurantDetailPageProps> = ({ restaurantI
                     api.getOffersForRestaurant(restaurantId)
                 ]);
                 setRestaurant(details || null);
+                if (details) {
+                    tracking.trackEvent('view_restaurant_detail', { 
+                        restaurantId: details.id, 
+                        restaurantName: details.name,
+                        cuisine: details.cuisine,
+                        rating: details.rating,
+                    });
+                }
                 setMenu(menuData);
                 setReviews(reviewsData);
                 setRestaurantOffers(offersData);

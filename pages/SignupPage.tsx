@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotification } from '../contexts/NotificationContext';
 import { LogoIcon } from '../components/Icons';
+import type { User } from '../types';
 
 interface SignupPageProps {}
 
@@ -11,6 +12,8 @@ const SignupPage: React.FC<SignupPageProps> = () => {
     const [phone, setPhone] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
+    const [age, setAge] = useState<number | ''>('');
+    const [gender, setGender] = useState<User['gender']>('prefer_not_to_say');
     const [isLoading, setIsLoading] = useState(false);
     const { signup } = useAuth();
     const { showNotification } = useNotification();
@@ -27,7 +30,14 @@ const SignupPage: React.FC<SignupPageProps> = () => {
         }
         setIsLoading(true);
         try {
-            await signup({ name, email, phone, password });
+            await signup({ 
+                name, 
+                email, 
+                phone, 
+                password, 
+                age: age ? Number(age) : undefined, 
+                gender 
+            });
             // Navigation to home will be handled by the App component
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
@@ -39,7 +49,7 @@ const SignupPage: React.FC<SignupPageProps> = () => {
 
     return (
         <div className="min-h-screen bg-gray-100 flex flex-col justify-center items-center p-4">
-            <div className="max-w-md w-full bg-white rounded-lg shadow-xl p-8 space-y-6 animate-fade-in-up">
+            <div className="max-w-md w-full bg-white rounded-lg shadow-xl p-8 space-y-4 animate-fade-in-up">
                 <div className="text-center">
                     <LogoIcon />
                     <h2 className="mt-4 text-3xl font-extrabold text-gray-900">
@@ -50,10 +60,38 @@ const SignupPage: React.FC<SignupPageProps> = () => {
                     </p>
                 </div>
 
-                <form className="space-y-4" onSubmit={handleSubmit}>
+                <form className="space-y-3" onSubmit={handleSubmit}>
                     <InputField label="Full Name" id="name" type="text" value={name} onChange={setName} required />
                     <InputField label="Email address" id="email" type="email" value={email} onChange={setEmail} required />
-                    <InputField label="Phone Number" id="phone" type="tel" value={phone} onChange={setPhone} />
+                    <InputField label="Phone Number (Optional)" id="phone" type="tel" value={phone} onChange={setPhone} />
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label htmlFor="age" className="block text-sm font-medium text-gray-700">Age (Optional)</label>
+                            <input
+                                id="age"
+                                name="age"
+                                type="number"
+                                value={age}
+                                onChange={(e) => setAge(e.target.value === '' ? '' : parseInt(e.target.value, 10))}
+                                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-red-500 focus:border-red-500"
+                            />
+                        </div>
+                         <div>
+                            <label htmlFor="gender" className="block text-sm font-medium text-gray-700">Gender (Optional)</label>
+                            <select
+                                id="gender"
+                                name="gender"
+                                value={gender}
+                                onChange={(e) => setGender(e.target.value as User['gender'])}
+                                className="mt-1 block w-full px-3 py-2 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500"
+                            >
+                                <option value="prefer_not_to_say">Prefer not to say</option>
+                                <option value="male">Male</option>
+                                <option value="female">Female</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                    </div>
                     <InputField label="Password" id="password" type="password" value={password} onChange={setPassword} required />
                     <InputField label="Confirm Password" id="confirm-password" type="password" value={confirmPassword} onChange={setConfirmPassword} required />
 

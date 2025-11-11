@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import type { Offer, Restaurant, Food, SearchResult } from '../types';
 import * as api from '../services/api';
+import * as tracking from '../services/tracking';
 import Header from '../components/Header';
 import HeroBanner from '../components/HeroBanner';
 import TopRestaurants from '../components/TopVendors';
@@ -82,6 +83,11 @@ const HomePage: React.FC<HomePageProps> = ({ location }) => {
             api.search(searchQuery, location).then(results => {
                 setSearchResults(results);
                 setIsSearching(false);
+                tracking.trackEvent('search', {
+                    query: searchQuery,
+                    restaurantResultCount: results.restaurants.length,
+                    foodResultCount: results.foods.length,
+                });
             });
         }, 500); // Debounce search
 

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useCart } from '../contexts/CartContext';
 import * as api from '../services/api';
+import * as tracking from '../services/tracking';
 import type { Address, Order, CartItem, Offer } from '../types';
 import AddressModal from '../components/AddressModal';
 import { useNotification } from '../contexts/NotificationContext';
@@ -139,6 +140,15 @@ const CheckoutPage: React.FC<CheckoutPageProps> = () => {
         
         try {
             const newOrder = await api.createOrder(orderPayload);
+            tracking.trackEvent('place_order', {
+                orderId: newOrder.id,
+                total: newOrder.total,
+                subtotal: newOrder.subtotal,
+                deliveryFee: newOrder.deliveryFee,
+                discount: newOrder.discount,
+                itemCount: cartItems.reduce((acc, item) => acc + item.quantity, 0),
+                restaurantIds: [...new Set(cartItems.map(item => item.restaurantId))],
+            });
             clearCart();
             window.location.hash = `#/confirmation/${newOrder.id}`;
         } catch (error) {

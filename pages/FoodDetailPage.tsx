@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import * as api from '../services/api';
+import * as tracking from '../services/tracking';
 import type { Food, Restaurant, Review, MenuItem } from '../types';
 import { StarIcon } from '../components/Icons';
 import { useCart } from '../contexts/CartContext';
@@ -79,6 +80,15 @@ const FoodDetailPage: React.FC<FoodDetailPageProps> = ({ foodId, location }) => 
                     return;
                 }
                 setFood(foodDetails);
+                if (foodDetails) {
+                     tracking.trackEvent('view_food_detail', { 
+                        foodId: foodDetails.id, 
+                        foodName: foodDetails.name, 
+                        restaurantId: foodDetails.restaurantId,
+                        price: foodDetails.price,
+                        rating: foodDetails.rating,
+                    });
+                }
 
                 const [restaurantData, reviewsData, relatedData] = await Promise.all([
                     api.getRestaurantDetails(foodDetails.restaurantId),

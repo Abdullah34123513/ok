@@ -154,6 +154,9 @@ export interface User {
     email: string;
     phone: string;
     authToken?: string;
+    // New fields for user behavior analysis
+    age?: number;
+    gender?: 'male' | 'female' | 'other' | 'prefer_not_to_say';
 }
 
 // --- Auth Types ---
@@ -167,6 +170,9 @@ export interface SignupData {
     email: string;
     phone: string;
     password: string;
+    // New fields for user behavior analysis
+    age?: number;
+    gender?: 'male' | 'female' | 'other' | 'prefer_not_to_say';
 }
 
 export interface AuthResponse {
