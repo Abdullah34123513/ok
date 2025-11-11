@@ -15,7 +15,7 @@ interface LocationModalProps {
 const LocationModal: React.FC<LocationModalProps> = ({ onLocationSet }) => {
   const [manualLocation, setManualLocation] = useState('');
   const [isDetecting, setIsDetecting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<{ type: 'permission' | 'timeout' | 'generic', message: string } | null>(null);
 
   const handleDetectLocation = async () => {
     setIsDetecting(true);
@@ -61,15 +61,19 @@ const LocationModal: React.FC<LocationModalProps> = ({ onLocationSet }) => {
       onLocationSet(locationName);
     } catch (err) {
       console.error('Location detection error:', err);
-      let errorMessage = 'Could not detect location. Please enable location services or enter manually.';
+      let errorType: 'permission' | 'timeout' | 'generic' = 'generic';
+      let errorMessage = 'Could not detect your location.';
+
       if (err instanceof Error) {
         if (err.message.includes('permission') || err.message.includes('denied')) {
-          errorMessage = 'Location permission denied. Please enable it in your device settings.';
+          errorType = 'permission';
+          errorMessage = 'Location permission was denied.';
         } else if (err.message.includes('timeout')) {
-            errorMessage = 'Could not get location in time. Please try again.';
+            errorType = 'timeout';
+            errorMessage = 'Could not get your location in time.';
         }
       }
-      setError(errorMessage);
+      setError({ type: errorType, message: errorMessage });
     } finally {
         setIsDetecting(false);
     }
@@ -125,7 +129,29 @@ const LocationModal: React.FC<LocationModalProps> = ({ onLocationSet }) => {
           {isDetecting ? 'Identifying location...' : 'Use current location'}
         </button>
 
-        {error && <p className="text-red-500 text-sm mt-4 text-center">{error}</p>}
+        {error && (
+          <div className="mt-4 p-4 bg-yellow-50 border-l-4 border-yellow-400 text-yellow-800 rounded-r-lg" role="alert">
+              <div className="flex">
+                  <div className="py-1">
+                      <svg className="fill-current h-6 w-6 text-yellow-500 mr-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M2.93 17.07A10 10 0 1 1 17.07 2.93 10 10 0 0 1 2.93 17.07zM9 5v6h2V5H9zm0 8v2h2v-2H9z"/></svg>
+                  </div>
+                  <div>
+                      <p className="font-bold">{error.message}</p>
+                      {error.type === 'permission' && (
+                          <p className="text-sm">
+                              To protect your privacy, browsers don't ask again after permission is denied. Please go to your <strong>device or browser settings</strong> to allow location access for this site, then try again.
+                          </p>
+                      )}
+                       {error.type === 'timeout' && (
+                        <p className="text-sm mt-1">Please check your connection and try again.</p>
+                      )}
+                       {error.type === 'generic' && (
+                        <p className="text-sm mt-1">Please ensure location services are enabled or try entering your location manually.</p>
+                      )}
+                  </div>
+              </div>
+          </div>
+        )}
       </div>
     </div>
   );

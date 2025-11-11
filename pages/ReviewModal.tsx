@@ -35,7 +35,8 @@ const ReviewModal: React.FC<ReviewModalProps> = ({ order, onClose, onSubmit }) =
     setReviews(prev => ({ ...prev, [itemId]: { ...prev[itemId], comment } }));
   };
   
-  const canSubmit = Object.values(reviews).some(r => r.rating > 0);
+  // FIX: Refactored to use Object.keys() to ensure proper type inference and resolve 'unknown' type error.
+  const canSubmit = Object.keys(reviews).some(itemId => reviews[itemId].rating > 0);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,14 +47,15 @@ const ReviewModal: React.FC<ReviewModalProps> = ({ order, onClose, onSubmit }) =
     
     setIsSubmitting(true);
     
+    // FIX: Refactored to use Object.keys() to ensure proper type inference and resolve 'unknown' type error.
     const reviewPayload: OrderReview = {
         orderId: order.id,
-        itemReviews: Object.entries(reviews)
-            .filter(([, review]) => review.rating > 0)
-            .map(([itemId, review]) => ({
+        itemReviews: Object.keys(reviews)
+            .filter((itemId) => reviews[itemId].rating > 0)
+            .map((itemId) => ({
                 itemId,
-                rating: review.rating,
-                comment: review.comment || undefined,
+                rating: reviews[itemId].rating,
+                comment: reviews[itemId].comment || undefined,
             }))
     };
     
