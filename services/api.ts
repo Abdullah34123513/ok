@@ -72,7 +72,6 @@ const createMockRestaurant = (id: number): Restaurant => ({
   deliveryFee: parseFloat((Math.random() * 5).toFixed(2)),
   deliveryTime: `${Math.floor(Math.random() * 20) + 20}-${Math.floor(Math.random() * 20) + 40} min`,
   address: `${120 + id} Flavor St, Food City`,
-  phone: `555-888-${String(id).padStart(4, '0')}`,
 });
 
 const mockOffers: Offer[] = [
@@ -344,8 +343,8 @@ let mockAddresses: Address[] = [
     { id: 'addr-2', label: 'Work', details: '456 Business Ave, Suite 500, Food City, 12345' }
 ];
 let mockOrders: Order[] = [
-    { id: 'order-1', items: allMockFoods.slice(10,12).map(f => ({...f, quantity: 1, restaurantName: f.vendor.name })), subtotal: 45.50, deliveryFee: 5.99, total: 51.49, address: mockAddresses[0], paymentMethod: 'cod', deliveryOption: 'home', status: 'Delivered', restaurantName: 'Restaurant Hub 1', restaurantPhone: allMockRestaurants.find(r => r.name === 'Restaurant Hub 1')?.phone, date: '2023-10-26', isReviewed: false },
-    { id: 'order-2', items: [], subtotal: 22.00, deliveryFee: 5.99, total: 27.99, address: mockAddresses[1], paymentMethod: 'online', deliveryOption: 'home', status: 'Cancelled', restaurantName: 'Restaurant Hub 3', restaurantPhone: allMockRestaurants.find(r => r.name === 'Restaurant Hub 3')?.phone, date: '2023-10-25' },
+    { id: 'order-1', items: allMockFoods.slice(10,12).map(f => ({...f, quantity: 1, restaurantName: f.vendor.name })), subtotal: 45.50, deliveryFee: 5.99, total: 51.49, address: mockAddresses[0], paymentMethod: 'cod', deliveryOption: 'home', status: 'Delivered', restaurantName: 'Restaurant Hub 1', date: '2023-10-26', isReviewed: false },
+    { id: 'order-2', items: [], subtotal: 22.00, deliveryFee: 5.99, total: 27.99, address: mockAddresses[1], paymentMethod: 'online', deliveryOption: 'home', status: 'Cancelled', restaurantName: 'Restaurant Hub 3', date: '2023-10-25' },
     { 
         id: 'order-3', 
         items: allMockFoods.slice(0,2).map(f => ({...f, quantity: 1, restaurantName: f.vendor.name })),
@@ -357,7 +356,6 @@ let mockOrders: Order[] = [
         deliveryOption: 'home', 
         status: 'On its way', 
         restaurantName: 'Restaurant Hub 2', 
-        restaurantPhone: allMockRestaurants.find(r => r.name === 'Restaurant Hub 2')?.phone,
         date: '2023-10-27',
         restaurantLocation: { lat: 34.0522, lng: -118.2437 },
         deliveryLocation: { lat: 34.0622, lng: -118.2537 },
@@ -370,7 +368,7 @@ let mockOrders: Order[] = [
             location: { lat: 34.0572, lng: -118.2487 },
         }
     },
-    { id: 'order-4', items: allMockFoods.slice(20,21).map(f => ({...f, quantity: 2, restaurantName: f.vendor.name })), subtotal: 25.00, deliveryFee: 5.99, total: 30.99, address: mockAddresses[0], paymentMethod: 'online', deliveryOption: 'home', status: 'Delivered', restaurantName: 'Restaurant Hub 4', restaurantPhone: allMockRestaurants.find(r => r.name === 'Restaurant Hub 4')?.phone, date: '2023-10-24', isReviewed: true },
+    { id: 'order-4', items: allMockFoods.slice(20,21).map(f => ({...f, quantity: 2, restaurantName: f.vendor.name })), subtotal: 25.00, deliveryFee: 5.99, total: 30.99, address: mockAddresses[0], paymentMethod: 'online', deliveryOption: 'home', status: 'Delivered', restaurantName: 'Restaurant Hub 4', date: '2023-10-24', isReviewed: true },
 ];
 let riderLocations = new Map<string, LocationPoint>([
     ['order-3', { lat: 34.0572, lng: -118.2487 }]
@@ -421,19 +419,11 @@ export const createOrder = (orderPayload: Omit<Order, 'id' | 'status' | 'restaur
     console.log('API: Creating order with payload:', orderPayload);
     const restaurantNames = [...new Set(orderPayload.items.map(item => item.restaurantName))].join(', ');
 
-    let restaurantPhone: string | undefined = undefined;
-    if (orderPayload.items.length > 0) {
-        const firstRestaurantId = orderPayload.items[0].restaurantId;
-        const restaurant = allMockRestaurants.find(r => r.id === firstRestaurantId);
-        restaurantPhone = restaurant?.phone;
-    }
-
     const newOrder: Order = {
         ...orderPayload,
         id: `order-${Date.now()}`,
         status: 'Placed',
         restaurantName: restaurantNames || 'Unknown Restaurant',
-        restaurantPhone,
         date: new Date().toISOString().split('T')[0],
     };
     mockOrders.unshift(newOrder);

@@ -26,7 +26,6 @@ export interface Restaurant {
   deliveryTime: string; // e.g., "25-35 min"
   address: string;
   isFavorite?: boolean;
-  phone?: string;
 }
 
 export interface Food {
@@ -132,7 +131,6 @@ export interface Order {
     deliveryOption: string;
     status: 'Pending' | 'Placed' | 'Preparing' | 'On its way' | 'Delivered' | 'Cancelled';
     restaurantName: string; 
-    restaurantPhone?: string;
     date: string; 
     // New fields for order tracking
     restaurantLocation?: LocationPoint;
