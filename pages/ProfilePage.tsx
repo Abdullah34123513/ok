@@ -304,59 +304,79 @@ const AddressSection: React.FC<{ addresses: Address[], onAddClick: () => void, o
 );
 
 // Orders Section
-const OrdersSection: React.FC<{ orders: Order[], filter: OrderFilter, onFilterChange: (filter: OrderFilter) => void, onReviewClick: (order: Order) => void }> = ({ orders, filter, onFilterChange, onReviewClick }) => (
-    <div>
-        <h2 className="text-2xl font-bold mb-4">Order History</h2>
-        <div className="border-b mb-4">
-            <nav className="flex space-x-4">
-                <OrderFilterButton label="Ongoing" id="ongoing" activeFilter={filter} onClick={onFilterChange} />
-                <OrderFilterButton label="Past Orders" id="past" activeFilter={filter} onClick={onFilterChange} />
-                <OrderFilterButton label="Cancelled" id="cancelled" activeFilter={filter} onClick={onFilterChange} />
-            </nav>
-        </div>
-        <div className="space-y-4">
-            {orders.length > 0 ? orders.map(order => (
-                <div key={order.id} className="p-4 border rounded-lg">
-                    <div className="flex justify-between items-start">
-                        <div>
-                            <p className="font-bold">{order.restaurantName}</p>
-                            <p className="text-sm text-gray-500">ID: {order.id}</p>
-                            <p className="text-sm text-gray-500">{order.date}</p>
+const OrdersSection: React.FC<{ orders: Order[], filter: OrderFilter, onFilterChange: (filter: OrderFilter) => void, onReviewClick: (order: Order) => void }> = ({ orders, filter, onFilterChange, onReviewClick }) => {
+    
+    const handleOrderClick = (order: Order) => {
+        // This handler is only attached when filter is 'ongoing'.
+        if (filter === 'ongoing') {
+            window.location.hash = `#/track/${order.id}`;
+        }
+    };
+
+    return (
+        <div>
+            <h2 className="text-2xl font-bold mb-4">Order History</h2>
+            <div className="border-b mb-4">
+                <nav className="flex space-x-4">
+                    <OrderFilterButton label="Ongoing" id="ongoing" activeFilter={filter} onClick={onFilterChange} />
+                    <OrderFilterButton label="Past Orders" id="past" activeFilter={filter} onClick={onFilterChange} />
+                    <OrderFilterButton label="Cancelled" id="cancelled" activeFilter={filter} onClick={onFilterChange} />
+                </nav>
+            </div>
+            <div className="space-y-4">
+                {orders.length > 0 ? orders.map(order => {
+                    const isClickable = filter === 'ongoing';
+                    return (
+                        <div 
+                            key={order.id} 
+                            className={`p-4 border rounded-lg ${isClickable ? 'cursor-pointer hover:shadow-md transition-shadow' : ''}`}
+                            onClick={isClickable ? () => handleOrderClick(order) : undefined}
+                        >
+                            <div className="flex justify-between items-start">
+                                <div>
+                                    <p className="font-bold">{order.restaurantName}</p>
+                                    <p className="text-sm text-gray-500">ID: {order.id}</p>
+                                    <p className="text-sm text-gray-500">{order.date}</p>
+                                </div>
+                                <div className="text-right">
+                                   <p className="font-bold text-lg">${order.total.toFixed(2)}</p>
+                                   <p className={`text-sm font-semibold ${order.status === 'Delivered' ? 'text-green-600' : 'text-gray-600'}`}>{order.status}</p>
+                                </div>
+                            </div>
+                            <div className="mt-4 pt-4 border-t text-right">
+                                {filter === 'ongoing' && (
+                                    <a 
+                                        href={`#/track/${order.id}`}
+                                        className="px-4 py-2 bg-red-500 text-white font-semibold rounded-lg hover:bg-red-600 transition inline-block"
+                                    >
+                                        Track Order
+                                    </a>
+                                )}
+                                {filter === 'past' && (
+                                    order.isReviewed ? (
+                                        <button className="px-4 py-2 bg-gray-200 text-gray-500 font-semibold rounded-lg cursor-not-allowed" disabled>
+                                            Reviewed
+                                        </button>
+                                    ) : (
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                onReviewClick(order);
+                                            }}
+                                            className="px-4 py-2 bg-blue-500 text-white font-semibold rounded-lg hover:bg-blue-600 transition inline-block"
+                                        >
+                                            Leave a Review
+                                        </button>
+                                    )
+                                )}
+                            </div>
                         </div>
-                        <div className="text-right">
-                           <p className="font-bold text-lg">${order.total.toFixed(2)}</p>
-                           <p className={`text-sm font-semibold ${order.status === 'Delivered' ? 'text-green-600' : 'text-gray-600'}`}>{order.status}</p>
-                        </div>
-                    </div>
-                    <div className="mt-4 pt-4 border-t text-right">
-                        {filter === 'ongoing' && (
-                            <a 
-                                href={`#/track/${order.id}`}
-                                className="px-4 py-2 bg-red-500 text-white font-semibold rounded-lg hover:bg-red-600 transition inline-block"
-                            >
-                                Track Order
-                            </a>
-                        )}
-                        {filter === 'past' && (
-                            order.isReviewed ? (
-                                <button className="px-4 py-2 bg-gray-200 text-gray-500 font-semibold rounded-lg cursor-not-allowed" disabled>
-                                    Reviewed
-                                </button>
-                            ) : (
-                                <button
-                                    onClick={() => onReviewClick(order)}
-                                    className="px-4 py-2 bg-blue-500 text-white font-semibold rounded-lg hover:bg-blue-600 transition inline-block"
-                                >
-                                    Leave a Review
-                                </button>
-                            )
-                        )}
-                    </div>
-                </div>
-            )) : <p>No {filter} orders found.</p>}
+                    )
+                }) : <p>No {filter} orders found.</p>}
+            </div>
         </div>
-    </div>
-);
+    );
+}
 
 const OrderFilterButton: React.FC<{ label: string, id: OrderFilter, activeFilter: OrderFilter, onClick: (filter: OrderFilter) => void }> = ({ label, id, activeFilter, onClick }) => (
     <button onClick={() => onClick(id)} className={`px-3 py-2 font-semibold transition ${activeFilter === id ? 'border-b-2 border-red-500 text-red-500' : 'text-gray-500 hover:text-red-500'}`}>

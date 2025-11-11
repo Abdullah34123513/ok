@@ -17,9 +17,9 @@ interface ItemReviewState {
 }
 
 const ReviewModal: React.FC<ReviewModalProps> = ({ order, onClose, onSubmit }) => {
-  // FIX: Explicitly provide the generic type to the 'reduce' method to ensure the accumulator 'acc' and the resulting state 'reviews' are correctly typed. This resolves downstream errors where properties of the review object were being accessed on an 'unknown' type.
+  // FIX: Explicitly type the accumulator in the 'reduce' method to ensure the initial state 'reviews' is correctly typed. This resolves downstream errors where properties of the review object were being accessed on an 'unknown' type.
   const [reviews, setReviews] = useState<Record<string, ItemReviewState>>(
-    order.items.reduce<Record<string, ItemReviewState>>((acc, item) => {
+    order.items.reduce((acc: Record<string, ItemReviewState>, item) => {
       acc[item.id] = { rating: 0, comment: '' };
       return acc;
     }, {})

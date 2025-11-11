@@ -144,7 +144,8 @@ const AppContent: React.FC = () => {
                 if (!id) { window.location.hash = '#/home'; return null; }
                 return <OrderConfirmationPage orderId={id} />;
             case 'offers':
-                return <OffersPage />;
+                // FIX: Pass location prop to OffersPage to allow fetching of location-specific offers.
+                return <OffersPage location={location} />;
             case 'home':
             default:
                 return <HomePage location={location} />;

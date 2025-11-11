@@ -46,8 +46,8 @@ const HomePage: React.FC<HomePageProps> = ({ location }) => {
         setTopRestaurants([]);
         setOffers([]);
         setActiveOffers([]);
-        api.getOffers().then(setOffers);
-        api.getActiveOffers().then(setActiveOffers);
+        api.getOffers(location).then(setOffers);
+        api.getActiveOffers(location).then(setActiveOffers);
         api.getTopRestaurants(location).then(setTopRestaurants);
     }, [location, resetFoodFeed]);
 

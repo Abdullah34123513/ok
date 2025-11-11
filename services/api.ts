@@ -1,5 +1,39 @@
 import type { Offer, Restaurant, Food, PaginatedFoods, SearchResult, PaginatedRestaurants, MenuCategory, Review, CartItem, MenuItem, Address, Order, AddressSuggestion, AddressDetails, User, LoginCredentials, SignupData, AuthResponse, LocationPoint, SupportInfo, ChatMessage, OrderReview } from '../types';
 
+// --- Location-based data simulation helpers ---
+
+// Helper to create a consistent hash from the location string
+const locationHash = (str: string): number => {
+  let hash = 0;
+  if (str.length === 0) return hash;
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash |= 0; // Convert to 32bit integer
+  }
+  return Math.abs(hash);
+};
+
+// Helper to create a seeded pseudo-random number generator for consistent shuffling
+const seededRandom = (seed: number) => {
+  let s = seed;
+  return () => {
+    s = Math.sin(s) * 10000;
+    return s - Math.floor(s);
+  };
+};
+
+// Helper to shuffle an array based on a seed, making it deterministic for a location
+const shuffleArray = <T,>(array: T[], seed: number): T[] => {
+  const newArr = [...array];
+  const random = seededRandom(seed);
+  for (let i = newArr.length - 1; i > 0; i--) {
+    const j = Math.floor(random() * (i + 1));
+    [newArr[i], newArr[j]] = [newArr[j], newArr[i]];
+  }
+  return newArr;
+};
+
 // --- Mock Databases ---
 let mockUsers: User[] = [
     { name: 'Alex Doe', email: 'alex.doe@example.com', phone: '123-456-7890' }
@@ -94,9 +128,22 @@ const mockOffers: Offer[] = [
 ];
 
 const allMockRestaurants: Restaurant[] = Array.from({ length: 50 }, (_, i) => createMockRestaurant(i + 1));
-const mockTopRestaurants: Restaurant[] = allMockRestaurants.slice(0, 10);
-
 const allMockFoods: Food[] = Array.from({ length: 100 }, (_, i) => createMockFood(i + 1, allMockRestaurants[(i % 10)]));
+
+// --- Location-aware data helpers ---
+const getRestaurantsForLocation = (location: string): Restaurant[] => {
+    const seed = locationHash(location);
+    return shuffleArray(allMockRestaurants, seed);
+};
+
+const getFoodsForLocation = (location: string): Food[] => {
+    const seed = locationHash(location);
+    const locationRestaurants = getRestaurantsForLocation(location);
+    const locationRestaurantIds = new Set(locationRestaurants.map(r => r.id));
+    // Filter foods to only include those from restaurants in the current location
+    const locationFoods = allMockFoods.filter(food => locationRestaurantIds.has(food.restaurantId));
+    return shuffleArray(locationFoods, seed);
+}
 
 // API simulation functions
 const simulateNetwork = <T,>(data: T, delay?: number): Promise<T> =>
@@ -132,25 +179,49 @@ export const login = (credentials: LoginCredentials): Promise<AuthResponse> => {
 };
 
 
-export const getOffers = (): Promise<Offer[]> => {
-  console.log('API: Fetching offers...');
-  return simulateNetwork(mockOffers);
+export const getOffers = (location: string): Promise<Offer[]> => {
+  console.log(`API: Fetching offers for ${location}...`);
+  // To make it feel real, let's say only a subset of restaurants are available in any location.
+  const locationRestaurants = getRestaurantsForLocation(location).slice(0, 25); // Top 25 for this area
+  const locationRestaurantIds = new Set(locationRestaurants.map(r => r.id));
+
+  const locationOffers = mockOffers.filter(offer => {
+      // Show offers applicable to all restaurants
+      if (offer.applicableTo === 'ALL') {
+          return true;
+      }
+      // Show offers for restaurants within the user's location
+      if (offer.applicableTo && typeof offer.applicableTo === 'object' && 'id' in offer.applicableTo) {
+          return locationRestaurantIds.has(offer.applicableTo.id);
+      }
+      // Show generic offers that are not tied to any specific restaurant
+      if (!offer.applicableTo) {
+          return true;
+      }
+      return false;
+  });
+
+  const seed = locationHash(location);
+  // Also shuffle the resulting offers to make it seem dynamic per location
+  return simulateNetwork(shuffleArray(locationOffers, seed));
 };
 
 export const getTopRestaurants = (location: string): Promise<Restaurant[]> => {
   console.log(`API: Fetching top restaurants for ${location}...`);
-  return simulateNetwork(mockTopRestaurants);
+  const locationRestaurants = getRestaurantsForLocation(location);
+  return simulateNetwork(locationRestaurants.slice(0, 10));
 };
 
 export const getFoods = (location: string, page: number, limit = 10): Promise<PaginatedFoods> => {
   console.log(`API: Fetching foods for ${location}, page ${page}...`);
+  const locationFoods = getFoodsForLocation(location);
   const startIndex = (page - 1) * limit;
   const endIndex = startIndex + limit;
-  const paginatedFoods = allMockFoods.slice(startIndex, endIndex);
+  const paginatedFoods = locationFoods.slice(startIndex, endIndex);
 
   return simulateNetwork({
     foods: paginatedFoods,
-    hasMore: endIndex < allMockFoods.length,
+    hasMore: endIndex < locationFoods.length,
     nextPage: page + 1,
   });
 };
@@ -159,32 +230,36 @@ export const search = (query: string, location: string): Promise<SearchResult> =
     console.log(`API: Searching for "${query}" in ${location}...`);
     const lowerCaseQuery = query.toLowerCase();
 
-    const matchingFoods = allMockFoods.filter(
+    const locationFoods = getFoodsForLocation(location);
+    const locationRestaurants = getRestaurantsForLocation(location);
+
+    const matchingFoods = locationFoods.filter(
         food => food.name.toLowerCase().includes(lowerCaseQuery) || food.vendor.name.toLowerCase().includes(lowerCaseQuery)
     ).slice(0, 5);
 
-    const matchingRestaurants = allMockRestaurants.filter(
+    const matchingRestaurants = locationRestaurants.filter(
         restaurant => restaurant.name.toLowerCase().includes(lowerCaseQuery) || restaurant.cuisine.toLowerCase().includes(lowerCaseQuery)
     ).slice(0, 5);
 
     return simulateNetwork({ restaurants: matchingRestaurants, foods: matchingFoods });
 };
 
-export const getActiveOffers = (): Promise<Offer[]> => {
-    console.log('API: Fetching active offers...');
-    // Return all offers for the homepage section as requested by the user.
-    return simulateNetwork(mockOffers);
+export const getActiveOffers = (location: string): Promise<Offer[]> => {
+    console.log(`API: Fetching active offers for ${location}...`);
+    // In this mock, this is the same as getOffers.
+    return getOffers(location);
 };
 
 export const getRestaurants = (location: string, page: number, filters: Record<string, any> = {}, limit = 12): Promise<PaginatedRestaurants> => {
     console.log(`API: Fetching restaurants for ${location}, page ${page} with filters`, filters);
+    const locationRestaurants = getRestaurantsForLocation(location);
     const startIndex = (page - 1) * limit;
     const endIndex = startIndex + limit;
-    const paginatedRestaurants = allMockRestaurants.slice(startIndex, endIndex);
+    const paginatedRestaurants = locationRestaurants.slice(startIndex, endIndex);
 
     return simulateNetwork({
         restaurants: paginatedRestaurants,
-        hasMore: endIndex < allMockRestaurants.length,
+        hasMore: endIndex < locationRestaurants.length,
         nextPage: page + 1,
     });
 };
@@ -253,8 +328,9 @@ export const getFoodReviews = (id: string): Promise<Review[]> => {
 
 export const getRelatedFoods = (foodId: string, location: string): Promise<Food[]> => {
     console.log(`API: Fetching related foods for ${foodId} in ${location}...`);
-    // Simple mock: return a few random items, excluding the current one
-    const related = allMockFoods.filter(f => f.id !== foodId).sort(() => 0.5 - Math.random()).slice(0, 8);
+    const locationFoods = getFoodsForLocation(location);
+    // Simple mock: return a few random items from the current location, excluding the current one
+    const related = locationFoods.filter(f => f.id !== foodId).slice(0, 8);
     return simulateNetwork(related);
 };
 

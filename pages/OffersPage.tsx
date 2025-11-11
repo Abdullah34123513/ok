@@ -35,16 +35,22 @@ const OfferCard: React.FC<{ offer: Offer }> = ({ offer }) => {
     );
 };
 
-const OffersPage: React.FC = () => {
+// FIX: Added location prop to fetch location-based offers.
+interface OffersPageProps {
+    location: string;
+}
+
+const OffersPage: React.FC<OffersPageProps> = ({ location }) => {
     const [offers, setOffers] = useState<Offer[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
         setIsLoading(true);
-        api.getOffers()
+        // FIX: Pass the location to the getOffers API call to resolve the missing argument error.
+        api.getOffers(location)
             .then(setOffers)
             .finally(() => setIsLoading(false));
-    }, []);
+    }, [location]);
     
     // Mock filters for UI
     const filters = ['All Offers', 'Nearby', 'Restaurant-Specific'];
