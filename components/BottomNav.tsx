@@ -29,7 +29,7 @@ const NavLink: React.FC<NavLinkProps> = ({ href, label, icon: Icon, isActive, ba
         <a href={href} className="flex flex-col items-center justify-center flex-1 pt-2 pb-1 group">
             <div className="relative">
                 <Icon className={`w-7 h-7 transition-colors ${isActive ? activeClass : inactiveClass}`} />
-                {badgeCount && badgeCount > 0 && (
+                {(badgeCount ?? 0) > 0 && (
                     <span className="absolute top-0 right-0 block h-5 min-w-[1.25rem] px-1 rounded-full bg-red-500 text-white text-xs flex items-center justify-center transform translate-x-1/2 -translate-y-1/2">
                         {badgeCount}
                     </span>

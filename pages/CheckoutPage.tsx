@@ -38,9 +38,13 @@ const CheckoutPage: React.FC<CheckoutPageProps> = () => {
         return deliveryOption === 'home' ? deliveryFee : 0;
     }, [deliveryOption, deliveryFee]);
 
+    const onlinePaymentDiscount = useMemo(() => {
+        return paymentOption === 'online' ? cartTotal * 0.05 : 0;
+    }, [paymentOption, cartTotal]);
+
     const currentGrandTotal = useMemo(() => {
-        return Math.max(0, cartTotal + currentDeliveryFee - discountAmount);
-    }, [cartTotal, currentDeliveryFee, discountAmount]);
+        return Math.max(0, cartTotal + currentDeliveryFee - discountAmount - onlinePaymentDiscount);
+    }, [cartTotal, currentDeliveryFee, discountAmount, onlinePaymentDiscount]);
 
     const groupedItems = useMemo(() => {
         return cartItems.reduce<Record<string, { restaurantName: string, items: CartItem[] }>>((acc, item) => {
@@ -119,12 +123,14 @@ const CheckoutPage: React.FC<CheckoutPageProps> = () => {
             return;
         };
         
+        const totalDiscount = discountAmount + onlinePaymentDiscount;
+
         const orderPayload: Omit<Order, 'id' | 'status' | 'restaurantName' | 'date'> = {
             items: cartItems,
             subtotal: cartTotal,
             deliveryFee: currentDeliveryFee,
             total: currentGrandTotal,
-            discount: discountAmount,
+            discount: totalDiscount,
             appliedOfferId: appliedOffer?.id,
             address,
             paymentMethod: paymentOption,
@@ -228,6 +234,12 @@ const CheckoutPage: React.FC<CheckoutPageProps> = () => {
                                     <span>Delivery Fee {numberOfRestaurants > 1 && deliveryOption === 'home' ? `(${numberOfRestaurants} restaurants)`: ''}</span>
                                     <span className="font-semibold">${currentDeliveryFee.toFixed(2)}</span>
                                 </div>
+                                {onlinePaymentDiscount > 0 && (
+                                    <div className="flex justify-between text-sm text-green-600">
+                                        <span className="font-semibold">Online Payment Discount (5%)</span>
+                                        <span className="font-semibold">-${onlinePaymentDiscount.toFixed(2)}</span>
+                                    </div>
+                                )}
                                 <div className="flex justify-between font-bold text-lg text-black mt-2 pt-2 border-t">
                                     <span>Total</span>
                                     <span>${currentGrandTotal.toFixed(2)}</span>
