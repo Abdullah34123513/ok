@@ -196,6 +196,67 @@ const burgerCustomizations: CustomizationOption[] = [
     }
 ];
 
+const saladCustomizations: CustomizationOption[] = [
+    {
+        id: 'dressing',
+        name: 'Choose Your Dressing',
+        type: 'SINGLE',
+        required: true,
+        choices: [
+            { name: 'Italian Vinaigrette', price: 0 },
+            { name: 'Ranch Dressing', price: 0 },
+            { name: 'Caesar Dressing', price: 0.50 },
+        ]
+    },
+    {
+        id: 'protein',
+        name: 'Add a Protein',
+        type: 'SINGLE',
+        required: false,
+        choices: [
+            { name: 'Grilled Chicken', price: 3.50 },
+            { name: 'Crispy Tofu', price: 2.50 },
+            { name: 'Shrimp', price: 4.50 },
+        ]
+    },
+     {
+        id: 'extras',
+        name: 'Extras',
+        type: 'MULTIPLE',
+        required: false,
+        choices: [
+            { name: 'Avocado', price: 1.50 },
+            { name: 'Feta Cheese', price: 1.00 },
+            { name: 'Croutons', price: 0.50 },
+        ]
+    }
+];
+
+const pastaCustomizations: CustomizationOption[] = [
+    {
+        id: 'sauce',
+        name: 'Pick Your Sauce',
+        type: 'SINGLE',
+        required: true,
+        choices: [
+            { name: 'Classic Marinara', price: 0 },
+            { name: 'Creamy Alfredo', price: 1.50 },
+            { name: 'Basil Pesto', price: 1.50 },
+        ]
+    },
+    {
+        id: 'addons',
+        name: 'Add-ons',
+        type: 'MULTIPLE',
+        required: false,
+        choices: [
+            { name: 'Meatballs (3)', price: 3.00 },
+            { name: 'Sausage', price: 2.50 },
+            { name: 'Extra Veggies', price: 1.75 },
+        ]
+    }
+];
+
 allMockFoods.unshift({
   id: 'food-pizza-1',
   imageUrl: 'https://picsum.photos/seed/pizza1/400/300',
@@ -220,6 +281,34 @@ allMockFoods.push({
     description: 'A juicy, all-beef patty with lettuce, tomato, and our special sauce on a toasted bun. Customize it with your favorite sides and add-ons!',
     vendor: { name: burgerRestaurant.name },
     customizationOptions: burgerCustomizations,
+});
+
+// Add a customizable salad
+const saladRestaurant = allMockRestaurants.find(r => r.cuisine === 'American') || allMockRestaurants[5];
+allMockFoods.push({
+    id: `food-salad-1`,
+    imageUrl: `https://picsum.photos/seed/salad1/400/300`,
+    name: `Build Your Own Garden Salad`,
+    price: 8.50,
+    rating: 4.4,
+    restaurantId: saladRestaurant.id,
+    description: 'A fresh bed of mixed greens and seasonal vegetables. Make it your own with our delicious dressings and protein add-ons!',
+    vendor: { name: saladRestaurant.name },
+    customizationOptions: saladCustomizations,
+});
+
+// Add a customizable pasta
+const pastaRestaurant = allMockRestaurants.find(r => r.cuisine === 'Italian') || allMockRestaurants[0];
+allMockFoods.push({
+    id: `food-pasta-1`,
+    imageUrl: `https://picsum.photos/seed/pasta1/400/300`,
+    name: `Create Your Own Pasta Bowl`,
+    price: 11.99,
+    rating: 4.7,
+    restaurantId: pastaRestaurant.id,
+    description: 'Your perfect pasta, your way. Choose your favorite sauce and load up on tasty add-ons for a meal you\'ll love.',
+    vendor: { name: pastaRestaurant.name },
+    customizationOptions: pastaCustomizations,
 });
 
 
