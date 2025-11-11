@@ -2,7 +2,6 @@ import React from 'react';
 import type { Offer } from '../types';
 import CountdownTimer from './CountdownTimer';
 import { useCart } from '../contexts/CartContext';
-import { useNotification } from '../contexts/NotificationContext';
 
 interface OfferCardProps {
     offer: Offer;
@@ -10,17 +9,28 @@ interface OfferCardProps {
 
 const OfferCard: React.FC<OfferCardProps> = ({ offer }) => {
     const { applyOffer } = useCart();
-    const { showNotification } = useNotification();
 
-    const handleApply = () => {
+    const handleApply = (e: React.MouseEvent) => {
+        e.stopPropagation();
         if (applyOffer(offer)) {
             // Optionally navigate or just show notification
             // window.location.hash = '#/cart';
         }
     };
 
+    const handleCardClick = () => {
+        if (offer.applicableTo && typeof offer.applicableTo === 'object' && offer.applicableTo.type === 'RESTAURANT') {
+            window.location.hash = `#/restaurant/${offer.applicableTo.id}`;
+        }
+    };
+
+    const isRestaurantOffer = offer.applicableTo && typeof offer.applicableTo === 'object' && offer.applicableTo.type === 'RESTAURANT';
+
     return (
-        <div className="bg-white rounded-lg overflow-hidden shadow-lg group transform hover:-translate-y-1 transition-transform duration-300 flex flex-col">
+        <div
+            onClick={isRestaurantOffer ? handleCardClick : undefined}
+            className={`bg-white rounded-lg overflow-hidden shadow-lg group transform hover:-translate-y-1 transition-transform duration-300 flex flex-col ${isRestaurantOffer ? 'cursor-pointer' : ''}`}
+        >
             <img src={offer.imageUrl.replace('/1200/400', '/600/300')} alt={offer.title} className="w-full h-40 object-cover" />
             <div className="p-4 flex flex-col flex-grow">
                 <h3 className="font-bold text-lg text-gray-800">{offer.title}</h3>

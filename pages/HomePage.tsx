@@ -8,6 +8,7 @@ import OffersCarousel from '../components/OffersCarousel';
 import FoodFeed from '../components/FoodFeed';
 import FoodCard from '../components/FoodCard';
 import { SearchIcon, StarIcon } from '../components/Icons';
+import OngoingOrderTracker from '../components/OngoingOrderTracker';
 
 interface HomePageProps {
     location: string;
@@ -141,6 +142,7 @@ const HomePage: React.FC<HomePageProps> = ({ location }) => {
             <Header searchQuery={searchQuery} onSearchChange={setSearchQuery} />
             {searchQuery.trim() !== '' ? renderSearchResults() : (
                 <>
+                    <OngoingOrderTracker />
                     <HeroBanner offers={offers} />
                     <TopRestaurants 
                         restaurants={topRestaurants} 
