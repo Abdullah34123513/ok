@@ -873,7 +873,7 @@ export const submitOrderReview = (review: OrderReview): Promise<{ success: boole
 // --- New Offer APIs ---
 export const getOffersForRestaurant = (restaurantId: string): Promise<Offer[]> => {
   console.log(`API: Fetching offers for restaurant ${restaurantId}...`);
-  // FIX: Added a type guard to safely access properties on the 'applicableTo' union type before checking the restaurant ID.
+  // Fix: Added explicit type guard to safely access properties on the 'applicableTo' union type.
   const restaurantOffers = mockOffers.filter(
     offer => offer.applicableTo && typeof offer.applicableTo === 'object' && 'id' in offer.applicableTo && offer.applicableTo.id === restaurantId
   );

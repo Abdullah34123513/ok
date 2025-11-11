@@ -5,6 +5,7 @@ import * as api from '../services/api';
 // Assuming Capacitor is set up in the project
 // In a real project: npm install @capacitor/core @capacitor/geolocation
 import { Capacitor } from '@capacitor/core';
+import { Geolocation } from '@capacitor/geolocation';
 
 
 interface LocationModalProps {
@@ -23,9 +24,6 @@ const LocationModal: React.FC<LocationModalProps> = ({ onLocationSet }) => {
     const getPosition = async (): Promise<{ latitude: number; longitude: number }> => {
       // Check if running on a native platform (iOS/Android)
       if (Capacitor.isNativePlatform()) {
-        // FIX: Use dynamic import to resolve the module at runtime via import maps, avoiding a build-time resolution error.
-        const { Geolocation } = await import('@capacitor/geolocation');
-        
         // Check and request permissions for native
         const permissions = await Geolocation.checkPermissions();
         if (permissions.location !== 'granted' && permissions.coarseLocation !== 'granted') {
