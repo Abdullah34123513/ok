@@ -66,7 +66,7 @@ const MenuPage: React.FC = () => {
 
     return (
         <div className="p-6 space-y-6">
-            <div className="flex justify-between items-center">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <h1 className="text-2xl font-bold text-gray-800">Menu Management</h1>
                 <button
                     onClick={handleOpenAddModal}
@@ -88,8 +88,8 @@ const MenuPage: React.FC = () => {
                             <h2 className="text-xl font-bold text-gray-700 mb-4 pb-2 border-b">{category.name}</h2>
                             <div className="space-y-4">
                                 {category.items.map(item => (
-                                    <div key={item.id} className="bg-white p-4 rounded-lg shadow-md flex items-center space-x-4">
-                                        <img src={item.imageUrl} alt={item.name} className="w-20 h-20 rounded-md object-cover"/>
+                                    <div key={item.id} className="bg-white p-4 rounded-lg shadow-md flex flex-col sm:flex-row items-start sm:items-center space-y-4 sm:space-y-0 sm:space-x-4">
+                                        <img src={item.imageUrl} alt={item.name} className="w-full sm:w-20 h-32 sm:h-20 rounded-md object-cover"/>
                                         <div className="flex-1">
                                             <div className="flex items-center space-x-3 mb-1">
                                                 <h3 className="font-bold">{item.name}</h3>
@@ -97,10 +97,10 @@ const MenuPage: React.FC = () => {
                                                     <span className="text-xs font-semibold bg-gray-200 text-gray-700 px-2 py-0.5 rounded-full">Customizable</span>
                                                 )}
                                             </div>
-                                            <p className="text-sm text-gray-500 max-w-lg truncate">{item.description}</p>
+                                            <p className="text-sm text-gray-500 max-w-lg">{item.description}</p>
                                         </div>
                                         <div className="font-semibold text-lg">${item.price.toFixed(2)}</div>
-                                        <div className="flex items-center space-x-2">
+                                        <div className="flex items-center space-x-2 self-end sm:self-center">
                                             <button onClick={() => handleEditItem(item)} className="p-2 bg-gray-200 text-sm font-semibold rounded-md hover:bg-gray-300">
                                                 <EditIcon className="w-5 h-5 text-gray-600"/>
                                             </button>

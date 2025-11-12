@@ -5,6 +5,8 @@ import { DashboardIcon, OrdersIcon, MenuIcon, SettingsIcon, LogoutIcon, LogoIcon
 
 interface SidebarProps {
     activeView: View;
+    isOpen: boolean;
+    onClose: () => void;
 }
 
 interface NavLinkProps {
@@ -25,11 +27,11 @@ const NavLink: React.FC<NavLinkProps> = ({ view, label, icon: Icon, isActive }) 
     );
 };
 
-const Sidebar: React.FC<SidebarProps> = ({ activeView }) => {
+const Sidebar: React.FC<SidebarProps> = ({ activeView, isOpen }) => {
     const { logout } = useAuth();
 
     return (
-        <aside className="w-64 flex-shrink-0 bg-white border-r p-4 flex flex-col">
+        <aside className={`w-64 flex-shrink-0 bg-white border-r p-4 flex flex-col transition-transform transform fixed inset-y-0 left-0 z-30 md:static md:translate-x-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
             <div className="flex items-center space-x-2 px-4 py-3 mb-6">
                 <LogoIcon />
                 <span className="font-bold text-2xl text-gray-800">FoodieFind</span>

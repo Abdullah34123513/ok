@@ -45,6 +45,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         id: vendorId,
         restaurantId: `restaurant-${vendorId.split('-')[1]}`, // Mock logic
         name: user.name,
+        email: user.email,
     };
     handleAuthSuccess(vendor);
   }, []);

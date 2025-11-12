@@ -1,4 +1,4 @@
-import type { Offer, Restaurant, Food, PaginatedFoods, SearchResult, PaginatedRestaurants, MenuCategory, Review, CartItem, MenuItem, Address, Order, AddressSuggestion, AddressDetails, User, LoginCredentials, SignupData, AuthResponse, LocationPoint, SupportInfo, ChatMessage, OrderReview, SelectedCustomization, CustomizationOption, Vendor, VendorDashboardSummary, ItemAvailability } from './types';
+import type { Offer, Restaurant, Food, PaginatedFoods, SearchResult, PaginatedRestaurants, MenuCategory, Review, CartItem, MenuItem, Address, Order, AddressSuggestion, AddressDetails, User, LoginCredentials, SignupData, AuthResponse, LocationPoint, SupportInfo, ChatMessage, OrderReview, SelectedCustomization, CustomizationOption, Vendor, VendorDashboardSummary, ItemAvailability, ConversationSummary, OperatingHours } from './types';
 
 // --- Location-based data simulation helpers ---
 
@@ -64,6 +64,17 @@ const createMockFood = (id: number, restaurant: Restaurant): Food => ({
   },
   availability: { type: 'ALL_DAY' }
 });
+
+const twentyFourSevenHours: OperatingHours = {
+    monday: { isOpen: true, slots: [{ open: '00:00', close: '23:59' }] },
+    tuesday: { isOpen: true, slots: [{ open: '00:00', close: '23:59' }] },
+    wednesday: { isOpen: true, slots: [{ open: '00:00', close: '23:59' }] },
+    thursday: { isOpen: true, slots: [{ open: '00:00', close: '23:59' }] },
+    friday: { isOpen: true, slots: [{ open: '00:00', close: '23:59' }] },
+    saturday: { isOpen: true, slots: [{ open: '00:00', close: '23:59' }] },
+    sunday: { isOpen: true, slots: [{ open: '00:00', close: '23:59' }] },
+};
+
 
 const createMockRestaurant = (id: number): Restaurant => ({
   id: `restaurant-${id}`,
@@ -206,6 +217,20 @@ allMockFoods.push({
     availability: { type: 'ALL_DAY' }
 });
 
+// Update some restaurants to be 24/7
+const diner = allMockRestaurants.find(r => r.id === 'restaurant-5');
+if (diner) {
+    diner.name = "24/7 Diner";
+    diner.operatingHours = twentyFourSevenHours;
+    diner.deliveryTime = "15-25 min";
+}
+const munchies = allMockRestaurants.find(r => r.id === 'restaurant-15');
+if (munchies) {
+    munchies.name = "Midnight Munchies";
+    munchies.operatingHours = twentyFourSevenHours;
+    munchies.deliveryTime = "20-30 min";
+}
+
 
 let mockCart: CartItem[] = [];
 
@@ -227,7 +252,7 @@ const allMockReviews: Review[] = Array.from({ length: 15 }, (_, i) => ({
 const mockChatHistory = new Map<string, ChatMessage[]>();
 
 const mockVendors: Vendor[] = [
-    { id: 'vendor-1', restaurantId: 'restaurant-1', name: 'Vendor One' }
+    { id: 'vendor-1', restaurantId: 'restaurant-1', name: 'Vendor One', email: 'vendor1@example.com' }
 ];
 
 // --- API Simulation ---
@@ -677,6 +702,19 @@ export const signup = async (data: SignupData): Promise<AuthResponse> => {
     
     return { user: newUser, token: `mock-auth-token-${Date.now()}` };
 };
+
+export const changePassword = async (email: string, currentPassword: string, newPassword: string): Promise<void> => {
+    await simulateDelay(600);
+    const storedPassword = mockUserPasswords.get(email);
+
+    if (!storedPassword || storedPassword !== currentPassword) {
+        throw new Error("Your current password is not correct.");
+    }
+
+    mockUserPasswords.set(email, newPassword);
+    console.log(`Password updated for ${email}`);
+};
+
 
 // --- Support API ---
 export const getSupportInfo = async (): Promise<SupportInfo> => {

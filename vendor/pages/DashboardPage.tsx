@@ -73,7 +73,9 @@ const DashboardPage: React.FC = () => {
             {/* Recent Orders */}
             <div className="bg-white p-6 rounded-lg shadow-md">
                 <h2 className="text-xl font-bold text-gray-800 mb-4">New Orders</h2>
-                <div className="overflow-x-auto">
+                
+                {/* Desktop Table */}
+                <div className="overflow-x-auto hidden md:block">
                     <table className="w-full text-left">
                         <thead>
                             <tr className="bg-gray-50">
@@ -102,6 +104,29 @@ const DashboardPage: React.FC = () => {
                             )}
                         </tbody>
                     </table>
+                </div>
+                
+                {/* Mobile Cards */}
+                <div className="md:hidden space-y-4">
+                     {recentOrders.length > 0 ? recentOrders.map(order => (
+                        <div key={order.id} className="border rounded-lg p-4">
+                            <div className="flex justify-between items-start">
+                                <div>
+                                    <div className="font-bold">{order.customerName}</div>
+                                    <div className="font-mono text-sm text-blue-600">{order.id.split('-')[1]}</div>
+                                </div>
+                                <div className="font-semibold text-lg">${order.total.toFixed(2)}</div>
+                            </div>
+                            <div className="mt-2 text-sm text-gray-600">
+                                {order.items.reduce((acc, item) => acc + item.quantity, 0)} items
+                            </div>
+                            <div className="mt-3 text-right">
+                                <a href="#/orders" className="text-blue-500 hover:underline font-semibold">View Order</a>
+                            </div>
+                        </div>
+                    )) : (
+                        <div className="p-6 text-center text-gray-500">No new orders right now.</div>
+                    )}
                 </div>
             </div>
         </div>

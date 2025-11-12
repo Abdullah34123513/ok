@@ -35,6 +35,7 @@ const parseHash = (): Route => {
 const AppContent: React.FC = () => {
     const { currentVendor, isLoading } = useAuth();
     const [route, setRoute] = useState<Route>(parseHash());
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     
     useEffect(() => {
         const handleHashChange = () => {
@@ -71,9 +72,11 @@ const AppContent: React.FC = () => {
     
     return (
         <div className="flex h-screen bg-gray-100 font-sans">
-            <Sidebar activeView={route.view} />
+            <Sidebar activeView={route.view} isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
+            {isSidebarOpen && <div className="fixed inset-0 bg-black bg-opacity-50 z-20 md:hidden" onClick={() => setIsSidebarOpen(false)}></div>}
+
             <div className="flex-1 flex flex-col overflow-hidden">
-                <Header vendorName={currentVendor.name} />
+                <Header vendorName={currentVendor.name} onMenuClick={() => setIsSidebarOpen(true)} />
                 <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100">
                     {renderView()}
                 </main>

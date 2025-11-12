@@ -259,10 +259,18 @@ export interface ChatMessage {
 
 // --- Vendor ---
 
+export interface ConversationSummary {
+  customerId: string; // user email
+  customerName: string;
+  lastMessage: string;
+  timestamp: string;
+  hasUnread: boolean;
+}
 export interface Vendor {
   id: string;
   restaurantId: string;
   name: string;
+  email: string;
 }
 
 export interface VendorDashboardSummary {
