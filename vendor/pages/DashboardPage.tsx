@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import * as api from '../../services/api';
+import * as api from '@shared/api';
 import { useAuth } from '../contexts/AuthContext';
-import type { VendorDashboardSummary, Order } from '../../types';
+import type { VendorDashboardSummary, Order } from '@shared/types';
 import StatCard from '../components/StatCard';
 import { RevenueIcon, TotalOrdersIcon, ActiveOrdersIcon, RatingIcon, OrdersIcon, PlusCircleIcon } from '../components/Icons';
 

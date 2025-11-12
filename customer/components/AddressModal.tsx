@@ -1,7 +1,6 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
-import * as api from '../../shared/api';
-import type { AddressSuggestion, AddressDetails } from '../../shared/types';
+import * as api from '@shared/api';
+import type { AddressSuggestion, AddressDetails } from '@shared/types';
 import { SearchIcon, LocationIcon } from './Icons';
 
 interface AddressModalProps {

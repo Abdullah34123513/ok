@@ -1,8 +1,7 @@
-
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import * as api from '../../shared/api';
-import * as tracking from '../../shared/tracking';
-import type { Food, Restaurant, Review, MenuItem, SelectedCustomization, CustomizationOption, CustomizationChoice } from '../../shared/types';
+import * as api from '@shared/api';
+import * as tracking from '@shared/tracking';
+import type { Food, Restaurant, Review, MenuItem, SelectedCustomization, CustomizationOption, CustomizationChoice } from '@shared/types';
 import { StarIcon } from '../components/Icons';
 import { useCart } from '../contexts/CartContext';
 import QuantityControl from '../components/QuantityControl';

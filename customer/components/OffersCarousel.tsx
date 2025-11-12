@@ -1,6 +1,5 @@
-
 import React from 'react';
-import type { Offer } from '../../shared/types';
+import type { Offer } from '@shared/types';
 import CountdownTimer from './CountdownTimer';
 
 interface OfferCardProps {

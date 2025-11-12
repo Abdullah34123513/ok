@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import * as api from '../../services/api';
+import * as api from '@shared/api';
 import { useAuth } from '../contexts/AuthContext';
-import type { Order } from '../../types';
+import type { Order } from '@shared/types';
 
 type OrderTab = 'New' | 'Preparing' | 'On its way' | 'Delivered' | 'Cancelled';
 

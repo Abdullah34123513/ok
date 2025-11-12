@@ -1,7 +1,6 @@
-
 import React, { useState, useEffect } from 'react';
-import * as api from '../../shared/api';
-import type { SupportInfo } from '../../shared/types';
+import * as api from '@shared/api';
+import type { SupportInfo } from '@shared/types';
 import { CloseIcon, PhoneIcon, ChatIcon } from './Icons';
 
 interface SupportModalProps {

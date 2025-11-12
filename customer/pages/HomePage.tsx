@@ -1,8 +1,7 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
-import type { Offer, Restaurant, Food, SearchResult } from '../../shared/types';
-import * as api from '../../shared/api';
-import * as tracking from '../../shared/tracking';
+import type { Offer, Restaurant, Food, SearchResult } from '@shared/types';
+import * as api from '@shared/api';
+import * as tracking from '@shared/tracking';
 import Header from '../components/Header';
 import HeroBanner from '../components/HeroBanner';
 import TopRestaurants from '../components/TopVendors';

@@ -1,6 +1,6 @@
 import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
-import type { LoginCredentials, Vendor } from '../../types';
-import * as api from '../../services/api';
+import type { LoginCredentials, Vendor } from '@shared/types';
+import * as api from '@shared/api';
 
 interface AuthContextType {
   currentVendor: Vendor | null;

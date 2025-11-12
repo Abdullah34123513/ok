@@ -1,8 +1,7 @@
-
 import React, { createContext, useState, useContext, useEffect, useMemo } from 'react';
-import type { CartItem, MenuItem, Offer, AppliedOffer, SelectedCustomization } from '../../shared/types';
-import * as api from '../../shared/api';
-import * as tracking from '../../shared/tracking';
+import type { CartItem, MenuItem, Offer, AppliedOffer, SelectedCustomization } from '@shared/types';
+import * as api from '@shared/api';
+import * as tracking from '@shared/tracking';
 import { useNotification } from './NotificationContext';
 
 export const DELIVERY_FEE = 5.99;
@@ -98,7 +97,6 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     let applicableSubtotal = 0;
     if (offer.applicableTo === 'ALL') {
         applicableSubtotal = subtotal;
-    // FIX: Add a type guard to ensure `offer.applicableTo` is an object before accessing its properties.
     } else if (offer.applicableTo && typeof offer.applicableTo === 'object') {
         applicableSubtotal = items
             .filter(item => item.baseItem.restaurantId === offer.applicableTo.id)

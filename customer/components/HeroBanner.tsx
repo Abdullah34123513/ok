@@ -1,6 +1,5 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
-import type { Offer } from '../../shared/types';
+import type { Offer } from '@shared/types';
 import { ChevronLeftIcon, ChevronRightIcon } from './Icons';
 
 interface HeroBannerProps {

@@ -1,7 +1,6 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
-import * as api from '../../shared/api';
-import type { User, Address, Order, Restaurant } from '../../shared/types';
+import * as api from '@shared/api';
+import type { User, Address, Order, Restaurant } from '@shared/types';
 import { useNotification } from '../contexts/NotificationContext';
 import { useAuth } from '../contexts/AuthContext';
 import { UserCircleIcon, TrashIcon } from '../components/Icons';

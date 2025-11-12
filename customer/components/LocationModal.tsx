@@ -1,7 +1,6 @@
-
 import React, { useState } from 'react';
 import { LocationIcon } from './Icons';
-import * as api from '../../shared/api';
+import * as api from '@shared/api';
 // Assuming Capacitor is set up in the project
 // In a real project: npm install @capacitor/core @capacitor/geolocation
 import { Capacitor } from '@capacitor/core';

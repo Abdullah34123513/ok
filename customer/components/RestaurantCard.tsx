@@ -1,7 +1,5 @@
-
-
 import React from 'react';
-import type { Restaurant } from '../../shared/types';
+import type { Restaurant } from '@shared/types';
 import { StarIcon } from './Icons';
 
 interface RestaurantCardProps {

@@ -1,7 +1,6 @@
-
 import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
-import type { User, LoginCredentials, SignupData } from '../../shared/types';
-import * as api from '../../shared/api';
+import type { User, LoginCredentials, SignupData } from '@shared/types';
+import * as api from '@shared/api';
 
 interface AuthContextType {
   currentUser: User | null;

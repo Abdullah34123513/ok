@@ -1,6 +1,5 @@
-
 import React from 'react';
-import type { Food, MenuItem } from '../../shared/types';
+import type { Food, MenuItem } from '@shared/types';
 import { StarIcon } from './Icons';
 import { useCart } from '../contexts/CartContext';
 import QuantityControl from './QuantityControl';

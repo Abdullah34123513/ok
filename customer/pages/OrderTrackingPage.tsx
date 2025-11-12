@@ -1,7 +1,6 @@
-
 import React, { useState, useEffect } from 'react';
-import * as api from '../../shared/api';
-import type { Order, LocationPoint } from '../../shared/types';
+import * as api from '@shared/api';
+import type { Order, LocationPoint } from '@shared/types';
 import MapMock from '../components/MapMock';
 import { PhoneIcon, StarIcon } from '../components/Icons';
 

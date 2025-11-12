@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import type { Order, OrderReview } from '@shared/types';
 import * as api from '@shared/api';
-import { CloseIcon } from '../components/Icons';
-import StarRatingInput from '../components/StarRatingInput';
+import { CloseIcon } from './Icons';
+import StarRatingInput from './StarRatingInput';
 import { useNotification } from '../contexts/NotificationContext';
 
 interface ReviewModalProps {

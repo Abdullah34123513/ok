@@ -1,9 +1,8 @@
-
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotification } from '../contexts/NotificationContext';
 import { LogoIcon } from '../components/Icons';
-import type { User } from '../../shared/types';
+import type { User } from '@shared/types';
 
 interface SignupPageProps {}
 

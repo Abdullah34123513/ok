@@ -3,10 +3,20 @@
   "private": true,
   "version": "1.0.0",
   "description": "Customer-facing application for FoodieFind.",
+  "scripts": {
+    "dev": "vite"
+  },
   "dependencies": {
     "@capacitor/core": "7.4.4",
     "@capacitor/geolocation": "7.1.5",
     "react": "^19.2.0",
     "react-dom": "^19.2.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.37",
+    "@types/react-dom": "^18.2.15",
+    "@vitejs/plugin-react": "^4.2.0",
+    "typescript": "^5.2.2",
+    "vite": "^5.0.0"
   }
 }

@@ -1,6 +1,5 @@
-
 import React from 'react';
-import type { Food } from '../../shared/types';
+import type { Food } from '@shared/types';
 import FoodCard from './FoodCard';
 
 interface RelatedFoodsProps {
