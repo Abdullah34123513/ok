@@ -5,6 +5,7 @@ import {
   Token,
   PushNotificationSchema,
   ActionPerformed,
+  Channel,
 } from '@capacitor/push-notifications';
 import { useNotification } from '../contexts/NotificationContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -18,11 +19,23 @@ export const usePushNotifications = () => {
       return;
     }
 
-    // Use an array to store listener handles
     const handles: PluginListenerHandle[] = [];
 
     const initPush = async () => {
       try {
+        const createNotificationChannel = async () => {
+          // On Android, we must create a channel for notifications to work.
+          const channel: Channel = {
+            id: 'new-orders-channel',
+            name: 'New Orders',
+            description: 'Notifications for new customer orders.',
+            importance: 5, // Max importance
+            visibility: 1, // Public
+            vibration: true,
+          };
+          await PushNotifications.createChannel(channel);
+        };
+        
         const registerDevice = async () => {
           let permStatus = await PushNotifications.checkPermissions();
 
@@ -32,8 +45,12 @@ export const usePushNotifications = () => {
           
           if (permStatus.receive !== 'granted') {
             console.warn('Push notification permission was denied.');
-            // Do not throw an error, just stop the registration process
             return;
+          }
+          
+          // Must create a channel on Android before registering
+          if (Capacitor.getPlatform() === 'android') {
+            await createNotificationChannel();
           }
 
           // Register the device with APNS/FCM.
@@ -91,10 +108,7 @@ export const usePushNotifications = () => {
     // Cleanup function
     return () => {
       console.log('Removing push notification listeners...');
-      // Remove each listener individually using its handle
       handles.forEach(handle => handle.remove());
-      // For extra safety, you can also call removeAllListeners if your Capacitor version supports it well.
-      // PushNotifications.removeAllListeners(); 
     };
   }, [currentVendor, showNotification]);
 };
