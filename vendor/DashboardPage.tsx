@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import * as api from '@shared/api';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from './contexts/AuthContext';
 import type { Order } from '@shared/types';
 
 const OrderStatusBadge: React.FC<{ status: Order['status'] }> = ({ status }) => {
