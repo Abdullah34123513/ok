@@ -29,6 +29,23 @@ export interface User {
   authToken?: string;
 }
 
+export interface OperatingHoursForDay {
+  isOpen: boolean;
+  open: string; // e.g., "09:00"
+  close: string; // e.g., "21:00"
+}
+
+export interface OperatingHours {
+  monday: OperatingHoursForDay;
+  tuesday: OperatingHoursForDay;
+  wednesday: OperatingHoursForDay;
+  thursday: OperatingHoursForDay;
+  friday: OperatingHoursForDay;
+  saturday: OperatingHoursForDay;
+  sunday: OperatingHoursForDay;
+}
+
+
 export interface Restaurant {
   id: string;
   logoUrl: string;
@@ -40,6 +57,7 @@ export interface Restaurant {
   deliveryTime: string;
   address: string;
   isFavorite?: boolean;
+  operatingHours?: OperatingHours;
 }
 
 export interface Food {

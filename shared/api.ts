@@ -74,6 +74,15 @@ const createMockRestaurant = (id: number): Restaurant => ({
   deliveryFee: parseFloat((Math.random() * 5).toFixed(2)),
   deliveryTime: `${Math.floor(Math.random() * 20) + 20}-${Math.floor(Math.random() * 20) + 40} min`,
   address: `${120 + id} Flavor St, Food City`,
+  operatingHours: {
+    monday: { isOpen: true, open: '09:00', close: '21:00' },
+    tuesday: { isOpen: true, open: '09:00', close: '21:00' },
+    wednesday: { isOpen: true, open: '09:00', close: '21:00' },
+    thursday: { isOpen: true, open: '09:00', close: '21:00' },
+    friday: { isOpen: true, open: '09:00', close: '21:00' },
+    saturday: { isOpen: true, open: '11:00', close: '22:00' },
+    sunday: { isOpen: false, open: '11:00', close: '22:00' },
+  }
 });
 
 const mockOffers: Offer[] = [
