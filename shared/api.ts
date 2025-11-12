@@ -239,7 +239,102 @@ let mockAddresses: Address[] = [
     { id: 'addr-2', label: 'Work', details: '456 Business Ave, Corp City, USA 54321' },
 ];
 
-let mockOrders: Order[] = []; // This will be populated as orders are created
+const restaurant1Foods = allMockFoods.filter(f => f.restaurantId === 'restaurant-1');
+
+// Helper to convert Food to MenuItem
+const foodToMenuItem = (food: Food): MenuItem => ({
+    id: food.id,
+    name: food.name,
+    description: food.description,
+    price: food.price,
+    imageUrl: food.imageUrl,
+    restaurantId: food.restaurantId,
+    restaurantName: food.vendor.name,
+    customizationOptions: food.customizationOptions,
+    isPackage: food.isPackage,
+    category: food.category,
+    availability: food.availability,
+});
+
+
+let mockOrders: Order[] = [
+    {
+        id: 'ORDER-1001',
+        status: 'Placed',
+        date: new Date(Date.now() - 10 * 60 * 1000).toLocaleString('en-US'),
+        restaurantName: 'Restaurant Hub 1',
+        items: [
+            {
+                cartItemId: 'ci-1',
+                baseItem: foodToMenuItem(restaurant1Foods[0]),
+                quantity: 2,
+                selectedCustomizations: [],
+                totalPrice: restaurant1Foods[0].price * 2,
+            },
+            {
+                cartItemId: 'ci-2',
+                baseItem: foodToMenuItem(restaurant1Foods[1]),
+                quantity: 1,
+                selectedCustomizations: [],
+                totalPrice: restaurant1Foods[1].price,
+            }
+        ],
+        subtotal: restaurant1Foods[0].price * 2 + restaurant1Foods[1].price,
+        deliveryFee: 3.99,
+        total: restaurant1Foods[0].price * 2 + restaurant1Foods[1].price + 3.99,
+        discount: 0,
+        address: mockAddresses[0],
+        paymentMethod: 'cod',
+        deliveryOption: 'home',
+        customerName: 'Alex Doe',
+    },
+    {
+        id: 'ORDER-1002',
+        status: 'Preparing',
+        date: new Date(Date.now() - 30 * 60 * 1000).toLocaleString('en-US'),
+        restaurantName: 'Restaurant Hub 1',
+        items: [
+            {
+                cartItemId: 'ci-3',
+                baseItem: foodToMenuItem(restaurant1Foods[2]),
+                quantity: 1,
+                selectedCustomizations: [],
+                totalPrice: restaurant1Foods[2].price,
+            }
+        ],
+        subtotal: restaurant1Foods[2].price,
+        deliveryFee: 3.99,
+        total: restaurant1Foods[2].price + 3.99,
+        discount: 0,
+        address: mockAddresses[1],
+        paymentMethod: 'online',
+        deliveryOption: 'home',
+        customerName: 'Jane Smith',
+    },
+    {
+        id: 'ORDER-1003',
+        status: 'Placed',
+        date: new Date(Date.now() - 5 * 60 * 1000).toLocaleString('en-US'),
+        restaurantName: 'Restaurant Hub 1',
+        items: [
+            {
+                cartItemId: 'ci-4',
+                baseItem: foodToMenuItem(restaurant1Foods[3]),
+                quantity: 1,
+                selectedCustomizations: [],
+                totalPrice: restaurant1Foods[3].price,
+            }
+        ],
+        subtotal: restaurant1Foods[3].price,
+        deliveryFee: 3.99,
+        total: restaurant1Foods[3].price + 3.99,
+        discount: 0,
+        address: { id: 'addr-3', label: 'Friend\'s House', details: '789 Other St, Anytown' },
+        paymentMethod: 'cod',
+        deliveryOption: 'home',
+        customerName: 'Sam Wilson',
+    }
+]; // This will be populated as orders are created
 
 const allMockReviews: Review[] = Array.from({ length: 15 }, (_, i) => ({
     id: `review-${i+1}`,
@@ -847,7 +942,7 @@ export const getVendorOrders = async (vendorId: string, status: Order['status'] 
     return mockOrders.filter(o => 
         statusesToFetch.includes(o.status) &&
         o.items.some(i => i.baseItem.restaurantId === vendor.restaurantId)
-    ).map(o => ({ ...o, customerName: mockUsers[0].name })); // Add customer name for vendor view
+    ).map(o => ({ ...o, customerName: o.customerName || mockUsers[0].name })); // Add customer name for vendor view
 };
 
 

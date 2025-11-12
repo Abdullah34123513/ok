@@ -6,23 +6,44 @@ import type { Order } from '@shared/types';
 type OrderTab = 'New' | 'Preparing' | 'On its way' | 'Delivered' | 'Cancelled';
 
 const OrderStatusButton: React.FC<{ order: Order, onUpdate: (orderId: string, status: Order['status']) => void, className?: string }> = ({ order, onUpdate, className }) => {
-    const [isLoading, setIsLoading] = useState(false);
-    
+    const [loadingAction, setLoadingAction] = useState<Order['status'] | null>(null);
+
     const handleClick = async (newStatus: Order['status']) => {
-        setIsLoading(true);
+        setLoadingAction(newStatus);
         await onUpdate(order.id, newStatus);
-        setIsLoading(false);
+        // No need to reset loading state as component will re-render
     };
 
     const baseClasses = "px-3 py-1 text-sm font-semibold rounded-md transition-colors disabled:opacity-50";
 
     switch (order.status) {
         case 'Placed':
-            return <button onClick={() => handleClick('Preparing')} disabled={isLoading} className={`${baseClasses} bg-blue-500 text-white hover:bg-blue-600 disabled:bg-blue-300 ${className}`}>Accept Order</button>;
+            return (
+                <div className={`flex items-center space-x-2 ${className}`}>
+                    <button 
+                        onClick={() => handleClick('Cancelled')} 
+                        disabled={!!loadingAction} 
+                        className={`${baseClasses} bg-red-500 text-white hover:bg-red-600 disabled:bg-red-300`}
+                    >
+                        {loadingAction === 'Cancelled' ? '...' : 'Reject'}
+                    </button>
+                    <button 
+                        onClick={() => handleClick('Preparing')} 
+                        disabled={!!loadingAction} 
+                        className={`${baseClasses} bg-blue-500 text-white hover:bg-blue-600 disabled:bg-blue-300`}
+                    >
+                        {loadingAction === 'Preparing' ? '...' : 'Accept Order'}
+                    </button>
+                </div>
+            );
         case 'Preparing':
-            return <button onClick={() => handleClick('On its way')} disabled={isLoading} className={`${baseClasses} bg-yellow-500 text-white hover:bg-yellow-600 disabled:bg-yellow-300 ${className}`}>Mark as Ready</button>;
+            return <button onClick={() => handleClick('On its way')} disabled={!!loadingAction} className={`${baseClasses} bg-yellow-500 text-white hover:bg-yellow-600 disabled:bg-yellow-300 ${className}`}>
+                {loadingAction === 'On its way' ? '...' : 'Mark as Ready'}
+            </button>;
         case 'On its way':
-             return <button onClick={() => handleClick('Delivered')} disabled={isLoading} className={`${baseClasses} bg-green-500 text-white hover:bg-green-600 disabled:bg-green-300 ${className}`}>Mark Delivered</button>;
+             return <button onClick={() => handleClick('Delivered')} disabled={!!loadingAction} className={`${baseClasses} bg-green-500 text-white hover:bg-green-600 disabled:bg-green-300 ${className}`}>
+                {loadingAction === 'Delivered' ? '...' : 'Mark Delivered'}
+             </button>;
         default:
             return <span className={`px-3 py-1 text-sm text-gray-500 ${className}`}>{order.status}</span>;
     }
