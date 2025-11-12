@@ -1,19 +1,15 @@
 import React from 'react';
-import { UserCircleIcon, MenuAlt2Icon } from './Icons';
+import { UserCircleIcon } from './Icons';
 
 interface HeaderProps {
     vendorName: string;
-    onMenuClick: () => void;
 }
 
-const Header: React.FC<HeaderProps> = ({ vendorName, onMenuClick }) => {
+const Header: React.FC<HeaderProps> = ({ vendorName }) => {
   return (
     <header className="flex-shrink-0 bg-white border-b">
       <div className="flex items-center justify-between p-4">
         <div className="flex items-center">
-            <button onClick={onMenuClick} className="mr-3 text-gray-500 md:hidden">
-                <MenuAlt2Icon />
-            </button>
             <h1 className="text-xl font-semibold text-gray-800">Vendor Dashboard</h1>
         </div>
         <a href="#/profile" className="flex items-center space-x-3 p-2 rounded-lg hover:bg-gray-100 transition-colors">

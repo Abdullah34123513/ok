@@ -6,7 +6,7 @@ import OrdersPage from './pages/OrdersPage';
 import MenuPage from './pages/MenuPage';
 import ProfilePage from './pages/ProfilePage';
 import SettingsPage from './pages/SettingsPage';
-import Sidebar from './components/Sidebar';
+import BottomNav from './components/Sidebar';
 import Header from './components/Header';
 
 export type View = 'dashboard' | 'orders' | 'menu' | 'settings' | 'profile';
@@ -35,7 +35,6 @@ const parseHash = (): Route => {
 const AppContent: React.FC = () => {
     const { currentVendor, isLoading } = useAuth();
     const [route, setRoute] = useState<Route>(parseHash());
-    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     
     useEffect(() => {
         const handleHashChange = () => {
@@ -71,16 +70,14 @@ const AppContent: React.FC = () => {
     };
     
     return (
-        <div className="flex h-screen bg-gray-100 font-sans">
-            <Sidebar activeView={route.view} isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
-            {isSidebarOpen && <div className="fixed inset-0 bg-black bg-opacity-50 z-20 md:hidden" onClick={() => setIsSidebarOpen(false)}></div>}
-
+        <div className="flex flex-col h-screen bg-gray-100 font-sans">
             <div className="flex-1 flex flex-col overflow-hidden">
-                <Header vendorName={currentVendor.name} onMenuClick={() => setIsSidebarOpen(true)} />
-                <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100">
+                <Header vendorName={currentVendor.name} />
+                <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100 pb-16">
                     {renderView()}
                 </main>
             </div>
+            <BottomNav activeView={route.view} />
         </div>
     );
 };

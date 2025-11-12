@@ -30,7 +30,7 @@ const ProfilePageSkeleton = () => (
 );
 
 const ProfilePage: React.FC = () => {
-    const { currentVendor } = useAuth();
+    const { currentVendor, logout } = useAuth();
     const [restaurant, setRestaurant] = useState<Partial<Restaurant>>({});
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
@@ -100,6 +100,14 @@ const ProfilePage: React.FC = () => {
                     </button>
                 </div>
             </form>
+
+            <div className="bg-white p-6 rounded-lg shadow-md">
+                <h2 className="text-xl font-bold text-gray-800">Account Actions</h2>
+                <p className="text-gray-600 mt-1 mb-4">Log out of your vendor account.</p>
+                <button onClick={logout} className="px-4 py-2 bg-red-100 text-red-700 font-semibold rounded-lg hover:bg-red-200 transition">
+                    Logout
+                </button>
+            </div>
         </div>
     );
 };
