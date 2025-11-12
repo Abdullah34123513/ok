@@ -1,6 +1,8 @@
 
 
 
+
+
 import type { Offer, Restaurant, Food, PaginatedFoods, SearchResult, PaginatedRestaurants, MenuCategory, Review, CartItem, MenuItem, Address, Order, AddressSuggestion, AddressDetails, User, LoginCredentials, SignupData, AuthResponse, LocationPoint, SupportInfo, ChatMessage, OrderReview, SelectedCustomization, CustomizationOption, Vendor, VendorDashboardSummary } from './types';
 
 // --- Location-based data simulation helpers ---
@@ -270,7 +272,7 @@ export const getFoodsForOffer = async (offerId: string, location: string): Promi
         return getFoods(location, 1).then(p => p.foods.slice(0, 8));
     }
     // FIX: Add a type guard to ensure `offer.applicableTo` is an object before accessing its `id` property.
-    else if (offer.applicableTo && typeof offer.applicableTo === 'object') {
+    if (offer.applicableTo && typeof offer.applicableTo === 'object') {
         return allMockFoods.filter(f => f.restaurantId === offer.applicableTo.id).slice(0, 8);
     }
     if (offer.applicableFoods) {
