@@ -248,12 +248,14 @@ export const getOffersForRestaurant = async (restaurantId: string): Promise<Offe
     return mockOffers.filter(o => {
         const isExpired = o.expiry && new Date(o.expiry) < now;
         if (isExpired) return false;
+        
+        const applicableTo = o.applicableTo;
 
-        if (o.applicableTo === 'ALL') {
+        if (applicableTo === 'ALL') {
             return true;
         }
-// FIX: Changed the type guard from `typeof o.applicableTo === 'object'` to `o.applicableTo !== 'ALL'` to ensure TypeScript correctly narrows the discriminated union type and allows safe access to the `id` property.
-        if (o.applicableTo && o.applicableTo !== 'ALL' && o.applicableTo.id === restaurantId) {
+
+        if (applicableTo && typeof applicableTo === 'object' && applicableTo.id === restaurantId) {
             return true;
         }
         return false;
@@ -264,11 +266,14 @@ export const getFoodsForOffer = async (offerId: string, location: string): Promi
     await simulateDelay(600);
     const offer = mockOffers.find(o => o.id === offerId);
     if (!offer) return [];
-    if (offer.applicableTo === 'ALL') {
+
+    const applicableTo = offer.applicableTo;
+
+    if (applicableTo === 'ALL') {
         return getFoods(location, 1).then(p => p.foods.slice(0, 8));
     }
-    if (offer.applicableTo && typeof offer.applicableTo === 'object') {
-        return allMockFoods.filter(f => f.restaurantId === offer.applicableTo.id).slice(0, 8);
+    if (applicableTo && typeof applicableTo === 'object') {
+        return allMockFoods.filter(f => f.restaurantId === applicableTo.id).slice(0, 8);
     }
     if (offer.applicableFoods) {
         return allMockFoods.filter(f => offer.applicableFoods?.includes(f.id));

@@ -95,11 +95,13 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   
   const calculateDiscount = (offer: Offer, items: CartItem[], subtotal: number): number => {
     let applicableSubtotal = 0;
-    if (offer.applicableTo === 'ALL') {
+    const applicableTo = offer.applicableTo;
+
+    if (applicableTo === 'ALL') {
         applicableSubtotal = subtotal;
-    } else if (offer.applicableTo && typeof offer.applicableTo === 'object') {
+    } else if (applicableTo && typeof applicableTo === 'object') {
         applicableSubtotal = items
-            .filter(item => item.baseItem.restaurantId === offer.applicableTo.id)
+            .filter(item => item.baseItem.restaurantId === applicableTo.id)
             .reduce((sum, item) => sum + item.totalPrice, 0);
     }
 
