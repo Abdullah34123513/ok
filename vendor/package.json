@@ -4,7 +4,9 @@
   "version": "1.0.0",
   "description": "Vendor dashboard for FoodieFind restaurants.",
   "scripts": {
-    "dev": "vite"
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
   },
   "dependencies": {
     "react": "^19.2.0",

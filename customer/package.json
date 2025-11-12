@@ -4,7 +4,9 @@
   "version": "1.0.0",
   "description": "Customer-facing application for FoodieFind.",
   "scripts": {
-    "dev": "vite"
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
   },
   "dependencies": {
     "@capacitor/core": "7.4.4",
