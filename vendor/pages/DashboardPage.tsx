@@ -31,9 +31,8 @@ const OrderStatusBadge: React.FC<{ status: Order['status'] }> = ({ status }) => 
 const OrderStatusButton: React.FC<{ 
     order: Order, 
     onUpdate: (orderId: string, status: Order['status']) => void, 
-    isUpdating: boolean,
     className?: string 
-}> = ({ order, onUpdate, isUpdating, className }) => {
+}> = ({ order, onUpdate, className }) => {
     const [loadingAction, setLoadingAction] = useState<Order['status'] | null>(null);
 
     const handleClick = async (newStatus: Order['status']) => {
@@ -43,7 +42,7 @@ const OrderStatusButton: React.FC<{
     };
 
     const baseClasses = "px-3 py-1 text-sm font-semibold rounded-md transition-colors disabled:opacity-50";
-    const isDisabled = !!loadingAction || isUpdating;
+    const isDisabled = !!loadingAction;
 
     switch (order.status) {
         case 'Placed':
@@ -82,7 +81,6 @@ const DashboardPage: React.FC = () => {
     const [orders, setOrders] = useState<Order[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState('');
-    const [recentlyUpdated, setRecentlyUpdated] = useState<Set<string>>(new Set());
 
     const fetchOrders = useCallback(async () => {
         if (!currentVendor) return;
@@ -116,18 +114,8 @@ const DashboardPage: React.FC = () => {
     }, [fetchOrders]);
     
     const handleUpdateStatus = async (orderId: string, newStatus: Order['status']) => {
-        setRecentlyUpdated(prev => new Set(prev).add(orderId));
-        
         await api.updateOrderStatus(orderId, newStatus);
         await fetchOrders(); // Refetch orders immediately to reflect the change
-
-        setTimeout(() => {
-            setRecentlyUpdated(prev => {
-                const newSet = new Set(prev);
-                newSet.delete(orderId);
-                return newSet;
-            });
-        }, 3000); // Keep button disabled for 3 seconds for feedback
     };
 
     const renderContent = () => {
@@ -183,7 +171,6 @@ const DashboardPage: React.FC = () => {
                                         <OrderStatusButton 
                                             order={order} 
                                             onUpdate={handleUpdateStatus} 
-                                            isUpdating={recentlyUpdated.has(order.id)}
                                         />
                                     </td>
                                 </tr>
@@ -219,7 +206,6 @@ const DashboardPage: React.FC = () => {
                                 <OrderStatusButton 
                                     order={order} 
                                     onUpdate={handleUpdateStatus} 
-                                    isUpdating={recentlyUpdated.has(order.id)}
                                 />
                             </div>
                         </div>
