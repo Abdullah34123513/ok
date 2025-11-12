@@ -111,7 +111,19 @@ const DashboardPage: React.FC = () => {
     useEffect(() => {
         fetchOrders(true); // Initial fetch
         const intervalId = setInterval(() => fetchOrders(false), 30000); // Poll for new orders
-        return () => clearInterval(intervalId); // Cleanup on unmount
+        
+        const handleNewOrder = () => {
+            console.log('New order notification received, fetching orders.');
+            fetchOrders(false);
+        };
+
+        // Listen for custom event dispatched by push notification handler
+        document.addEventListener('new-order-notification', handleNewOrder);
+
+        return () => {
+            clearInterval(intervalId); // Cleanup on unmount
+            document.removeEventListener('new-order-notification', handleNewOrder);
+        };
     }, [fetchOrders]);
     
     const handleUpdateStatus = async (orderId: string, newStatus: Order['status']) => {

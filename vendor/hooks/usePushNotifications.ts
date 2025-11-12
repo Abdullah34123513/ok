@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { Capacitor, PluginListenerHandle } from '@capacitor/core';
+import { App as CapacitorApp } from '@capacitor/app';
 import {
   PushNotifications,
   Token,
@@ -71,13 +72,17 @@ export const usePushNotifications = () => {
 
         const receivedHandle = await PushNotifications.addListener(
           'pushNotificationReceived',
-          (notification: PushNotificationSchema) => {
+          async (notification: PushNotificationSchema) => {
             console.log('Push received:', notification);
-            const message = notification.body || 'You have a new notification.';
-            showNotification(message, 'info');
+            const appState = await CapacitorApp.getState();
+            // Only handle foreground notifications if the app is active
+            if (appState.isActive) {
+                const message = notification.body || 'You have a new notification.';
+                showNotification(message, 'info');
 
-            if (notification.data?.type === 'new_order') {
-              document.dispatchEvent(new CustomEvent('new-order-notification'));
+                if (notification.data?.type === 'new_order') {
+                  document.dispatchEvent(new CustomEvent('new-order-notification'));
+                }
             }
           },
         );
