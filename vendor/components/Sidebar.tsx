@@ -1,6 +1,6 @@
 import React from 'react';
 import { View } from '../App';
-import { DashboardIcon, OrdersIcon, MenuIcon, SettingsIcon, LogoIcon, LogoutIcon, EarningsIcon } from './Icons';
+import { DashboardIcon, MenuIcon, SettingsIcon, LogoIcon, LogoutIcon, EarningsIcon } from './Icons';
 import { useAuth } from '../contexts/AuthContext';
 
 interface NavProps {
@@ -37,7 +37,6 @@ const Navigation: React.FC<NavProps> = ({ activeView }) => {
     const { logout } = useAuth();
     const navItems: { view: View; label: string; icon: React.ComponentType<{ className?: string }>; }[] = [
         { view: 'dashboard', label: 'Dashboard', icon: DashboardIcon },
-        { view: 'orders', label: 'Orders', icon: OrdersIcon },
         { view: 'menu', label: 'Menu', icon: MenuIcon },
         { view: 'earnings', label: 'Earnings', icon: EarningsIcon },
         { view: 'settings', label: 'Settings', icon: SettingsIcon },

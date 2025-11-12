@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
-import OrdersPage from './pages/OrdersPage';
 import MenuPage from './pages/MenuPage';
 import ProfilePage from './pages/ProfilePage';
 import SettingsPage from './pages/SettingsPage';
@@ -10,7 +9,7 @@ import EarningsPage from './pages/EarningsPage';
 import Navigation from './components/Sidebar';
 import Header from './components/Header';
 
-export type View = 'dashboard' | 'orders' | 'menu' | 'settings' | 'profile' | 'earnings';
+export type View = 'dashboard' | 'menu' | 'settings' | 'profile' | 'earnings';
 
 interface Route {
     view: View;
@@ -23,7 +22,6 @@ const parseHash = (): Route => {
     const view = parts[0] as View;
     
     switch (view) {
-        case 'orders': return { view: 'orders' };
         case 'menu': return { view: 'menu' };
         case 'settings': return { view: 'settings' };
         case 'profile': return { view: 'profile' };
@@ -57,8 +55,6 @@ const AppContent: React.FC = () => {
 
     const renderView = () => {
         switch (route.view) {
-            case 'orders':
-                return <OrdersPage />;
             case 'menu':
                 return <MenuPage />;
             case 'settings':
