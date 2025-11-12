@@ -55,6 +55,7 @@ export interface Food {
   };
   customizationOptions?: CustomizationOption[];
   isPackage?: boolean;
+  category?: string;
 }
 
 export interface MenuItem {
@@ -67,6 +68,7 @@ export interface MenuItem {
     restaurantName: string;
     customizationOptions?: CustomizationOption[];
     isPackage?: boolean;
+    category?: string;
 }
 
 export interface SelectedCustomization {

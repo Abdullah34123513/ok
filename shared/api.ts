@@ -360,17 +360,29 @@ export const getRestaurantMenu = async (restaurantId: string): Promise<MenuCateg
             restaurantName: food.vendor.name,
             customizationOptions: food.customizationOptions,
             isPackage: food.isPackage,
+            category: food.category,
         }));
 
-    // Simple categorization logic for the mock
-    const appetizers = items.filter(i => i.name.toLowerCase().includes('salad') || i.name.toLowerCase().includes('wings')).slice(0, 5);
-    const mains = items.filter(i => !appetizers.map(a => a.id).includes(i.id)).slice(0, 10);
+    // Group items by category
+    const categorizedItems = items.reduce<Record<string, MenuItem[]>>((acc, item) => {
+        const categoryName = item.category || 'Menu';
+        if (!acc[categoryName]) {
+            acc[categoryName] = [];
+        }
+        acc[categoryName].push(item);
+        return acc;
+    }, {});
 
-    const categories: MenuCategory[] = [];
-    if (appetizers.length > 0) categories.push({ name: 'Appetizers', items: appetizers });
-    if (mains.length > 0) categories.push({ name: 'Main Courses', items: mains });
-    if (categories.length === 0 && items.length > 0) categories.push({ name: 'Menu', items });
-
+    const categories: MenuCategory[] = Object.keys(categorizedItems).map(name => ({
+        name,
+        items: categorizedItems[name]
+    }));
+    
+    // Fallback if no items have categories
+    if (categories.length === 0 && items.length > 0) {
+        return [{ name: 'Menu', items }];
+    }
+    
     return categories;
 };
 
@@ -806,16 +818,75 @@ export const updateRestaurantDetails = async (restaurantId: string, details: Par
     return allMockRestaurants[restaurantIndex];
 };
 
-export const addMenuItem = async (vendorId: string, item: Omit<MenuItem, 'id' | 'restaurantId' | 'restaurantName'>): Promise<MenuItem> => {
+export const getVendorCategories = async (): Promise<string[]> => {
+    await simulateDelay(200);
+    return ['Appetizers', 'Main Courses', 'Desserts', 'Beverages', 'Salads', 'Soups'];
+};
+
+export const uploadImage = async (file: File): Promise<string> => {
+    await simulateDelay(1000);
+    return `https://picsum.photos/seed/${file.name.replace(/\s/g, '')}/400/300`;
+};
+
+interface NewMenuItemPayload {
+    name: string;
+    description: string;
+    category: string;
+    imageUrl: string;
+    status: 'active' | 'inactive';
+    price?: number;
+    sizes?: { name: string; price: number }[];
+    toppings?: { name: string; price: number }[];
+}
+
+export const addMenuItem = async (vendorId: string, itemData: NewMenuItemPayload): Promise<MenuItem> => {
     await simulateDelay(500);
     const vendor = mockVendors.find(v => v.id === vendorId);
     if (!vendor) throw new Error("Vendor not found");
+
+    const customizationOptions: CustomizationOption[] = [];
+    let basePrice = 0;
+
+    if (itemData.sizes && itemData.sizes.length > 0) {
+        const sortedSizes = [...itemData.sizes].sort((a, b) => a.price - b.price);
+        basePrice = sortedSizes[0].price;
+        customizationOptions.push({
+            id: 'size',
+            name: 'Size',
+            type: 'SINGLE',
+            required: true,
+            choices: sortedSizes.map(s => ({
+                name: s.name,
+                price: s.price - basePrice,
+            })),
+        });
+    } else {
+        basePrice = itemData.price || 0;
+    }
+
+    if (itemData.toppings && itemData.toppings.length > 0) {
+        customizationOptions.push({
+            id: 'toppings',
+            name: 'Toppings',
+            type: 'MULTIPLE',
+            required: false,
+            choices: itemData.toppings.map(t => ({
+                name: t.name,
+                price: t.price,
+            })),
+        });
+    }
 
     const newMenuItem: MenuItem = {
         id: `food-${Date.now()}`,
         restaurantId: vendor.restaurantId,
         restaurantName: allMockRestaurants.find(r => r.id === vendor.restaurantId)?.name || 'N/A',
-        ...item,
+        name: itemData.name,
+        description: itemData.description,
+        price: basePrice,
+        imageUrl: itemData.imageUrl,
+        customizationOptions: customizationOptions.length > 0 ? customizationOptions : undefined,
+        category: itemData.category,
     };
 
     allMockFoods.push({
@@ -828,10 +899,12 @@ export const addMenuItem = async (vendorId: string, item: Omit<MenuItem, 'id' | 
         rating: 4.0, // Default rating
         vendor: { name: newMenuItem.restaurantName },
         customizationOptions: newMenuItem.customizationOptions,
+        category: newMenuItem.category,
     });
     
     return newMenuItem;
 };
+
 
 export const updateMenuItem = async (vendorId: string, item: MenuItem): Promise<MenuItem> => {
     await simulateDelay(500);
