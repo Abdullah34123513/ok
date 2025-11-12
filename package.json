@@ -9,6 +9,8 @@
     "dev:customer": "npm run dev --workspace=customer-app",
     "dev:vendor": "npm run dev --workspace=vendor-app",
     "build:customer": "npm run build --workspace=customer-app",
-    "build:vendor": "npm run build --workspace=vendor-app"
+    "build:vendor": "npm run build --workspace=vendor-app",
+    "build": "npm run build --workspaces",
+    "check": "npm run check --workspaces"
   }
 }
