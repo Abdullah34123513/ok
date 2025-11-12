@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import * as api from '@shared/api';
 import { useAuth } from '../contexts/AuthContext';
-import { CloseIcon, PlusCircleIcon, TrashIcon } from './Icons';
+import { CloseIcon, PlusCircleIcon, TrashIcon, CameraIcon } from './Icons';
 import type { MenuItem, CustomizationOption, ItemAvailability } from '@shared/types';
+import { Camera, CameraResultType, CameraSource, Capacitor } from '@capacitor/camera';
 
 interface AddMenuItemModalProps {
     isOpen: boolean;
@@ -103,6 +104,34 @@ const AddMenuItemModal: React.FC<AddMenuItemModalProps> = ({ isOpen, onClose, on
                 setImagePreview(reader.result as string);
             };
             reader.readAsDataURL(file);
+        }
+    };
+
+    const handleTakePhoto = async () => {
+        if (!Capacitor.isPluginAvailable('Camera')) {
+            alert('Camera is not available on this device.');
+            return;
+        }
+        try {
+            const image = await Camera.getPhoto({
+                quality: 90,
+                allowEditing: true,
+                resultType: CameraResultType.DataUrl,
+                source: CameraSource.Camera,
+            });
+
+            if (image.dataUrl) {
+                setImagePreview(image.dataUrl);
+                // Convert dataURL to a File object for the upload API
+                const response = await fetch(image.dataUrl);
+                const blob = await response.blob();
+                const filename = `photo_${Date.now()}.${image.format}`;
+                const file = new File([blob], filename, { type: blob.type });
+                setImageFile(file);
+            }
+        } catch (error) {
+            console.error('Error taking photo:', error);
+            setError('Could not access camera. Please ensure permissions are granted.');
         }
     };
 
@@ -249,9 +278,15 @@ const AddMenuItemModal: React.FC<AddMenuItemModalProps> = ({ isOpen, onClose, on
                             </div>
                             <textarea placeholder="Description" value={description} onChange={e => setDescription(e.target.value)} className="p-2 border rounded w-full" rows={3}></textarea>
                             <div className="flex items-center space-x-4">
-                                <div>
+                                <div className="flex items-center space-x-2">
                                     <input type="file" ref={fileInputRef} onChange={handleImageChange} accept="image/*" className="hidden" />
-                                    <button type="button" onClick={() => fileInputRef.current?.click()} className="px-4 py-2 bg-gray-200 text-sm font-semibold rounded-md hover:bg-gray-300">Upload Image</button>
+                                    <button type="button" onClick={() => fileInputRef.current?.click()} className="flex items-center px-4 py-2 bg-gray-200 text-sm font-semibold rounded-md hover:bg-gray-300">
+                                        Upload Image
+                                    </button>
+                                    <button type="button" onClick={handleTakePhoto} className="flex items-center px-4 py-2 bg-gray-200 text-sm font-semibold rounded-md hover:bg-gray-300">
+                                        <CameraIcon className="w-5 h-5 mr-2" />
+                                        Take Photo
+                                    </button>
                                 </div>
                                 {imagePreview && <img src={imagePreview} alt="Preview" className="w-20 h-20 rounded-md object-cover"/>}
                             </div>

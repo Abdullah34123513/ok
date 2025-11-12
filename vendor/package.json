@@ -10,6 +10,8 @@
     "check": "tsc --noEmit"
   },
   "dependencies": {
+    "@capacitor/camera": "7.1.5",
+    "@capacitor/core": "7.4.4",
     "react": "^19.2.0",
     "react-dom": "^19.2.0"
   },
