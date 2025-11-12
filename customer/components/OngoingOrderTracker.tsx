@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import * as api from '@shared/api';
 import type { Order } from '@shared/types';
 import { MotorcycleIcon, CloseIcon } from './Icons';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '@contexts/AuthContext';
 
 const OngoingOrderTracker: React.FC = () => {
     const { currentUser } = useAuth();
@@ -16,7 +16,7 @@ const OngoingOrderTracker: React.FC = () => {
             return;
         }
         api.getOrders('ongoing')
-            .then(orders => {
+            .then((orders: Order[]) => {
                 if (orders.length > 0) {
                     const latestOrder = orders[0];
                     const dismissed = sessionStorage.getItem(`dismissed_order_${latestOrder.id}`);

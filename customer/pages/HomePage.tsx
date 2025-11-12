@@ -80,7 +80,7 @@ const HomePage: React.FC<HomePageProps> = ({ location }) => {
 
         setIsSearching(true);
         const handler = setTimeout(() => {
-            api.search(searchQuery, location).then(results => {
+            api.search(searchQuery, location).then((results: SearchResult) => {
                 setSearchResults(results);
                 setIsSearching(false);
                 tracking.trackEvent('search', {
@@ -110,7 +110,7 @@ const HomePage: React.FC<HomePageProps> = ({ location }) => {
                         <>
                             <h3 className="text-xl font-semibold text-gray-700 mb-3 mt-6">Restaurants</h3>
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                                 {searchResults.restaurants.map(restaurant => (
+                                 {searchResults.restaurants.map((restaurant: Restaurant) => (
                                     <div key={restaurant.id} className="bg-white p-4 rounded-lg shadow-md flex items-center space-x-4 cursor-pointer hover:shadow-lg transition" onClick={() => onRestaurantClick(restaurant.id)}>
                                         <img src={restaurant.logoUrl} alt={restaurant.name} className="w-16 h-16 rounded-full object-cover"/>
                                         <div>
@@ -130,7 +130,7 @@ const HomePage: React.FC<HomePageProps> = ({ location }) => {
                         <>
                             <h3 className="text-xl font-semibold text-gray-700 mb-3 mt-6">Food Items</h3>
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                                {searchResults.foods.map(food => <FoodCard key={food.id} food={food} onFoodClick={onFoodClick} />)}
+                                {searchResults.foods.map((food: Food) => <FoodCard key={food.id} food={food} onFoodClick={onFoodClick} />)}
                             </div>
                         </>
                     )}

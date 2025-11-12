@@ -37,7 +37,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const login = useCallback(async (credentials: LoginCredentials) => {
-    const { user, token, vendorId } = await api.login(credentials);
+    const { user, vendorId } = await api.login(credentials);
     if (!vendorId) {
         throw new Error("This account is not a valid vendor account.");
     }

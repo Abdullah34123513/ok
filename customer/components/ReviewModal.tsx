@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import type { Order, OrderReview } from '@shared/types';
+import type { Order, OrderReview, CartItem } from '@shared/types';
 import * as api from '@shared/api';
 import { CloseIcon } from '@components/Icons';
 import StarRatingInput from '@components/StarRatingInput';
@@ -18,7 +18,7 @@ interface ItemReviewState {
 
 const ReviewModal: React.FC<ReviewModalProps> = ({ order, onClose, onSubmit }) => {
   const [reviews, setReviews] = useState<Record<string, ItemReviewState>>(
-    order.items.reduce((acc: Record<string, ItemReviewState>, item) => {
+    order.items.reduce((acc: Record<string, ItemReviewState>, item: CartItem) => {
       acc[item.baseItem.id] = { rating: 0, comment: '' };
       return acc;
     }, {})
@@ -79,7 +79,7 @@ const ReviewModal: React.FC<ReviewModalProps> = ({ order, onClose, onSubmit }) =
 
         <form onSubmit={handleSubmit}>
             <main className="p-6 space-y-6 max-h-[70vh] overflow-y-auto">
-                {order.items.map(item => (
+                {order.items.map((item: CartItem) => (
                     <div key={item.cartItemId} className="flex space-x-4 pb-4 border-b last:border-b-0">
                         <img src={item.baseItem.imageUrl} alt={item.baseItem.name} className="w-24 h-24 rounded-md object-cover flex-shrink-0"/>
                         <div className="flex-1 space-y-2">

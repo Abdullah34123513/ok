@@ -22,7 +22,7 @@ const ChatWindow = ({ onClose }: ChatWindowProps) => {
     
     const fetchMessages = () => {
         if (!currentUser) return;
-        api.getChatHistory(currentUser.email).then(history => {
+        api.getChatHistory(currentUser.email).then((history: ChatMessage[]) => {
             setMessages(history);
             if(isLoading) setIsLoading(false);
         });

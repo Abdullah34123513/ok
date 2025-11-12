@@ -1,6 +1,3 @@
-
-import React from 'react';
-
 export const LogoIcon = () => (
     <svg className="w-8 h-8 text-red-500" viewBox="0 0 24 24" fill="currentColor">
         <path d="M12 5.17L16.24 12 12 18.83 7.76 12 12 5.17M12 2L2 12l10 10 10-10L12 2z"/>

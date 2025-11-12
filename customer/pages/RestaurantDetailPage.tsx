@@ -127,7 +127,7 @@ const RestaurantDetailPage: React.FC<RestaurantDetailPageProps> = ({ restaurantI
         if (!restaurant) return;
         
         const newFavoriteStatus = !restaurant.isFavorite;
-        setRestaurant(prev => prev ? { ...prev, isFavorite: newFavoriteStatus } : null);
+        setRestaurant((prev: Restaurant | null) => prev ? { ...prev, isFavorite: newFavoriteStatus } : null);
 
         try {
             if (newFavoriteStatus) {
@@ -137,7 +137,7 @@ const RestaurantDetailPage: React.FC<RestaurantDetailPageProps> = ({ restaurantI
             }
         } catch (error) {
             console.error("Failed to update favorite status", error);
-            setRestaurant(prev => prev ? { ...prev, isFavorite: !newFavoriteStatus } : null);
+            setRestaurant((prev: Restaurant | null) => prev ? { ...prev, isFavorite: !newFavoriteStatus } : null);
         }
     };
     
@@ -215,7 +215,7 @@ const RestaurantDetailPage: React.FC<RestaurantDetailPageProps> = ({ restaurantI
 
             {/* Tab Content */}
             <div className="container mx-auto p-4 sm:p-6">
-                {activeTab === 'menu' && <MenuSection menu={menu} restaurantId={restaurantId} onFoodClick={onFoodClick} />}
+                {activeTab === 'menu' && <MenuSection menu={menu} onFoodClick={onFoodClick} />}
                 {activeTab === 'reviews' && <ReviewsSection reviews={reviews} />}
                 {activeTab === 'about' && <AboutSection restaurant={restaurant} />}
             </div>
@@ -234,7 +234,7 @@ const TabButton: React.FC<{ name: string, id: Tab, activeTab: Tab, setActiveTab:
     </button>
 );
 
-const MenuItemCard: React.FC<{ item: MenuItem, restaurantId: string, onFoodClick: (id: string) => void }> = ({ item, restaurantId, onFoodClick }) => {
+const MenuItemCard: React.FC<{ item: MenuItem, onFoodClick: (id: string) => void }> = ({ item, onFoodClick }) => {
     const { cartItems, addItem, updateQuantity, removeItem } = useCart();
     const cartItem = cartItems.find(ci => ci.baseItem.id === item.id && ci.selectedCustomizations.length === 0);
     const hasCustomizations = item.customizationOptions && item.customizationOptions.length > 0;
@@ -282,13 +282,13 @@ const MenuItemCard: React.FC<{ item: MenuItem, restaurantId: string, onFoodClick
     );
 };
 
-const MenuSection: React.FC<{ menu: MenuCategory[], restaurantId: string, onFoodClick: (id: string) => void }> = ({ menu, restaurantId, onFoodClick }) => (
+const MenuSection: React.FC<{ menu: MenuCategory[], onFoodClick: (id: string) => void }> = ({ menu, onFoodClick }) => (
     <div>
         {menu.map(category => (
             <div key={category.name} className="mb-8">
                 <h2 className="text-2xl font-bold border-l-4 border-red-500 pl-3 mb-4">{category.name}</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {category.items.map(item => <MenuItemCard key={item.id} item={item} restaurantId={restaurantId} onFoodClick={onFoodClick} />)}
+                    {category.items.map((item: MenuItem) => <MenuItemCard key={item.id} item={item} onFoodClick={onFoodClick} />)}
                 </div>
             </div>
         ))}

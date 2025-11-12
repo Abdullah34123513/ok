@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import * as api from '@shared/api';
-import type { Order, LocationPoint } from '@shared/types';
+import type { Order, LocationPoint, CartItem } from '@shared/types';
 import MapMock from '@components/MapMock';
 import { PhoneIcon, StarIcon } from '@components/Icons';
 
@@ -69,7 +69,7 @@ const OrderTrackingPage: React.FC<OrderTrackingPageProps> = ({ orderId }) => {
 
   useEffect(() => {
     setIsLoading(true);
-    api.getOrderDetails(orderId).then(data => {
+    api.getOrderDetails(orderId).then((data: Order | undefined) => {
       if (data) {
         setOrder(data);
         if (data.rider?.location) {
@@ -84,7 +84,7 @@ const OrderTrackingPage: React.FC<OrderTrackingPageProps> = ({ orderId }) => {
     if (!order || order.status !== 'On its way') return;
 
     const intervalId = setInterval(() => {
-      api.getRiderLocation(orderId).then(location => {
+      api.getRiderLocation(orderId).then((location: LocationPoint | null) => {
         if (location) {
           setRiderLocation(location);
         }
@@ -139,7 +139,7 @@ const OrderTrackingPage: React.FC<OrderTrackingPageProps> = ({ orderId }) => {
             <div>
                 <h3 className="font-bold text-lg mb-2">Order Summary</h3>
                 <div className="bg-gray-50 p-4 rounded-lg space-y-2 max-h-48 overflow-y-auto">
-                    {order.items.map(item => (
+                    {order.items.map((item: CartItem) => (
                         <div key={item.cartItemId} className="flex justify-between text-sm">
                             <span className="truncate pr-2">{item.quantity} x {item.baseItem.name}</span>
                             <span className="font-semibold">${item.totalPrice.toFixed(2)}</span>

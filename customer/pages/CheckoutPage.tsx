@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useCart } from '@contexts/CartContext';
 import * as api from '@shared/api';
 import * as tracking from '@shared/tracking';
-import type { Address, Order, CartItem, Offer } from '@shared/types';
+import type { Address, Order, CartItem, SelectedCustomization, CustomizationChoice } from '@shared/types';
 import AddressModal from '@components/AddressModal';
 import { useNotification } from '@contexts/NotificationContext';
 
@@ -64,7 +64,7 @@ const CheckoutPage: React.FC<CheckoutPageProps> = () => {
 
     useEffect(() => {
         setIsAddressLoading(true);
-        api.getAddresses().then(data => {
+        api.getAddresses().then((data: Address[]) => {
             setAddresses(data);
             if (data.length > 0) {
                 setSelectedAddress(data[0].id);
@@ -77,7 +77,7 @@ const CheckoutPage: React.FC<CheckoutPageProps> = () => {
     const handleAddressAdded = () => {
         setIsAddressModalOpen(false);
         setIsAddressLoading(true);
-        api.getAddresses().then(data => {
+        api.getAddresses().then((data: Address[]) => {
             setAddresses(data);
             if(data.length > 0) {
                 // Select the newly added address, which will be the last one in the list
@@ -227,7 +227,7 @@ const CheckoutPage: React.FC<CheckoutPageProps> = () => {
                                             </div>
                                             {item.selectedCustomizations.length > 0 && (
                                                 <div className="text-xs text-gray-500 pl-2">
-                                                    {item.selectedCustomizations.map(cust => cust.choices.map(c => c.name).join(', ')).join(' • ')}
+                                                    {item.selectedCustomizations.map((cust: SelectedCustomization) => cust.choices.map((c: CustomizationChoice) => c.name).join(', ')).join(' • ')}
                                                 </div>
                                             )}
                                         </div>

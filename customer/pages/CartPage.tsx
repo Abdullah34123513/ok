@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import { useCart } from '@contexts/CartContext';
 import { TrashIcon } from '@components/Icons';
 import QuantityControl from '@components/QuantityControl';
-import type { CartItem } from '@shared/types';
+import type { CartItem, SelectedCustomization, CustomizationChoice } from '@shared/types';
 
 interface CartPageProps {}
 
@@ -26,9 +26,9 @@ const CartItemRow: React.FC<{ item: CartItem }> = ({ item }) => {
                 <h3 className="font-bold text-lg">{item.baseItem.name}</h3>
                 {item.selectedCustomizations.length > 0 && (
                     <div className="text-xs text-gray-500 mt-1">
-                        {item.selectedCustomizations.map(cust => (
+                        {item.selectedCustomizations.map((cust: SelectedCustomization) => (
                             <div key={cust.optionId}>
-                                <strong>{cust.optionName}:</strong> {cust.choices.map(c => c.name).join(', ')}
+                                <strong>{cust.optionName}:</strong> {cust.choices.map((c: CustomizationChoice) => c.name).join(', ')}
                             </div>
                         ))}
                     </div>

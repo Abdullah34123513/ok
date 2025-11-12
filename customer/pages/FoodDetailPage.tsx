@@ -163,7 +163,7 @@ const FoodDetailPage: React.FC<FoodDetailPageProps> = ({ foodId, location }) => 
 
         const finalCustomizations: SelectedCustomization[] = Object.entries(selectedCustomizations)
             .map(([optionId, choices]: [string, CustomizationChoice[]]) => {
-                const optionDetails = food.customizationOptions?.find(o => o.id === optionId);
+                const optionDetails = food.customizationOptions?.find((o: CustomizationOption) => o.id === optionId);
                 return {
                     optionId,
                     optionName: optionDetails?.name || 'Unknown Option',
@@ -218,11 +218,11 @@ const FoodDetailPage: React.FC<FoodDetailPageProps> = ({ foodId, location }) => 
                         
                         {hasCustomizations && (
                              <div className="space-y-4 mb-6 flex-grow overflow-y-auto max-h-64 pr-2">
-                                {food.customizationOptions?.map(option => (
+                                {food.customizationOptions?.map((option: CustomizationOption) => (
                                     <div key={option.id}>
                                         <h3 className="font-bold text-lg mb-2">{option.name} {option.required && <span className="text-red-500">*</span>}</h3>
                                         <div className="space-y-2">
-                                            {option.choices.map(choice => (
+                                            {option.choices.map((choice: CustomizationChoice) => (
                                                 <label key={choice.name} className="flex items-center p-3 border rounded-md cursor-pointer hover:bg-gray-50">
                                                     <input
                                                         type={option.type === 'SINGLE' ? 'radio' : 'checkbox'}

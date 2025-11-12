@@ -266,7 +266,7 @@ export const getFoodsForOffer = async (offerId: string, location: string): Promi
     if (offer.applicableTo === 'ALL') {
         return getFoods(location, 1).then(p => p.foods.slice(0, 8));
     }
-    // Fix: Add a type guard to ensure `offer.applicableTo` is an object before accessing its `id` property.
+    // FIX: Add a type guard to ensure `offer.applicableTo` is an object before accessing its `id` property.
     // This prevents a TypeScript error because `applicableTo` could also be the string 'ALL'.
     if (offer.applicableTo && typeof offer.applicableTo === 'object') {
         return allMockFoods.filter(f => f.restaurantId === offer.applicableTo.id).slice(0, 8);
@@ -444,7 +444,7 @@ export const updateCartItemQuantity = async (cartItemId: string, quantity: numbe
 
 // --- Address & Geocoding ---
 
-export const reverseGeocode = async (lat: number, lng: number): Promise<string> => {
+export const reverseGeocode = async (_lat: number, _lng: number): Promise<string> => {
     await simulateDelay(500);
     // In a real app, this would call a geocoding API.
     return "Downtown, Food City";
@@ -460,7 +460,7 @@ export const searchAddresses = async (query: string): Promise<AddressSuggestion[
     ];
 };
 
-export const getAddressDetails = async (placeId: string): Promise<AddressDetails> => {
+export const getAddressDetails = async (_placeId: string): Promise<AddressDetails> => {
     await simulateDelay(400);
     // Mock details for a selected place
     return {

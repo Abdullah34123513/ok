@@ -149,7 +149,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (appliedOffer) {
         const discountAmount = calculateDiscount(appliedOffer, cartItems, cartTotal);
         if (discountAmount > 0 && (!appliedOffer.minOrderValue || cartTotal >= appliedOffer.minOrderValue)) {
-            setAppliedOffer(prev => prev ? { ...prev, discountAmount } : null);
+            setAppliedOffer((prev: AppliedOffer | null) => prev ? { ...prev, discountAmount } : null);
         } else {
             removeOffer();
             showNotification('An applied offer is no longer valid for your cart and has been removed.', 'error');

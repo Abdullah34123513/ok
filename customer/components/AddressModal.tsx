@@ -28,7 +28,7 @@ const AddressModal: React.FC<AddressModalProps> = ({ onClose, onAddressAdded }) 
     debounce((query: string) => {
       if (query.trim()) {
         setIsSearching(true);
-        api.searchAddresses(query).then(results => {
+        api.searchAddresses(query).then((results: AddressSuggestion[]) => {
           setSuggestions(results);
           setIsSearching(false);
         });

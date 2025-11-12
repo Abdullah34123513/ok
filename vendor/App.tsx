@@ -18,8 +18,7 @@ const parseHash = (): Route => {
     const hash = window.location.hash.substring(2) || 'dashboard'; // remove '#/'
     const parts = hash.split('/');
     const view = parts[0] as View;
-    const id = parts[1];
-
+    
     switch (view) {
         case 'orders': return { view: 'orders' };
         case 'menu': return { view: 'menu' };
