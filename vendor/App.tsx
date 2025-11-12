@@ -6,7 +6,7 @@ import OrdersPage from './pages/OrdersPage';
 import MenuPage from './pages/MenuPage';
 import ProfilePage from './pages/ProfilePage';
 import SettingsPage from './pages/SettingsPage';
-import BottomNav from './components/Sidebar';
+import Navigation from './components/Sidebar';
 import Header from './components/Header';
 
 export type View = 'dashboard' | 'orders' | 'menu' | 'settings' | 'profile';
@@ -70,14 +70,14 @@ const AppContent: React.FC = () => {
     };
     
     return (
-        <div className="flex flex-col h-screen bg-gray-100 font-sans">
+        <div className="flex h-screen bg-gray-100 font-sans">
+            <Navigation activeView={route.view} />
             <div className="flex-1 flex flex-col overflow-hidden">
                 <Header vendorName={currentVendor.name} />
-                <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100 pb-16">
+                <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100 pb-16 md:pb-0">
                     {renderView()}
                 </main>
             </div>
-            <BottomNav activeView={route.view} />
         </div>
     );
 };
