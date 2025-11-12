@@ -30,19 +30,17 @@ const OrderStatusBadge: React.FC<{ status: Order['status'] }> = ({ status }) => 
 
 const OrderStatusButton: React.FC<{ 
     order: Order, 
-    onUpdate: (orderId: string, status: Order['status']) => void, 
+    onUpdate: (orderId: string, status: Order['status']) => void,
+    isUpdating: boolean,
     className?: string 
-}> = ({ order, onUpdate, className }) => {
-    const [loadingAction, setLoadingAction] = useState<Order['status'] | null>(null);
-
-    const handleClick = async (newStatus: Order['status']) => {
-        setLoadingAction(newStatus);
-        await onUpdate(order.id, newStatus);
-        // No need to reset loading state as component will re-render or disappear
+}> = ({ order, onUpdate, isUpdating, className }) => {
+    
+    const handleClick = (newStatus: Order['status']) => {
+        onUpdate(order.id, newStatus);
     };
 
     const baseClasses = "px-3 py-1 text-sm font-semibold rounded-md transition-colors disabled:opacity-50";
-    const isDisabled = !!loadingAction;
+    const isDisabled = isUpdating;
 
     switch (order.status) {
         case 'Placed':
@@ -53,20 +51,20 @@ const OrderStatusButton: React.FC<{
                         disabled={isDisabled} 
                         className={`${baseClasses} bg-red-500 text-white hover:bg-red-600 disabled:bg-red-300`}
                     >
-                        {loadingAction === 'Cancelled' ? '...' : 'Reject'}
+                        {isUpdating ? '...' : 'Reject'}
                     </button>
                     <button 
                         onClick={() => handleClick('Preparing')} 
                         disabled={isDisabled} 
                         className={`${baseClasses} bg-green-500 text-white hover:bg-green-600 disabled:bg-green-300`}
                     >
-                        {loadingAction === 'Preparing' ? '...' : 'Accept'}
+                        {isUpdating ? '...' : 'Accept'}
                     </button>
                 </div>
             );
         case 'Preparing':
             return <button onClick={() => handleClick('On its way')} disabled={isDisabled} className={`${baseClasses} bg-blue-500 text-white hover:bg-blue-600 disabled:bg-blue-300 ${className}`}>
-                {loadingAction === 'On its way' ? '...' : 'Mark as Ready'}
+                {isUpdating ? '...' : 'Mark as Ready'}
             </button>;
         case 'On its way':
             return null; // Vendor's job is done for this view
@@ -81,6 +79,7 @@ const DashboardPage: React.FC = () => {
     const [orders, setOrders] = useState<Order[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState('');
+    const [updatingOrderId, setUpdatingOrderId] = useState<string | null>(null);
 
     const fetchOrders = useCallback(async () => {
         if (!currentVendor) return;
@@ -114,8 +113,15 @@ const DashboardPage: React.FC = () => {
     }, [fetchOrders]);
     
     const handleUpdateStatus = async (orderId: string, newStatus: Order['status']) => {
-        await api.updateOrderStatus(orderId, newStatus);
-        await fetchOrders(); // Refetch orders immediately to reflect the change
+        setUpdatingOrderId(orderId);
+        try {
+            await api.updateOrderStatus(orderId, newStatus);
+            await fetchOrders(); // Refetch orders immediately to reflect the change
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Failed to update order status.');
+        } finally {
+            setUpdatingOrderId(null);
+        }
     };
 
     const renderContent = () => {
@@ -171,6 +177,7 @@ const DashboardPage: React.FC = () => {
                                         <OrderStatusButton 
                                             order={order} 
                                             onUpdate={handleUpdateStatus} 
+                                            isUpdating={updatingOrderId === order.id}
                                         />
                                     </td>
                                 </tr>
@@ -206,6 +213,7 @@ const DashboardPage: React.FC = () => {
                                 <OrderStatusButton 
                                     order={order} 
                                     onUpdate={handleUpdateStatus} 
+                                    isUpdating={updatingOrderId === order.id}
                                 />
                             </div>
                         </div>
