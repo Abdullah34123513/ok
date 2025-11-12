@@ -1,4 +1,5 @@
 {
   "name": "FoodieFind - Nearby Restaurant & Food Delivery",
-  "description": "A dynamic food delivery homepage that displays nearby restaurants, special offers, and a variety of food options with an infinite scroll feed. Users can set their location to get personalized content."
+  "description": "A dynamic food delivery homepage that displays nearby restaurants, special offers, and a variety of food options with an infinite scroll feed. Users can set their location to get personalized content.",
+  "requestFramePermissions": []
 }
