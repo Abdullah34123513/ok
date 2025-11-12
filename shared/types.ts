@@ -1,19 +1,32 @@
-export interface Offer {
-  id: string;
-  imageUrl: string;
-  title: string;
-  description: string;
-  expiry?: string; // ISO 8601 string
-  discountType?: 'PERCENTAGE' | 'FIXED';
-  discountValue?: number;
-  minOrderValue?: number;
-  applicableTo?: 'ALL' | { type: 'RESTAURANT', id: string };
-  couponCode?: string;
-  applicableFoods?: string[]; // New: Array of food IDs this offer applies to
+// --- Authentication ---
+export interface LoginCredentials {
+  email: string;
+  password: string;
 }
 
-export interface AppliedOffer extends Offer {
-    discountAmount: number;
+export interface SignupData {
+  name: string;
+  email: string;
+  phone: string;
+  age?: number;
+  gender?: User['gender'];
+  password: string;
+}
+
+export interface AuthResponse {
+  user: User;
+  token: string;
+  vendorId?: string;
+}
+
+// --- Core App Entities ---
+export interface User {
+  name: string;
+  email: string;
+  phone: string;
+  age?: number;
+  gender?: 'male' | 'female' | 'other' | 'prefer_not_to_say';
+  authToken?: string;
 }
 
 export interface Restaurant {
@@ -24,29 +37,16 @@ export interface Restaurant {
   rating: number;
   cuisine: string;
   deliveryFee: number;
-  deliveryTime: string; // e.g., "25-35 min"
+  deliveryTime: string;
   address: string;
   isFavorite?: boolean;
-}
-
-export interface CustomizationChoice {
-    name: string;
-    price: number; // Price difference, can be 0
-}
-
-export interface CustomizationOption {
-    id: string;
-    name: string; // e.g., "Size", "Toppings"
-    type: 'SINGLE' | 'MULTIPLE'; // SINGLE for radio, MULTIPLE for checkbox
-    required: boolean;
-    choices: CustomizationChoice[];
 }
 
 export interface Food {
   id: string;
   imageUrl: string;
   name: string;
-  price: number; // Base price
+  price: number;
   rating: number;
   restaurantId: string;
   description: string;
@@ -59,46 +59,143 @@ export interface Food {
 }
 
 export interface MenuItem {
-    id: string;
-    name: string;
-    description: string;
-    price: number;
-    imageUrl: string;
-    restaurantId: string;
-    restaurantName: string;
-    customizationOptions?: CustomizationOption[];
-    isPackage?: boolean;
-    category?: string;
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  imageUrl: string;
+  restaurantId: string;
+  restaurantName: string;
+  customizationOptions?: CustomizationOption[];
+  isPackage?: boolean;
+  category?: string;
+}
+
+export interface MenuCategory {
+  name: string;
+  items: MenuItem[];
+}
+
+export interface CustomizationChoice {
+  name: string;
+  price: number;
+}
+
+export interface CustomizationOption {
+  id: string;
+  name: string;
+  type: 'SINGLE' | 'MULTIPLE';
+  required: boolean;
+  choices: CustomizationChoice[];
 }
 
 export interface SelectedCustomization {
-    optionId: string;
-    optionName: string;
-    choices: CustomizationChoice[];
+  optionId: string;
+  optionName: string;
+  choices: CustomizationChoice[];
 }
 
-// CartItem is now a more complex object to handle unique configurations
-export interface CartItem {
-    cartItemId: string; // A unique ID for this specific cart entry, e.g., `food-1-a8b3f`
-    quantity: number;
-    baseItem: MenuItem;
-    selectedCustomizations: SelectedCustomization[];
-    totalPrice: number; // (base price + customization prices) * quantity
+export interface Offer {
+  id: string;
+  imageUrl: string;
+  title: string;
+  description: string;
+  expiry?: string;
+  discountType?: 'PERCENTAGE' | 'FIXED';
+  discountValue?: number;
+  minOrderValue?: number;
+  applicableTo?: 'ALL' | { type: 'RESTAURANT'; id: string };
+  couponCode?: string;
+  applicableFoods?: string[];
 }
 
-
-export interface MenuCategory {
-    name: string;
-    items: MenuItem[];
+export interface AppliedOffer extends Offer {
+    discountAmount: number;
 }
+
 
 export interface Review {
-    id: string;
-    author: string;
-    rating: number;
-    text: string;
-    avatarUrl: string;
+  id: string;
+  author: string;
+  rating: number;
+  text: string;
+  avatarUrl: string;
 }
+
+// --- Cart & Order ---
+
+export interface CartItem {
+  cartItemId: string;
+  baseItem: MenuItem;
+  quantity: number;
+  selectedCustomizations: SelectedCustomization[];
+  totalPrice: number;
+}
+
+export interface LocationPoint {
+  lat: number;
+  lng: number;
+}
+
+export interface Order {
+  id: string;
+  status: 'Pending' | 'Placed' | 'Preparing' | 'On its way' | 'Delivered' | 'Cancelled';
+  date: string;
+  restaurantName: string;
+  items: CartItem[];
+  subtotal: number;
+  deliveryFee: number;
+  total: number;
+  discount: number;
+  appliedOfferId?: string;
+  address: Address;
+  paymentMethod: string;
+  deliveryOption: string;
+  restaurantLocation?: LocationPoint;
+  deliveryLocation?: LocationPoint;
+  estimatedDeliveryTime?: string;
+  rider?: {
+    name: string;
+    phone: string;
+    vehicle: string;
+    rating: number;
+    location: LocationPoint;
+  };
+  isReviewed?: boolean;
+  customerName?: string;
+}
+
+export interface OrderReview {
+  orderId: string;
+  itemReviews: {
+    itemId: string;
+    rating: number;
+    comment?: string;
+  }[];
+}
+
+
+// --- User Profile & Location ---
+
+export interface Address {
+  id: string;
+  label: string;
+  details: string;
+}
+
+export interface AddressSuggestion {
+  id: string;
+  description: string;
+}
+
+export interface AddressDetails {
+  street: string;
+  city: string;
+  postalCode: string;
+  country: string;
+}
+
+// --- API & Pagination ---
 
 export interface PaginatedFoods {
   foods: Food[];
@@ -112,128 +209,35 @@ export interface PaginatedRestaurants {
   nextPage: number;
 }
 
-
 export interface SearchResult {
-    restaurants: Restaurant[];
-    foods: Food[];
+  restaurants: Restaurant[];
+  foods: Food[];
 }
 
-export interface Address {
-    id:string;
-    label: string;
-    details: string;
-}
+// --- Support ---
 
-export interface AddressSuggestion {
-    id: string; // Corresponds to a "place_id"
-    description: string;
-}
-
-export interface AddressDetails {
-    street: string;
-    city: string;
-    postalCode: string;
-    country: string;
-}
-
-export interface LocationPoint {
-    lat: number;
-    lng: number;
-}
-
-export interface Rider {
-    name: string;
-    phone: string;
-    vehicle: string;
-    rating: number;
-    location: LocationPoint;
-}
-
-export interface Order {
-    id: string;
-    items: CartItem[];
-    subtotal: number;
-    deliveryFee: number;
-    total: number;
-    discount?: number;
-    appliedOfferId?: string;
-    address: Address;
-    paymentMethod: string;
-    deliveryOption: string;
-    status: 'Pending' | 'Placed' | 'Preparing' | 'On its way' | 'Delivered' | 'Cancelled';
-    restaurantName: string; 
-    date: string; 
-    // New fields for order tracking
-    restaurantLocation?: LocationPoint;
-    deliveryLocation?: LocationPoint;
-    estimatedDeliveryTime?: string;
-    rider?: Rider;
-    isReviewed?: boolean;
-    customerName?: string; // For vendor view
-}
-
-export interface OrderReview {
-    orderId: string;
-    itemReviews: {
-        itemId: string;
-        rating: number;
-        comment?: string;
-    }[];
-}
-
-export interface User {
-    name: string;
-    email: string;
-    phone: string;
-    authToken?: string;
-    // New fields for user behavior analysis
-    age?: number;
-    gender?: 'male' | 'female' | 'other' | 'prefer_not_to_say';
-}
-
-// --- Auth Types ---
-export interface LoginCredentials {
-    email: string;
-    password: string;
-}
-
-export interface SignupData {
-    name: string;
-    email: string;
-    phone: string;
-    password: string;
-    // New fields for user behavior analysis
-    age?: number;
-    gender?: 'male' | 'female' | 'other' | 'prefer_not_to_say';
-}
-
-export interface AuthResponse {
-    user: User;
-    token: string;
-    vendorId?: string; // For vendor login
+export interface SupportInfo {
+  phoneNumber: string;
 }
 
 export interface ChatMessage {
-    id: string;
-    text: string;
-    sender: 'user' | 'support';
-    timestamp: string;
+  id: string;
+  text: string;
+  sender: 'user' | 'support';
+  timestamp: string;
 }
 
-export interface SupportInfo {
-    phoneNumber: string;
-}
+// --- Vendor ---
 
-// --- Vendor Types ---
 export interface Vendor {
-    id: string;
-    restaurantId: string;
-    name: string;
+  id: string;
+  restaurantId: string;
+  name: string;
 }
 
 export interface VendorDashboardSummary {
-    totalRevenue: number;
-    totalOrders: number;
-    activeOrders: number;
-    averageItemRating: number;
+  totalRevenue: number;
+  totalOrders: number;
+  activeOrders: number;
+  averageItemRating: number;
 }
