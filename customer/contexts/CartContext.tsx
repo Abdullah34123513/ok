@@ -1,7 +1,8 @@
+
 import React, { createContext, useState, useContext, useEffect, useMemo } from 'react';
-import type { CartItem, MenuItem, Offer, AppliedOffer, SelectedCustomization } from '../types';
-import * as api from '../services/api';
-import * as tracking from '../services/tracking';
+import type { CartItem, MenuItem, Offer, AppliedOffer, SelectedCustomization } from '../../shared/types';
+import * as api from '../../shared/api';
+import * as tracking from '../../shared/tracking';
 import { useNotification } from './NotificationContext';
 
 export const DELIVERY_FEE = 5.99;

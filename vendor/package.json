@@ -1,0 +1,10 @@
+{
+  "name": "vendor-app",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Vendor dashboard for FoodieFind restaurants.",
+  "dependencies": {
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
+  }
+}

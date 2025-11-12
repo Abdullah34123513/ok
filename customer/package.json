@@ -1,0 +1,12 @@
+{
+  "name": "customer-app",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Customer-facing application for FoodieFind.",
+  "dependencies": {
+    "@capacitor/core": "7.4.4",
+    "@capacitor/geolocation": "7.1.5",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
+  }
+}

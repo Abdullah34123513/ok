@@ -17,7 +17,7 @@ interface NavLinkProps {
 const NavLink: React.FC<NavLinkProps> = ({ view, label, icon: Icon, isActive }) => {
     return (
         <a href={`#/${view}`} className={`flex items-center px-4 py-3 text-lg font-medium rounded-lg transition-colors ${
-            isActive ? 'bg-red-500 text-white shadow-md' : 'text-gray-600 hover:bg-gray-200'
+            isActive ? 'bg-blue-600 text-white shadow-md' : 'text-gray-600 hover:bg-gray-200'
         }`}>
             <Icon className="w-6 h-6 mr-3" />
             <span>{label}</span>

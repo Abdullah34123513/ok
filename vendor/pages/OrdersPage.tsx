@@ -31,6 +31,7 @@ const OrdersPage: React.FC = () => {
     const { currentVendor } = useAuth();
     const [activeTab, setActiveTab] = useState<OrderTab>('New');
     const [orders, setOrders] = useState<Order[]>([]);
+    const [orderCounts, setOrderCounts] = useState<Record<string, number> | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState('');
 
@@ -49,17 +50,40 @@ const OrdersPage: React.FC = () => {
         }
     }, [currentVendor, activeTab]);
 
+    const fetchCounts = useCallback(async () => {
+        if (!currentVendor) return;
+        try {
+            const counts = await api.getVendorOrderCounts(currentVendor.id);
+            setOrderCounts(counts);
+        } catch (err) {
+            console.error("Could not fetch order counts", err);
+        }
+    }, [currentVendor]);
+
+
     useEffect(() => {
         fetchOrders();
     }, [fetchOrders]);
+
+    useEffect(() => {
+        fetchCounts();
+    }, [fetchCounts]);
     
     const handleUpdateStatus = async (orderId: string, newStatus: Order['status']) => {
         await api.updateOrderStatus(orderId, newStatus);
         // Refetch orders for the current tab to see the change
         fetchOrders();
+        fetchCounts();
     };
 
     const tabs: OrderTab[] = ['New', 'Preparing', 'On its way', 'Delivered', 'Cancelled'];
+    const tabColors: Record<OrderTab, string> = {
+        'New': 'bg-blue-500',
+        'Preparing': 'bg-yellow-500',
+        'On its way': 'bg-purple-500',
+        'Delivered': 'bg-green-500',
+        'Cancelled': 'bg-gray-400',
+    };
 
     return (
         <div className="p-6 space-y-6">
@@ -71,13 +95,19 @@ const OrdersPage: React.FC = () => {
                         <button
                             key={tab}
                             onClick={() => setActiveTab(tab)}
-                            className={`whitespace-nowrap pb-3 px-1 border-b-2 font-medium text-sm transition-colors ${
+                            className={`flex items-center space-x-2 whitespace-nowrap pb-3 px-1 border-b-2 font-medium text-sm transition-colors ${
                                 activeTab === tab
-                                    ? 'border-red-500 text-red-600'
+                                    ? 'border-blue-500 text-blue-600'
                                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                             }`}
                         >
-                            {tab}
+                             <span className={`w-2 h-2 rounded-full ${tabColors[tab]}`}></span>
+                             <span>{tab}</span>
+                             {orderCounts && (
+                                <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${activeTab === tab ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-600'}`}>
+                                    {orderCounts[tab]}
+                                </span>
+                            )}
                         </button>
                     ))}
                 </nav>

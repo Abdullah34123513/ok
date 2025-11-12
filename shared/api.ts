@@ -1,5 +1,6 @@
 
-import type { Offer, Restaurant, Food, PaginatedFoods, SearchResult, PaginatedRestaurants, MenuCategory, Review, CartItem, MenuItem, Address, Order, AddressSuggestion, AddressDetails, User, LoginCredentials, SignupData, AuthResponse, LocationPoint, SupportInfo, ChatMessage, OrderReview, SelectedCustomization, CustomizationOption, Vendor, VendorDashboardSummary } from '../types';
+
+import type { Offer, Restaurant, Food, PaginatedFoods, SearchResult, PaginatedRestaurants, MenuCategory, Review, CartItem, MenuItem, Address, Order, AddressSuggestion, AddressDetails, User, LoginCredentials, SignupData, AuthResponse, LocationPoint, SupportInfo, ChatMessage, OrderReview, SelectedCustomization, CustomizationOption, Vendor, VendorDashboardSummary } from './types';
 
 // --- Location-based data simulation helpers ---
 
@@ -242,7 +243,6 @@ export const getOfferDetails = async (offerId: string): Promise<Offer | undefine
     return mockOffers.find(o => o.id === offerId);
 };
 
-// FIX: Added the missing function to fetch offers for a specific restaurant.
 export const getOffersForRestaurant = async (restaurantId: string): Promise<Offer[]> => {
     await simulateDelay(400);
     const now = new Date();

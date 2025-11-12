@@ -3,7 +3,7 @@ import * as api from '../../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import type { VendorDashboardSummary, Order } from '../../types';
 import StatCard from '../components/StatCard';
-import { RevenueIcon, TotalOrdersIcon, ActiveOrdersIcon, RatingIcon } from '../components/Icons';
+import { RevenueIcon, TotalOrdersIcon, ActiveOrdersIcon, RatingIcon, OrdersIcon, PlusCircleIcon } from '../components/Icons';
 
 const DashboardPage: React.FC = () => {
     const { currentVendor } = useAuth();
@@ -45,7 +45,7 @@ const DashboardPage: React.FC = () => {
 
     return (
         <div className="p-6 space-y-6">
-            <h1 className="text-2xl font-bold text-gray-800">Dashboard</h1>
+            <h1 className="text-2xl font-bold text-gray-800">Restaurant Dashboard</h1>
 
             {/* Stat Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -53,6 +53,21 @@ const DashboardPage: React.FC = () => {
                 <StatCard title="Total Orders" value={summary?.totalOrders ?? 0} icon={TotalOrdersIcon} color="#3B82F6" />
                 <StatCard title="Active Orders" value={summary?.activeOrders ?? 0} icon={ActiveOrdersIcon} color="#F59E0B" />
                 <StatCard title="Average Rating" value={summary?.averageItemRating.toFixed(1) ?? 'N/A'} icon={RatingIcon} color="#EF4444" />
+            </div>
+
+            {/* Quick Actions */}
+            <div className="bg-white p-6 rounded-lg shadow-md">
+                <h2 className="text-xl font-bold text-gray-800 mb-4">Quick Actions</h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <a href="#/orders" className="flex flex-col items-center justify-center p-6 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition">
+                        <OrdersIcon className="w-10 h-10 mb-2" />
+                        <span className="font-semibold">View New Orders</span>
+                    </a>
+                    <a href="#/menu" className="flex flex-col items-center justify-center p-6 bg-green-50 text-green-700 rounded-lg hover:bg-green-100 transition">
+                        <PlusCircleIcon className="w-10 h-10 mb-2" />
+                        <span className="font-semibold">Add Menu Item</span>
+                    </a>
+                </div>
             </div>
 
             {/* Recent Orders */}

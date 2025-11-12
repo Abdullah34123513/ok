@@ -56,7 +56,7 @@ const MenuPage: React.FC = () => {
                 <h1 className="text-2xl font-bold text-gray-800">Menu Management</h1>
                 <button
                     onClick={handleAddItem}
-                    className="flex items-center px-4 py-2 bg-red-500 text-white font-semibold rounded-lg hover:bg-red-600 transition"
+                    className="flex items-center px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition"
                 >
                     <PlusCircleIcon className="w-5 h-5 mr-2" />
                     Add Menu Item
@@ -77,7 +77,12 @@ const MenuPage: React.FC = () => {
                                     <div key={item.id} className="bg-white p-4 rounded-lg shadow-md flex items-center space-x-4">
                                         <img src={item.imageUrl} alt={item.name} className="w-20 h-20 rounded-md object-cover"/>
                                         <div className="flex-1">
-                                            <h3 className="font-bold">{item.name}</h3>
+                                            <div className="flex items-center space-x-3 mb-1">
+                                                <h3 className="font-bold">{item.name}</h3>
+                                                {item.customizationOptions && item.customizationOptions.length > 0 && (
+                                                    <span className="text-xs font-semibold bg-gray-200 text-gray-700 px-2 py-0.5 rounded-full">Customizable</span>
+                                                )}
+                                            </div>
                                             <p className="text-sm text-gray-500 max-w-lg truncate">{item.description}</p>
                                         </div>
                                         <div className="font-semibold text-lg">${item.price.toFixed(2)}</div>
