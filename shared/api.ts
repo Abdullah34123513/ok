@@ -1,4 +1,4 @@
-import type { Offer, Restaurant, Food, PaginatedFoods, SearchResult, PaginatedRestaurants, MenuCategory, Review, CartItem, MenuItem, Address, Order, AddressSuggestion, AddressDetails, User, LoginCredentials, SignupData, AuthResponse, LocationPoint, SupportInfo, ChatMessage, OrderReview, SelectedCustomization, CustomizationOption, Vendor, VendorDashboardSummary, ItemAvailability, ConversationSummary, OperatingHours } from './types';
+import type { Offer, Restaurant, Food, PaginatedFoods, SearchResult, PaginatedRestaurants, MenuCategory, Review, CartItem, MenuItem, Address, Order, AddressSuggestion, AddressDetails, User, LoginCredentials, SignupData, AuthResponse, LocationPoint, SupportInfo, ChatMessage, OrderReview, SelectedCustomization, CustomizationOption, Vendor, VendorDashboardSummary, ConversationSummary, OperatingHours } from './types';
 
 // --- Location-based data simulation helpers ---
 
@@ -1089,7 +1089,7 @@ export const deleteMenuItem = async (vendorId: string, itemId: string): Promise<
 };
 
 
-export const getVendorConversations = async (vendorId: string): Promise<ConversationSummary[]> => {
+export const getVendorConversations = async (_vendorId: string): Promise<ConversationSummary[]> => {
     await simulateDelay(500);
     // This is a mock. In a real app, you'd query your chat database.
     return [

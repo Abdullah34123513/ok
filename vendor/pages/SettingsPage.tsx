@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import * as api from '@shared/api';
 import { useAuth } from '../contexts/AuthContext';
 import { BellIcon, LockClosedIcon, ClockIcon, PlusCircleIcon, TrashIcon } from '../components/Icons';
-import type { OperatingHours, TimeSlot } from '@shared/types';
+import type { OperatingHours } from '@shared/types';
 import ChangePasswordModal from '../components/ChangePasswordModal';
 
 interface ToggleProps {

@@ -51,7 +51,9 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ onClose }) =>
     return (
         <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
             <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-2xl p-6 sm:p-8 w-full max-w-md animate-fade-in-up relative">
-                <button type="button" onClick={onClose} className="absolute top-4 right-4 text-gray-500 hover:text-gray-800 text-2xl">&times;</button>
+                <button type="button" onClick={onClose} className="absolute top-4 right-4 text-gray-500 hover:text-gray-800 p-1 rounded-full hover:bg-gray-100">
+                    <CloseIcon />
+                </button>
                 <h2 className="text-2xl font-bold text-gray-800 mb-6">Change Password</h2>
 
                 {error && <div className="mb-4 text-red-600 bg-red-100 p-3 rounded-md">{error}</div>}

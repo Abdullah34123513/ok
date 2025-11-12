@@ -43,7 +43,7 @@ const OrdersPage: React.FC = () => {
         setError('');
         try {
             const statusToFetch = activeTab === 'New' ? 'Placed' : activeTab;
-            const data = await api.getVendorOrders(currentVendor.id, statusToFetch);
+            const data = await api.getVendorOrders(currentVendor.id, [statusToFetch]);
             setOrders(data);
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Failed to load orders.');
