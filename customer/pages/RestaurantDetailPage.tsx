@@ -2,9 +2,9 @@ import React, { useState, useEffect } from 'react';
 import type { Restaurant, MenuCategory, Review, MenuItem, Offer } from '@shared/types';
 import * as api from '@shared/api';
 import * as tracking from '@shared/tracking';
-import { StarIcon, HeartIcon } from '../components/Icons';
-import { useCart } from '../contexts/CartContext';
-import QuantityControl from '../components/QuantityControl';
+import { StarIcon, HeartIcon } from '@components/Icons';
+import { useCart } from '@contexts/CartContext';
+import QuantityControl from '@components/QuantityControl';
 
 interface RestaurantDetailPageProps {
     restaurantId: string;

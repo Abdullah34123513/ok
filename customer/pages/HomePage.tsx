@@ -2,14 +2,14 @@ import React, { useState, useEffect, useCallback } from 'react';
 import type { Offer, Restaurant, Food, SearchResult } from '@shared/types';
 import * as api from '@shared/api';
 import * as tracking from '@shared/tracking';
-import Header from '../components/Header';
-import HeroBanner from '../components/HeroBanner';
-import TopRestaurants from '../components/TopVendors';
-import OffersCarousel from '../components/OffersCarousel';
-import FoodFeed from '../components/FoodFeed';
-import FoodCard from '../components/FoodCard';
-import { SearchIcon, StarIcon } from '../components/Icons';
-import OngoingOrderTracker from '../components/OngoingOrderTracker';
+import Header from '@components/Header';
+import HeroBanner from '@components/HeroBanner';
+import TopRestaurants from '@components/TopVendors';
+import OffersCarousel from '@components/OffersCarousel';
+import FoodFeed from '@components/FoodFeed';
+import FoodCard from '@components/FoodCard';
+import { SearchIcon, StarIcon } from '@components/Icons';
+import OngoingOrderTracker from '@components/OngoingOrderTracker';
 
 interface HomePageProps {
     location: string;

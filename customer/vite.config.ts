@@ -10,8 +10,11 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      // FIX: __dirname is not available in ES modules. Using import.meta.url to resolve path.
-      '@shared': fileURLToPath(new URL('../shared', import.meta.url))
+      '@shared': fileURLToPath(new URL('../shared', import.meta.url)),
+      '@components': fileURLToPath(new URL('./components', import.meta.url)),
+      '@pages': fileURLToPath(new URL('./pages', import.meta.url)),
+      '@hooks': fileURLToPath(new URL('./hooks', import.meta.url)),
+      '@contexts': fileURLToPath(new URL('./contexts', import.meta.url)),
     }
   }
 })

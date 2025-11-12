@@ -1,6 +1,5 @@
-
 import React from 'react';
-import { PlusIcon, MinusIcon } from './Icons';
+import { PlusIcon, MinusIcon } from '@components/Icons';
 
 interface QuantityControlProps {
     quantity: number;

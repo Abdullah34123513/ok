@@ -1,8 +1,7 @@
-
 import React from 'react';
-import { LogoIcon, SearchIcon, CartIcon, ProfileIcon, ArrowLeftIcon } from './Icons';
-import { useCart } from '../contexts/CartContext';
-import { useAuth } from '../contexts/AuthContext';
+import { LogoIcon, SearchIcon, CartIcon, ProfileIcon, ArrowLeftIcon } from '@components/Icons';
+import { useCart } from '@contexts/CartContext';
+import { useAuth } from '@contexts/AuthContext';
 
 interface HeaderProps {
     searchQuery?: string;

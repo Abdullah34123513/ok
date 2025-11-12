@@ -1,8 +1,8 @@
 import React from 'react';
 import type { Food, MenuItem } from '@shared/types';
-import { StarIcon } from './Icons';
-import { useCart } from '../contexts/CartContext';
-import QuantityControl from './QuantityControl';
+import { StarIcon } from '@components/Icons';
+import { useCart } from '@contexts/CartContext';
+import QuantityControl from '@components/QuantityControl';
 
 interface FoodCardProps {
   food: Food;

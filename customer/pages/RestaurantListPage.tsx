@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import type { Restaurant } from '@shared/types';
 import * as api from '@shared/api';
-import RestaurantCard from '../components/RestaurantCard';
-import { FilterIcon } from '../components/Icons';
+import RestaurantCard from '@components/RestaurantCard';
+import { FilterIcon } from '@components/Icons';
 
 interface RestaurantListPageProps {
     location: string;

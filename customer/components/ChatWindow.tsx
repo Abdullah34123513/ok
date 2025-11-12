@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import * as api from '@shared/api';
 import type { ChatMessage } from '@shared/types';
-import { CloseIcon, SendIcon } from './Icons';
-import { useAuth } from '../contexts/AuthContext';
+import { CloseIcon, SendIcon } from '@components/Icons';
+import { useAuth } from '@contexts/AuthContext';
 
 interface ChatWindowProps {
     onClose: () => void;

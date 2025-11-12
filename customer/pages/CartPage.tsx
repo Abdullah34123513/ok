@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
-import { useCart } from '../contexts/CartContext';
-import { TrashIcon } from '../components/Icons';
-import QuantityControl from '../components/QuantityControl';
+import { useCart } from '@contexts/CartContext';
+import { TrashIcon } from '@components/Icons';
+import QuantityControl from '@components/QuantityControl';
 import type { CartItem } from '@shared/types';
 
 interface CartPageProps {}

@@ -1,7 +1,6 @@
-
 import React, { useState, useEffect } from 'react';
-import { HomeIcon, RestaurantIcon, CartIcon, ProfileIcon } from './Icons';
-import { useCart } from '../contexts/CartContext';
+import { HomeIcon, RestaurantIcon, CartIcon, ProfileIcon } from '@components/Icons';
+import { useCart } from '@contexts/CartContext';
 
 type Tab = 'home' | 'restaurants' | 'cart' | 'profile' | null;
 

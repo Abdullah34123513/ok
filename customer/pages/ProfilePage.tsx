@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import * as api from '@shared/api';
 import type { User, Address, Order, Restaurant } from '@shared/types';
-import { useNotification } from '../contexts/NotificationContext';
-import { useAuth } from '../contexts/AuthContext';
-import { UserCircleIcon, TrashIcon } from '../components/Icons';
-import AddressModal from '../components/AddressModal';
-import SupportModal from '../components/SupportModal';
-import ChatWindow from '../components/ChatWindow';
-import ReviewModal from '../components/ReviewModal';
+import { useNotification } from '@contexts/NotificationContext';
+import { useAuth } from '@contexts/AuthContext';
+import { UserCircleIcon, TrashIcon } from '@components/Icons';
+import AddressModal from '@components/AddressModal';
+import SupportModal from '@components/SupportModal';
+import ChatWindow from '@components/ChatWindow';
+import ReviewModal from '@components/ReviewModal';
 
 interface ProfilePageProps {
     onChangeLocation: () => void;

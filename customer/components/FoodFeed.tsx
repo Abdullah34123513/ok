@@ -1,6 +1,6 @@
 import React, { useRef, useCallback } from 'react';
 import type { Food } from '@shared/types';
-import FoodCard from './FoodCard';
+import FoodCard from '@components/FoodCard';
 
 interface FoodFeedProps {
   foods: Food[];

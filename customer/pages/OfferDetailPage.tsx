@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import * as api from '@shared/api';
 import type { Offer, Food } from '@shared/types';
-import FoodCard from '../components/FoodCard';
+import FoodCard from '@components/FoodCard';
 
 interface OfferDetailPageProps {
     offerId: string;

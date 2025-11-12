@@ -1,6 +1,6 @@
 import React from 'react';
 import type { Restaurant } from '@shared/types';
-import { StarIcon } from './Icons';
+import { StarIcon } from '@components/Icons';
 
 interface RestaurantCardProps {
     restaurant: Restaurant;

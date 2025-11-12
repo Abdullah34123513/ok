@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useCart } from '../contexts/CartContext';
+import { useCart } from '@contexts/CartContext';
 import * as api from '@shared/api';
 import * as tracking from '@shared/tracking';
 import type { Address, Order, CartItem, Offer } from '@shared/types';
-import AddressModal from '../components/AddressModal';
-import { useNotification } from '../contexts/NotificationContext';
+import AddressModal from '@components/AddressModal';
+import { useNotification } from '@contexts/NotificationContext';
 
 interface CheckoutPageProps {}
 

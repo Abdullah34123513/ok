@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import type { Offer } from '@shared/types';
 import * as api from '@shared/api';
-import CountdownTimer from '../components/CountdownTimer';
+import CountdownTimer from '@components/CountdownTimer';
 
 const OfferCard: React.FC<{ offer: Offer }> = ({ offer }) => {
     const handleCardClick = () => {

@@ -1,7 +1,6 @@
-
 import React from 'react';
-import type { LocationPoint } from '../../shared/types';
-import { HomeIcon, MotorcycleIcon, RestaurantIcon } from './Icons';
+import type { LocationPoint } from '@shared/types';
+import { HomeIcon, MotorcycleIcon, RestaurantIcon } from '@components/Icons';
 
 interface MapMockProps {
   restaurantLocation?: LocationPoint;
