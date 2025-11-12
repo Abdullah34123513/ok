@@ -796,6 +796,16 @@ export const updateOrderStatus = async (orderId: string, newStatus: Order['statu
     return order;
 };
 
+export const updateRestaurantDetails = async (restaurantId: string, details: Partial<Restaurant>): Promise<Restaurant> => {
+    await simulateDelay(500);
+    const restaurantIndex = allMockRestaurants.findIndex(r => r.id === restaurantId);
+    if (restaurantIndex === -1) {
+        throw new Error("Restaurant not found");
+    }
+    allMockRestaurants[restaurantIndex] = { ...allMockRestaurants[restaurantIndex], ...details };
+    return allMockRestaurants[restaurantIndex];
+};
+
 export const addMenuItem = async (vendorId: string, item: Omit<MenuItem, 'id' | 'restaurantId' | 'restaurantName'>): Promise<MenuItem> => {
     await simulateDelay(500);
     const vendor = mockVendors.find(v => v.id === vendorId);

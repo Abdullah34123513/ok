@@ -4,10 +4,12 @@ import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
 import OrdersPage from './pages/OrdersPage';
 import MenuPage from './pages/MenuPage';
+import ProfilePage from './pages/ProfilePage';
+import SettingsPage from './pages/SettingsPage';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
 
-export type View = 'dashboard' | 'orders' | 'menu' | 'settings';
+export type View = 'dashboard' | 'orders' | 'menu' | 'settings' | 'profile';
 
 interface Route {
     view: View;
@@ -23,6 +25,7 @@ const parseHash = (): Route => {
         case 'orders': return { view: 'orders' };
         case 'menu': return { view: 'menu' };
         case 'settings': return { view: 'settings' };
+        case 'profile': return { view: 'profile' };
         case 'dashboard':
         default:
             return { view: 'dashboard' };
@@ -57,7 +60,9 @@ const AppContent: React.FC = () => {
             case 'menu':
                 return <MenuPage />;
             case 'settings':
-                return <div className="p-6"><h1 className="text-2xl font-bold">Settings</h1><p>Settings page is under construction.</p></div>;
+                return <SettingsPage />;
+            case 'profile':
+                return <ProfilePage />;
             case 'dashboard':
             default:
                 return <DashboardPage />;
