@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import * as api from '@shared/api';
 import { useAuth } from '../contexts/AuthContext';
 import type { MenuCategory, MenuItem } from '@shared/types';
-import { PlusCircleIcon } from '../components/Icons';
+import { PlusCircleIcon, EditIcon, TrashIcon } from '../components/Icons';
 import AddMenuItemModal from '../components/AddMenuItemModal';
 
 const MenuPage: React.FC = () => {
@@ -11,6 +11,7 @@ const MenuPage: React.FC = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState('');
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
 
     const fetchMenu = useCallback(async () => {
         if (!currentVendor) return;
@@ -30,14 +31,25 @@ const MenuPage: React.FC = () => {
         fetchMenu();
     }, [fetchMenu]);
 
-    const handleItemAdded = () => {
+    const handleSuccess = () => {
         setIsModalOpen(false);
+        setEditingItem(null);
         fetchMenu();
     };
 
+    const handleOpenAddModal = () => {
+        setEditingItem(null);
+        setIsModalOpen(true);
+    };
+
     const handleEditItem = (item: MenuItem) => {
-        // Placeholder for edit item modal
-        alert(`Editing "${item.name}" functionality coming soon!`);
+        setEditingItem(item);
+        setIsModalOpen(true);
+    };
+    
+    const handleCloseModal = () => {
+        setIsModalOpen(false);
+        setEditingItem(null);
     };
 
     const handleDeleteItem = async (itemId: string) => {
@@ -57,7 +69,7 @@ const MenuPage: React.FC = () => {
             <div className="flex justify-between items-center">
                 <h1 className="text-2xl font-bold text-gray-800">Menu Management</h1>
                 <button
-                    onClick={() => setIsModalOpen(true)}
+                    onClick={handleOpenAddModal}
                     className="flex items-center px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition"
                 >
                     <PlusCircleIcon className="w-5 h-5 mr-2" />
@@ -88,9 +100,13 @@ const MenuPage: React.FC = () => {
                                             <p className="text-sm text-gray-500 max-w-lg truncate">{item.description}</p>
                                         </div>
                                         <div className="font-semibold text-lg">${item.price.toFixed(2)}</div>
-                                        <div className="space-x-2">
-                                            <button onClick={() => handleEditItem(item)} className="px-3 py-1 bg-gray-200 text-sm font-semibold rounded-md hover:bg-gray-300">Edit</button>
-                                            <button onClick={() => handleDeleteItem(item.id)} className="px-3 py-1 bg-red-100 text-red-600 text-sm font-semibold rounded-md hover:bg-red-200">Delete</button>
+                                        <div className="flex items-center space-x-2">
+                                            <button onClick={() => handleEditItem(item)} className="p-2 bg-gray-200 text-sm font-semibold rounded-md hover:bg-gray-300">
+                                                <EditIcon className="w-5 h-5 text-gray-600"/>
+                                            </button>
+                                            <button onClick={() => handleDeleteItem(item.id)} className="p-2 bg-red-100 text-red-600 text-sm font-semibold rounded-md hover:bg-red-200">
+                                                <TrashIcon className="w-5 h-5"/>
+                                            </button>
                                         </div>
                                     </div>
                                 ))}
@@ -107,8 +123,9 @@ const MenuPage: React.FC = () => {
             {isModalOpen && (
                 <AddMenuItemModal 
                     isOpen={isModalOpen}
-                    onClose={() => setIsModalOpen(false)}
-                    onItemAdded={handleItemAdded}
+                    onClose={handleCloseModal}
+                    onSuccess={handleSuccess}
+                    itemToEdit={editingItem}
                 />
             )}
         </div>

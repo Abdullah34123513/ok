@@ -921,6 +921,7 @@ export const updateMenuItem = async (vendorId: string, item: MenuItem): Promise<
         price: item.price,
         imageUrl: item.imageUrl,
         customizationOptions: item.customizationOptions,
+        category: item.category,
     };
     allMockFoods[foodIndex] = updatedFood;
 

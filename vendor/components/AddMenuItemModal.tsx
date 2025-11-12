@@ -2,15 +2,18 @@ import React, { useState, useEffect, useRef } from 'react';
 import * as api from '@shared/api';
 import { useAuth } from '../contexts/AuthContext';
 import { CloseIcon, PlusCircleIcon, TrashIcon } from './Icons';
+import type { MenuItem, CustomizationOption } from '@shared/types';
 
 interface AddMenuItemModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onItemAdded: () => void;
+    onSuccess: () => void;
+    itemToEdit?: MenuItem | null;
 }
 
-const AddMenuItemModal: React.FC<AddMenuItemModalProps> = ({ isOpen, onClose, onItemAdded }) => {
+const AddMenuItemModal: React.FC<AddMenuItemModalProps> = ({ isOpen, onClose, onSuccess, itemToEdit }) => {
     const { currentVendor } = useAuth();
+    const isEditMode = !!itemToEdit;
     
     // Basic Info
     const [name, setName] = useState('');
@@ -34,11 +37,57 @@ const AddMenuItemModal: React.FC<AddMenuItemModalProps> = ({ isOpen, onClose, on
     const [isSaving, setIsSaving] = useState(false);
     const [error, setError] = useState('');
 
+    const resetState = () => {
+        setName('');
+        setDescription('');
+        setCategory('');
+        setImageFile(null);
+        setImagePreview('');
+        setStatus('active');
+        setEnableSizes(false);
+        setPrice('');
+        setSizes([{ name: '', price: '' }]);
+        setToppings([]);
+        setError('');
+    };
+    
     useEffect(() => {
         if (isOpen) {
             api.getVendorCategories().then(setCategories);
+            if (isEditMode && itemToEdit) {
+                // Pre-populate form for editing
+                setName(itemToEdit.name);
+                setDescription(itemToEdit.description);
+                setCategory(itemToEdit.category || '');
+                setImagePreview(itemToEdit.imageUrl);
+                
+                // Deconstruct customization options
+                const sizeOption = itemToEdit.customizationOptions?.find(o => o.id === 'size');
+                if (sizeOption) {
+                    setEnableSizes(true);
+                    setSizes(sizeOption.choices.map(c => ({
+                        name: c.name,
+                        price: (itemToEdit.price + c.price).toFixed(2)
+                    })));
+                } else {
+                    setEnableSizes(false);
+                    setPrice(itemToEdit.price.toFixed(2));
+                }
+                
+                const toppingOption = itemToEdit.customizationOptions?.find(o => o.id === 'toppings');
+                if (toppingOption) {
+                    setToppings(toppingOption.choices.map(c => ({
+                        name: c.name,
+                        price: c.price.toFixed(2)
+                    })));
+                }
+
+            } else {
+                // Reset form for adding
+                resetState();
+            }
         }
-    }, [isOpen]);
+    }, [isOpen, isEditMode, itemToEdit]);
 
     const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
@@ -78,7 +127,7 @@ const AddMenuItemModal: React.FC<AddMenuItemModalProps> = ({ isOpen, onClose, on
         }
 
         // Validation
-        if (!name || !category || !imageFile) {
+        if (!name || !category || !imagePreview) { // imagePreview check covers both edit and add
             setError('Name, Category, and Image are required.');
             return;
         }
@@ -99,11 +148,11 @@ const AddMenuItemModal: React.FC<AddMenuItemModalProps> = ({ isOpen, onClose, on
 
         try {
             let uploadedImageUrl = imagePreview;
-            if (imageFile) {
+            if (imageFile) { // If a new file was selected, upload it
                 uploadedImageUrl = await api.uploadImage(imageFile);
             }
 
-            const itemData = {
+            const payload = {
                 name,
                 description,
                 category,
@@ -113,11 +162,46 @@ const AddMenuItemModal: React.FC<AddMenuItemModalProps> = ({ isOpen, onClose, on
                 sizes: enableSizes ? sizes.map(s => ({ ...s, price: parseFloat(s.price) })) : undefined,
                 toppings: toppings.map(t => ({ ...t, price: parseFloat(t.price) })),
             };
+            
+            if (isEditMode && itemToEdit) {
+                // This logic is duplicated from api.addMenuItem to construct the MenuItem object
+                // A better long-term solution would be to have this logic in a shared utility or have the API accept the payload directly
+                const customizationOptions: CustomizationOption[] = [];
+                let basePrice = 0;
+                if (payload.sizes && payload.sizes.length > 0) {
+                    const sortedSizes = [...payload.sizes].sort((a, b) => a.price - b.price);
+                    basePrice = sortedSizes[0].price;
+                    customizationOptions.push({
+                        id: 'size', name: 'Size', type: 'SINGLE', required: true,
+                        choices: sortedSizes.map(s => ({ name: s.name, price: s.price - basePrice })),
+                    });
+                } else {
+                    basePrice = payload.price || 0;
+                }
+                if (payload.toppings && payload.toppings.length > 0) {
+                    customizationOptions.push({
+                        id: 'toppings', name: 'Toppings', type: 'MULTIPLE', required: false,
+                        choices: payload.toppings.map(t => ({ name: t.name, price: t.price })),
+                    });
+                }
+                
+                const updatedMenuItem: MenuItem = {
+                    ...itemToEdit,
+                    name: payload.name,
+                    description: payload.description,
+                    category: payload.category,
+                    imageUrl: payload.imageUrl,
+                    price: basePrice,
+                    customizationOptions: customizationOptions.length > 0 ? customizationOptions : undefined,
+                };
 
-            await api.addMenuItem(currentVendor.id, itemData);
-            onItemAdded();
+                await api.updateMenuItem(currentVendor.id, updatedMenuItem);
+            } else {
+                 await api.addMenuItem(currentVendor.id, payload);
+            }
+            onSuccess();
         } catch (err) {
-            setError(err instanceof Error ? err.message : 'Failed to add item.');
+            setError(err instanceof Error ? err.message : 'Failed to save item.');
         } finally {
             setIsSaving(false);
         }
@@ -129,7 +213,7 @@ const AddMenuItemModal: React.FC<AddMenuItemModalProps> = ({ isOpen, onClose, on
         <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
             <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-2xl w-full max-w-3xl animate-fade-in-up flex flex-col">
                  <header className="p-4 border-b flex justify-between items-center flex-shrink-0">
-                    <h2 className="text-2xl font-bold text-gray-800">Add New Item</h2>
+                    <h2 className="text-2xl font-bold text-gray-800">{isEditMode ? 'Edit Menu Item' : 'Add New Item'}</h2>
                     <button type="button" onClick={onClose} className="p-1 rounded-full hover:bg-gray-100 transition-colors">
                         <CloseIcon className="w-6 h-6 text-gray-500" />
                     </button>
@@ -224,7 +308,7 @@ const AddMenuItemModal: React.FC<AddMenuItemModalProps> = ({ isOpen, onClose, on
                         Cancel
                     </button>
                     <button type="submit" disabled={isSaving} className="px-6 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition disabled:bg-blue-300">
-                        {isSaving ? 'Saving...' : 'Save Item'}
+                        {isSaving ? 'Saving...' : (isEditMode ? 'Save Changes' : 'Save Item')}
                     </button>
                 </footer>
             </form>
