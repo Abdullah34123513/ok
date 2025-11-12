@@ -3,6 +3,8 @@
 
 
 
+
+
 import type { Offer, Restaurant, Food, PaginatedFoods, SearchResult, PaginatedRestaurants, MenuCategory, Review, CartItem, MenuItem, Address, Order, AddressSuggestion, AddressDetails, User, LoginCredentials, SignupData, AuthResponse, LocationPoint, SupportInfo, ChatMessage, OrderReview, SelectedCustomization, CustomizationOption, Vendor, VendorDashboardSummary } from './types';
 
 // --- Location-based data simulation helpers ---

@@ -6,7 +6,6 @@
     "vendor"
   ],
   "scripts": {
-    "install": "npm install --workspaces --if-present",
     "dev:customer": "npm run dev --workspace=customer-app",
     "dev:vendor": "npm run dev --workspace=vendor-app",
     "build:customer": "npm run build --workspace=customer-app",
