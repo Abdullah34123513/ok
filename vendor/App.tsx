@@ -6,10 +6,11 @@ import OrdersPage from './pages/OrdersPage';
 import MenuPage from './pages/MenuPage';
 import ProfilePage from './pages/ProfilePage';
 import SettingsPage from './pages/SettingsPage';
+import EarningsPage from './pages/EarningsPage';
 import Navigation from './components/Sidebar';
 import Header from './components/Header';
 
-export type View = 'dashboard' | 'orders' | 'menu' | 'settings' | 'profile';
+export type View = 'dashboard' | 'orders' | 'menu' | 'settings' | 'profile' | 'earnings';
 
 interface Route {
     view: View;
@@ -26,6 +27,7 @@ const parseHash = (): Route => {
         case 'menu': return { view: 'menu' };
         case 'settings': return { view: 'settings' };
         case 'profile': return { view: 'profile' };
+        case 'earnings': return { view: 'earnings' };
         case 'dashboard':
         default:
             return { view: 'dashboard' };
@@ -63,6 +65,8 @@ const AppContent: React.FC = () => {
                 return <SettingsPage />;
             case 'profile':
                 return <ProfilePage />;
+            case 'earnings':
+                return <EarningsPage />;
             case 'dashboard':
             default:
                 return <DashboardPage />;

@@ -1,14 +1,74 @@
 import React, { useState, useEffect } from 'react';
 import * as api from '@shared/api';
 import { useAuth } from '../contexts/AuthContext';
-import type { VendorDashboardSummary, Order } from '@shared/types';
-import StatCard from '../components/StatCard';
-import { RevenueIcon, TotalOrdersIcon, ActiveOrdersIcon, RatingIcon, OrdersIcon, PlusCircleIcon } from '../components/Icons';
+import type { Order } from '@shared/types';
+
+const OrderList: React.FC<{ title: string, orders: Order[] }> = ({ title, orders }) => (
+    <div className="bg-white p-6 rounded-lg shadow-md">
+        <h2 className="text-xl font-bold text-gray-800 mb-4">{title}</h2>
+        
+        {/* Desktop Table */}
+        <div className="overflow-x-auto hidden md:block">
+            <table className="w-full text-left">
+                <thead>
+                    <tr className="bg-gray-50">
+                        <th className="p-3 font-semibold">Order ID</th>
+                        <th className="p-3 font-semibold">Customer</th>
+                        <th className="p-3 font-semibold">Total</th>
+                        <th className="p-3 font-semibold">Items</th>
+                        <th className="p-3 font-semibold">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {orders.length > 0 ? orders.map(order => (
+                        <tr key={order.id} className="border-b hover:bg-gray-50">
+                            <td className="p-3 font-mono text-sm text-blue-600">{order.id.split('-')[1]}</td>
+                            <td className="p-3">{order.customerName}</td>
+                            <td className="p-3 font-semibold">${order.total.toFixed(2)}</td>
+                            <td className="p-3">{order.items.reduce((acc, item) => acc + item.quantity, 0)}</td>
+                            <td className="p-3">
+                                <a href="#/orders" className="text-blue-500 hover:underline font-semibold">View Details</a>
+                            </td>
+                        </tr>
+                    )) : (
+                        <tr>
+                            <td colSpan={5} className="p-6 text-center text-gray-500">No orders in this category.</td>
+                        </tr>
+                    )}
+                </tbody>
+            </table>
+        </div>
+        
+        {/* Mobile Cards */}
+        <div className="md:hidden space-y-4">
+             {orders.length > 0 ? orders.map(order => (
+                <div key={order.id} className="border rounded-lg p-4">
+                    <div className="flex justify-between items-start">
+                        <div>
+                            <div className="font-bold">{order.customerName}</div>
+                            <div className="font-mono text-sm text-blue-600">{order.id.split('-')[1]}</div>
+                        </div>
+                        <div className="font-semibold text-lg">${order.total.toFixed(2)}</div>
+                    </div>
+                    <div className="mt-2 text-sm text-gray-600">
+                        {order.items.reduce((acc, item) => acc + item.quantity, 0)} items
+                    </div>
+                    <div className="mt-3 text-right">
+                        <a href="#/orders" className="text-blue-500 hover:underline font-semibold">View Order</a>
+                    </div>
+                </div>
+            )) : (
+                <div className="p-6 text-center text-gray-500">No orders in this category.</div>
+            )}
+        </div>
+    </div>
+);
+
 
 const DashboardPage: React.FC = () => {
     const { currentVendor } = useAuth();
-    const [summary, setSummary] = useState<VendorDashboardSummary | null>(null);
-    const [recentOrders, setRecentOrders] = useState<Order[]>([]);
+    const [newOrders, setNewOrders] = useState<Order[]>([]);
+    const [pendingOrders, setPendingOrders] = useState<Order[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState('');
 
@@ -19,12 +79,12 @@ const DashboardPage: React.FC = () => {
             setIsLoading(true);
             setError('');
             try {
-                const [summaryData, ordersData] = await Promise.all([
-                    api.getVendorDashboardSummary(currentVendor.id),
+                const [newOrdersData, pendingOrdersData] = await Promise.all([
                     api.getVendorOrders(currentVendor.id, 'New'),
+                    api.getVendorOrders(currentVendor.id, 'Preparing'),
                 ]);
-                setSummary(summaryData);
-                setRecentOrders(ordersData);
+                setNewOrders(newOrdersData);
+                setPendingOrders(pendingOrdersData);
             } catch (err) {
                 setError(err instanceof Error ? err.message : 'Failed to load dashboard data.');
             } finally {
@@ -45,90 +105,10 @@ const DashboardPage: React.FC = () => {
 
     return (
         <div className="p-6 space-y-6">
-            <h1 className="text-2xl font-bold text-gray-800">Restaurant Dashboard</h1>
+            <h1 className="text-2xl font-bold text-gray-800">Order Overview</h1>
 
-            {/* Stat Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <StatCard title="Total Revenue" value={`$${summary?.totalRevenue.toFixed(2)}`} icon={RevenueIcon} color="#10B981" />
-                <StatCard title="Total Orders" value={summary?.totalOrders ?? 0} icon={TotalOrdersIcon} color="#3B82F6" />
-                <StatCard title="Active Orders" value={summary?.activeOrders ?? 0} icon={ActiveOrdersIcon} color="#F59E0B" />
-                <StatCard title="Average Rating" value={summary?.averageItemRating.toFixed(1) ?? 'N/A'} icon={RatingIcon} color="#EF4444" />
-            </div>
-
-            {/* Quick Actions */}
-            <div className="bg-white p-6 rounded-lg shadow-md">
-                <h2 className="text-xl font-bold text-gray-800 mb-4">Quick Actions</h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <a href="#/orders" className="flex flex-col items-center justify-center p-6 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition">
-                        <OrdersIcon className="w-10 h-10 mb-2" />
-                        <span className="font-semibold">View New Orders</span>
-                    </a>
-                    <a href="#/menu" className="flex flex-col items-center justify-center p-6 bg-green-50 text-green-700 rounded-lg hover:bg-green-100 transition">
-                        <PlusCircleIcon className="w-10 h-10 mb-2" />
-                        <span className="font-semibold">Add Menu Item</span>
-                    </a>
-                </div>
-            </div>
-
-            {/* Recent Orders */}
-            <div className="bg-white p-6 rounded-lg shadow-md">
-                <h2 className="text-xl font-bold text-gray-800 mb-4">New Orders</h2>
-                
-                {/* Desktop Table */}
-                <div className="overflow-x-auto hidden md:block">
-                    <table className="w-full text-left">
-                        <thead>
-                            <tr className="bg-gray-50">
-                                <th className="p-3 font-semibold">Order ID</th>
-                                <th className="p-3 font-semibold">Customer</th>
-                                <th className="p-3 font-semibold">Total</th>
-                                <th className="p-3 font-semibold">Items</th>
-                                <th className="p-3 font-semibold">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {recentOrders.length > 0 ? recentOrders.map(order => (
-                                <tr key={order.id} className="border-b hover:bg-gray-50">
-                                    <td className="p-3 font-mono text-sm text-blue-600">{order.id.split('-')[1]}</td>
-                                    <td className="p-3">{order.customerName}</td>
-                                    <td className="p-3 font-semibold">${order.total.toFixed(2)}</td>
-                                    <td className="p-3">{order.items.reduce((acc, item) => acc + item.quantity, 0)}</td>
-                                    <td className="p-3">
-                                        <a href="#/orders" className="text-blue-500 hover:underline font-semibold">View</a>
-                                    </td>
-                                </tr>
-                            )) : (
-                                <tr>
-                                    <td colSpan={5} className="p-6 text-center text-gray-500">No new orders right now.</td>
-                                </tr>
-                            )}
-                        </tbody>
-                    </table>
-                </div>
-                
-                {/* Mobile Cards */}
-                <div className="md:hidden space-y-4">
-                     {recentOrders.length > 0 ? recentOrders.map(order => (
-                        <div key={order.id} className="border rounded-lg p-4">
-                            <div className="flex justify-between items-start">
-                                <div>
-                                    <div className="font-bold">{order.customerName}</div>
-                                    <div className="font-mono text-sm text-blue-600">{order.id.split('-')[1]}</div>
-                                </div>
-                                <div className="font-semibold text-lg">${order.total.toFixed(2)}</div>
-                            </div>
-                            <div className="mt-2 text-sm text-gray-600">
-                                {order.items.reduce((acc, item) => acc + item.quantity, 0)} items
-                            </div>
-                            <div className="mt-3 text-right">
-                                <a href="#/orders" className="text-blue-500 hover:underline font-semibold">View Order</a>
-                            </div>
-                        </div>
-                    )) : (
-                        <div className="p-6 text-center text-gray-500">No new orders right now.</div>
-                    )}
-                </div>
-            </div>
+            <OrderList title="New Orders" orders={newOrders} />
+            <OrderList title="Pending Orders (Preparing)" orders={pendingOrders} />
         </div>
     );
 };
