@@ -12,6 +12,7 @@
   "dependencies": {
     "@capacitor/camera": "^7.0.2",
     "@capacitor/core": "7.4.4",
+    "@capacitor/push-notifications": "^6.0.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0"
   },

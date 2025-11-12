@@ -8,6 +8,9 @@ import SettingsPage from './pages/SettingsPage';
 import EarningsPage from './pages/EarningsPage';
 import Navigation from './components/Sidebar';
 import Header from './components/Header';
+import { NotificationProvider } from './contexts/NotificationContext';
+import Notification from './components/Notification';
+import { usePushNotifications } from './hooks/usePushNotifications';
 
 export type View = 'dashboard' | 'menu' | 'settings' | 'profile' | 'earnings';
 
@@ -35,6 +38,9 @@ const parseHash = (): Route => {
 const AppContent: React.FC = () => {
     const { currentVendor, isLoading } = useAuth();
     const [route, setRoute] = useState<Route>(parseHash());
+    
+    // Initialize push notifications for logged-in users on native platforms
+    usePushNotifications();
     
     useEffect(() => {
         const handleHashChange = () => {
@@ -85,7 +91,10 @@ const AppContent: React.FC = () => {
 const App: React.FC = () => {
     return (
         <AuthProvider>
-            <AppContent />
+            <NotificationProvider>
+                <Notification />
+                <AppContent />
+            </NotificationProvider>
         </AuthProvider>
     );
 };
