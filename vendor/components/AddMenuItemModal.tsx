@@ -3,7 +3,7 @@ import * as api from '@shared/api';
 import { useAuth } from '../contexts/AuthContext';
 import { CloseIcon, PlusCircleIcon, TrashIcon, CameraIcon } from './Icons';
 import type { MenuItem, CustomizationOption, ItemAvailability } from '@shared/types';
-import { Camera, CameraResultType, CameraSource, Capacitor } from '@capacitor/camera';
+import { Capacitor } from '@capacitor/core';
 
 interface AddMenuItemModalProps {
     isOpen: boolean;
@@ -113,6 +113,7 @@ const AddMenuItemModal: React.FC<AddMenuItemModalProps> = ({ isOpen, onClose, on
             return;
         }
         try {
+            const { Camera, CameraResultType, CameraSource } = await import('@capacitor/camera');
             const image = await Camera.getPhoto({
                 quality: 90,
                 allowEditing: true,
