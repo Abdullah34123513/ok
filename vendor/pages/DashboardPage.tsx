@@ -77,22 +77,22 @@ const OrderStatusButton: React.FC<{
 const DashboardPage: React.FC = () => {
     const { currentVendor } = useAuth();
     const [orders, setOrders] = useState<Order[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
+    const [isInitialLoading, setIsInitialLoading] = useState(true);
     const [error, setError] = useState('');
     const [updatingOrderId, setUpdatingOrderId] = useState<string | null>(null);
 
-    const fetchOrders = useCallback(async () => {
+    const fetchOrders = useCallback(async (isInitialLoad = false) => {
         if (!currentVendor) return;
-        // Don't show loading indicator on background refreshes
-        if (orders.length === 0) {
-            setIsLoading(true);
+        
+        if (isInitialLoad) {
+            setIsInitialLoading(true);
         }
         setError('');
+        
         try {
             const statusesToFetch: Array<Order['status'] | 'New'> = ['New', 'Preparing', 'On its way'];
             const data = await api.getVendorOrders(currentVendor.id, statusesToFetch);
             
-            // Sort orders: New orders first, then by date
             data.sort((a, b) => {
                 if (a.status === 'Placed' && b.status !== 'Placed') return -1;
                 if (a.status !== 'Placed' && b.status === 'Placed') return 1;
@@ -102,13 +102,15 @@ const DashboardPage: React.FC = () => {
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Failed to load orders.');
         } finally {
-            setIsLoading(false);
+            if (isInitialLoad) {
+                setIsInitialLoading(false);
+            }
         }
-    }, [currentVendor, orders.length]);
+    }, [currentVendor]);
 
     useEffect(() => {
-        fetchOrders(); // Initial fetch
-        const intervalId = setInterval(fetchOrders, 30000); // Poll for new orders every 30 seconds
+        fetchOrders(true); // Initial fetch
+        const intervalId = setInterval(() => fetchOrders(false), 30000); // Poll for new orders
         return () => clearInterval(intervalId); // Cleanup on unmount
     }, [fetchOrders]);
     
@@ -116,7 +118,7 @@ const DashboardPage: React.FC = () => {
         setUpdatingOrderId(orderId);
         try {
             await api.updateOrderStatus(orderId, newStatus);
-            await fetchOrders(); // Refetch orders immediately to reflect the change
+            await fetchOrders(false); // Refetch orders immediately to reflect the change
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Failed to update order status.');
         } finally {
@@ -125,7 +127,7 @@ const DashboardPage: React.FC = () => {
     };
 
     const renderContent = () => {
-        if (isLoading) {
+        if (isInitialLoading) {
             return <div className="p-6 text-center text-gray-500">Loading active orders...</div>;
         }
         if (error) {
