@@ -1,4 +1,4 @@
-import type { Offer, Restaurant, Food, PaginatedFoods, SearchResult, PaginatedRestaurants, MenuCategory, Review, CartItem, MenuItem, Address, Order, AddressSuggestion, AddressDetails, User, LoginCredentials, SignupData, AuthResponse, LocationPoint, SupportInfo, ChatMessage, OrderReview, SelectedCustomization, CustomizationOption, Vendor, VendorDashboardSummary } from './types';
+import type { Offer, Restaurant, Food, PaginatedFoods, SearchResult, PaginatedRestaurants, MenuCategory, Review, CartItem, MenuItem, Address, Order, AddressSuggestion, AddressDetails, User, LoginCredentials, SignupData, AuthResponse, LocationPoint, SupportInfo, ChatMessage, OrderReview, SelectedCustomization, CustomizationOption, Vendor, VendorDashboardSummary, ItemAvailability } from './types';
 
 // --- Location-based data simulation helpers ---
 
@@ -62,6 +62,7 @@ const createMockFood = (id: number, restaurant: Restaurant): Food => ({
   vendor: {
     name: restaurant.name,
   },
+  availability: { type: 'ALL_DAY' }
 });
 
 const createMockRestaurant = (id: number): Restaurant => ({
@@ -75,13 +76,13 @@ const createMockRestaurant = (id: number): Restaurant => ({
   deliveryTime: `${Math.floor(Math.random() * 20) + 20}-${Math.floor(Math.random() * 20) + 40} min`,
   address: `${120 + id} Flavor St, Food City`,
   operatingHours: {
-    monday: { isOpen: true, open: '09:00', close: '21:00' },
-    tuesday: { isOpen: true, open: '09:00', close: '21:00' },
-    wednesday: { isOpen: true, open: '09:00', close: '21:00' },
-    thursday: { isOpen: true, open: '09:00', close: '21:00' },
-    friday: { isOpen: true, open: '09:00', close: '21:00' },
-    saturday: { isOpen: true, open: '11:00', close: '22:00' },
-    sunday: { isOpen: false, open: '11:00', close: '22:00' },
+    monday: { isOpen: true, slots: [{ open: '09:00', close: '21:00' }] },
+    tuesday: { isOpen: true, slots: [{ open: '09:00', close: '21:00' }] },
+    wednesday: { isOpen: true, slots: [{ open: '09:00', close: '14:00' }, { open: '17:00', close: '21:00' }] }, // Example split
+    thursday: { isOpen: true, slots: [{ open: '09:00', close: '21:00' }] },
+    friday: { isOpen: true, slots: [{ open: '09:00', close: '22:00' }] },
+    saturday: { isOpen: true, slots: [{ open: '11:00', close: '22:00' }] },
+    sunday: { isOpen: false, slots: [] },
   }
 });
 
@@ -187,6 +188,7 @@ allMockFoods.unshift({
   description: 'Classic delight with 100% real mozzarella cheese. Customize it to your liking!',
   vendor: { name: allMockRestaurants[0].name },
   customizationOptions: pizzaCustomizations,
+  availability: { type: 'CUSTOM_TIME', startTime: '17:00', endTime: '22:00'}
 });
 
 // Add a customizable burger
@@ -201,6 +203,7 @@ allMockFoods.push({
     description: 'A juicy, all-beef patty with your choice of sides and add-ons!',
     vendor: { name: burgerRestaurant.name },
     customizationOptions: burgerCustomizations,
+    availability: { type: 'ALL_DAY' }
 });
 
 
@@ -370,6 +373,7 @@ export const getRestaurantMenu = async (restaurantId: string): Promise<MenuCateg
             customizationOptions: food.customizationOptions,
             isPackage: food.isPackage,
             category: food.category,
+            availability: food.availability,
         }));
 
     // Group items by category
@@ -846,6 +850,7 @@ interface NewMenuItemPayload {
     price?: number;
     sizes?: { name: string; price: number }[];
     toppings?: { name: string; price: number }[];
+    availability: ItemAvailability;
 }
 
 export const addMenuItem = async (vendorId: string, itemData: NewMenuItemPayload): Promise<MenuItem> => {
@@ -896,6 +901,7 @@ export const addMenuItem = async (vendorId: string, itemData: NewMenuItemPayload
         imageUrl: itemData.imageUrl,
         customizationOptions: customizationOptions.length > 0 ? customizationOptions : undefined,
         category: itemData.category,
+        availability: itemData.availability,
     };
 
     allMockFoods.push({
@@ -909,6 +915,7 @@ export const addMenuItem = async (vendorId: string, itemData: NewMenuItemPayload
         vendor: { name: newMenuItem.restaurantName },
         customizationOptions: newMenuItem.customizationOptions,
         category: newMenuItem.category,
+        availability: newMenuItem.availability,
     });
     
     return newMenuItem;
@@ -931,6 +938,7 @@ export const updateMenuItem = async (vendorId: string, item: MenuItem): Promise<
         imageUrl: item.imageUrl,
         customizationOptions: item.customizationOptions,
         category: item.category,
+        availability: item.availability,
     };
     allMockFoods[foodIndex] = updatedFood;
 

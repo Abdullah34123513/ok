@@ -29,10 +29,14 @@ export interface User {
   authToken?: string;
 }
 
-export interface OperatingHoursForDay {
-  isOpen: boolean;
+export interface TimeSlot {
   open: string; // e.g., "09:00"
   close: string; // e.g., "21:00"
+}
+
+export interface OperatingHoursForDay {
+  isOpen: boolean;
+  slots: TimeSlot[];
 }
 
 export interface OperatingHours {
@@ -60,6 +64,12 @@ export interface Restaurant {
   operatingHours?: OperatingHours;
 }
 
+export interface ItemAvailability {
+  type: 'ALL_DAY' | 'CUSTOM_TIME';
+  startTime?: string; // e.g., "17:00"
+  endTime?: string; // e.g., "22:00"
+}
+
 export interface Food {
   id: string;
   imageUrl: string;
@@ -74,6 +84,7 @@ export interface Food {
   customizationOptions?: CustomizationOption[];
   isPackage?: boolean;
   category?: string;
+  availability?: ItemAvailability;
 }
 
 export interface MenuItem {
@@ -87,6 +98,7 @@ export interface MenuItem {
   customizationOptions?: CustomizationOption[];
   isPackage?: boolean;
   category?: string;
+  availability?: ItemAvailability;
 }
 
 export interface MenuCategory {

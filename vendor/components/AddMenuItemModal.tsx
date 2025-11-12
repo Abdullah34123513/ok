@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import * as api from '@shared/api';
 import { useAuth } from '../contexts/AuthContext';
 import { CloseIcon, PlusCircleIcon, TrashIcon } from './Icons';
-import type { MenuItem, CustomizationOption } from '@shared/types';
+import type { MenuItem, CustomizationOption, ItemAvailability } from '@shared/types';
 
 interface AddMenuItemModalProps {
     isOpen: boolean;
@@ -33,6 +33,9 @@ const AddMenuItemModal: React.FC<AddMenuItemModalProps> = ({ isOpen, onClose, on
     // Toppings
     const [toppings, setToppings] = useState<{ name: string; price: string }[]>([]);
 
+    // Availability
+    const [availability, setAvailability] = useState<ItemAvailability>({ type: 'ALL_DAY' });
+
     // Component State
     const [isSaving, setIsSaving] = useState(false);
     const [error, setError] = useState('');
@@ -48,6 +51,7 @@ const AddMenuItemModal: React.FC<AddMenuItemModalProps> = ({ isOpen, onClose, on
         setPrice('');
         setSizes([{ name: '', price: '' }]);
         setToppings([]);
+        setAvailability({ type: 'ALL_DAY' });
         setError('');
     };
     
@@ -60,6 +64,7 @@ const AddMenuItemModal: React.FC<AddMenuItemModalProps> = ({ isOpen, onClose, on
                 setDescription(itemToEdit.description);
                 setCategory(itemToEdit.category || '');
                 setImagePreview(itemToEdit.imageUrl);
+                setAvailability(itemToEdit.availability || { type: 'ALL_DAY' });
                 
                 // Deconstruct customization options
                 const sizeOption = itemToEdit.customizationOptions?.find(o => o.id === 'size');
@@ -142,6 +147,10 @@ const AddMenuItemModal: React.FC<AddMenuItemModalProps> = ({ isOpen, onClose, on
                 return;
             }
         }
+        if (availability.type === 'CUSTOM_TIME' && (!availability.startTime || !availability.endTime)) {
+            setError('Both start and end times are required for custom availability.');
+            return;
+        }
 
         setIsSaving(true);
         setError('');
@@ -161,6 +170,7 @@ const AddMenuItemModal: React.FC<AddMenuItemModalProps> = ({ isOpen, onClose, on
                 price: enableSizes ? undefined : parseFloat(price),
                 sizes: enableSizes ? sizes.map(s => ({ ...s, price: parseFloat(s.price) })) : undefined,
                 toppings: toppings.map(t => ({ ...t, price: parseFloat(t.price) })),
+                availability,
             };
             
             if (isEditMode && itemToEdit) {
@@ -193,6 +203,7 @@ const AddMenuItemModal: React.FC<AddMenuItemModalProps> = ({ isOpen, onClose, on
                     imageUrl: payload.imageUrl,
                     price: basePrice,
                     customizationOptions: customizationOptions.length > 0 ? customizationOptions : undefined,
+                    availability: payload.availability,
                 };
 
                 await api.updateMenuItem(currentVendor.id, updatedMenuItem);
@@ -301,6 +312,34 @@ const AddMenuItemModal: React.FC<AddMenuItemModalProps> = ({ isOpen, onClose, on
                             <button type="button" onClick={addTopping} className="flex items-center text-sm font-semibold text-blue-600 hover:text-blue-800"><PlusCircleIcon className="w-5 h-5 mr-1"/>Add Topping</button>
                         </div>
                     </details>
+                    
+                    {/* Availability */}
+                    <details className="group">
+                        <summary className="text-xl font-bold cursor-pointer list-none flex justify-between items-center">
+                            Availability
+                            <span className="text-sm font-normal text-gray-500 group-open:hidden">Click to expand</span>
+                        </summary>
+                        <div className="mt-4 space-y-4 border-t pt-4">
+                             <div className="flex space-x-4">
+                                <label className="flex items-center">
+                                    <input type="radio" name="availability" value="ALL_DAY" checked={availability.type === 'ALL_DAY'} onChange={() => setAvailability({ type: 'ALL_DAY' })} className="mr-2"/>
+                                    Available All Day
+                                </label>
+                                <label className="flex items-center">
+                                    <input type="radio" name="availability" value="CUSTOM_TIME" checked={availability.type === 'CUSTOM_TIME'} onChange={() => setAvailability({ type: 'CUSTOM_TIME', startTime: '17:00', endTime: '22:00' })} className="mr-2"/>
+                                    Custom Time
+                                </label>
+                            </div>
+                            {availability.type === 'CUSTOM_TIME' && (
+                                <div className="flex items-center gap-2 pl-6">
+                                    <input type="time" value={availability.startTime || ''} onChange={e => setAvailability(prev => ({ ...prev, startTime: e.target.value }))} className="p-1 border rounded text-sm w-full max-w-[120px]"/>
+                                    <span className="text-gray-500">to</span>
+                                    <input type="time" value={availability.endTime || ''} onChange={e => setAvailability(prev => ({ ...prev, endTime: e.target.value }))} className="p-1 border rounded text-sm w-full max-w-[120px]"/>
+                                </div>
+                            )}
+                        </div>
+                    </details>
+
                 </main>
 
                 <footer className="p-4 border-t bg-gray-50 rounded-b-lg flex justify-end space-x-3 flex-shrink-0">

@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import * as api from '@shared/api';
 import { useAuth } from '../contexts/AuthContext';
-import { BellIcon, LockClosedIcon, ClockIcon } from '../components/Icons';
-import type { OperatingHours } from '@shared/types';
+import { BellIcon, LockClosedIcon, ClockIcon, PlusCircleIcon, TrashIcon } from '../components/Icons';
+import type { OperatingHours, TimeSlot } from '@shared/types';
 
 interface ToggleProps {
     label: string;
@@ -33,17 +33,19 @@ const SettingToggle: React.FC<ToggleProps> = ({ label, description, enabled, onT
     </div>
 );
 
-const daysOfWeek: (keyof OperatingHours)[] = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+// FIX: Use `as const` to create a specific string literal type union for daysOfWeek.
+// This ensures `day` is treated as a specific string, which is a valid React key and child,
+// and also a valid key for `OperatingHours`, resolving the compiler errors.
+const daysOfWeek = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'] as const;
 
-// FIX: Replaced reduce with an explicit object literal to avoid potential type inference issues with the accumulator.
 const defaultHours: OperatingHours = {
-    monday: { isOpen: false, open: '09:00', close: '17:00' },
-    tuesday: { isOpen: false, open: '09:00', close: '17:00' },
-    wednesday: { isOpen: false, open: '09:00', close: '17:00' },
-    thursday: { isOpen: false, open: '09:00', close: '17:00' },
-    friday: { isOpen: false, open: '09:00', close: '17:00' },
-    saturday: { isOpen: false, open: '09:00', close: '17:00' },
-    sunday: { isOpen: false, open: '09:00', close: '17:00' },
+    monday: { isOpen: false, slots: [] },
+    tuesday: { isOpen: false, slots: [] },
+    wednesday: { isOpen: false, slots: [] },
+    thursday: { isOpen: false, slots: [] },
+    friday: { isOpen: false, slots: [] },
+    saturday: { isOpen: false, slots: [] },
+    sunday: { isOpen: false, slots: [] },
 };
 
 
@@ -75,17 +77,44 @@ const SettingsPage: React.FC = () => {
     };
 
     const handleToggleDay = (day: keyof OperatingHours) => {
-        setOperatingHours(prev => ({
-            ...prev,
-            [day]: { ...prev[day], isOpen: !prev[day].isOpen }
-        }));
+        setOperatingHours(prev => {
+            const newHours = { ...prev };
+            const dayState = newHours[day];
+            dayState.isOpen = !dayState.isOpen;
+            // If opening for the first time, add a default slot
+            if (dayState.isOpen && dayState.slots.length === 0) {
+                dayState.slots.push({ open: '09:00', close: '17:00' });
+            }
+            return newHours;
+        });
+    };
+
+    const handleTimeChange = (day: keyof OperatingHours, slotIndex: number, type: 'open' | 'close', value: string) => {
+        setOperatingHours(prev => {
+            const newHours = { ...prev };
+            newHours[day].slots[slotIndex][type] = value;
+            return newHours;
+        });
     };
     
-    const handleTimeChange = (day: keyof OperatingHours, type: 'open' | 'close', value: string) => {
-        setOperatingHours(prev => ({
-            ...prev,
-            [day]: { ...prev[day], [type]: value }
-        }));
+    const addSlot = (day: keyof OperatingHours) => {
+        setOperatingHours(prev => {
+            const newHours = { ...prev };
+            newHours[day].slots.push({ open: '17:00', close: '22:00' });
+            return newHours;
+        });
+    };
+
+    const removeSlot = (day: keyof OperatingHours, slotIndex: number) => {
+        setOperatingHours(prev => {
+            const newHours = { ...prev };
+            newHours[day].slots.splice(slotIndex, 1);
+            // If all slots are removed, mark day as closed
+            if (newHours[day].slots.length === 0) {
+                newHours[day].isOpen = false;
+            }
+            return newHours;
+        });
     };
 
     const handleSaveHours = async () => {
@@ -149,31 +178,39 @@ const SettingsPage: React.FC = () => {
                 ) : (
                     <div className="space-y-4">
                         {daysOfWeek.map(day => (
-                            <div key={day} className="grid grid-cols-1 sm:grid-cols-3 items-center gap-4 py-3 border-b last:border-0">
-                                <div className="capitalize font-medium text-gray-800">{day}</div>
-                                <div className="flex items-center space-x-3">
-                                    <button
-                                        type="button"
-                                        onClick={() => handleToggleDay(day)}
-                                        className={`relative inline-flex items-center h-6 rounded-full w-11 transition-colors ${
-                                            operatingHours[day].isOpen ? 'bg-blue-600' : 'bg-gray-200'
-                                        }`}
-                                    >
-                                        <span
-                                            className={`inline-block w-4 h-4 transform bg-white rounded-full transition-transform ${
-                                                operatingHours[day].isOpen ? 'translate-x-6' : 'translate-x-1'
+                            <div key={day} className="py-3 border-b last:border-0">
+                                <div className="grid grid-cols-1 sm:grid-cols-3 items-center gap-4">
+                                    <div className="capitalize font-medium text-gray-800">{day}</div>
+                                    <div className="flex items-center space-x-3">
+                                        <button
+                                            type="button"
+                                            onClick={() => handleToggleDay(day)}
+                                            className={`relative inline-flex items-center h-6 rounded-full w-11 transition-colors ${
+                                                operatingHours[day].isOpen ? 'bg-blue-600' : 'bg-gray-200'
                                             }`}
-                                        />
-                                    </button>
-                                    <span className={`font-semibold ${operatingHours[day].isOpen ? 'text-green-600' : 'text-gray-500'}`}>
-                                        {operatingHours[day].isOpen ? 'Open' : 'Closed'}
-                                    </span>
+                                        >
+                                            <span
+                                                className={`inline-block w-4 h-4 transform bg-white rounded-full transition-transform ${
+                                                    operatingHours[day].isOpen ? 'translate-x-6' : 'translate-x-1'
+                                                }`}
+                                            />
+                                        </button>
+                                        <span className={`font-semibold ${operatingHours[day].isOpen ? 'text-green-600' : 'text-gray-500'}`}>
+                                            {operatingHours[day].isOpen ? 'Open' : 'Closed'}
+                                        </span>
+                                    </div>
                                 </div>
                                 {operatingHours[day].isOpen && (
-                                    <div className="flex items-center gap-2">
-                                        <input type="time" value={operatingHours[day].open} onChange={e => handleTimeChange(day, 'open', e.target.value)} className="p-1 border rounded text-sm w-full"/>
-                                        <span className="text-gray-500">to</span>
-                                        <input type="time" value={operatingHours[day].close} onChange={e => handleTimeChange(day, 'close', e.target.value)} className="p-1 border rounded text-sm w-full"/>
+                                    <div className="pl-4 mt-3 space-y-2">
+                                        {operatingHours[day].slots.map((slot, index) => (
+                                            <div key={index} className="flex items-center gap-2">
+                                                <input type="time" value={slot.open} onChange={e => handleTimeChange(day, index, 'open', e.target.value)} className="p-1 border rounded text-sm w-full max-w-[120px]"/>
+                                                <span className="text-gray-500">to</span>
+                                                <input type="time" value={slot.close} onChange={e => handleTimeChange(day, index, 'close', e.target.value)} className="p-1 border rounded text-sm w-full max-w-[120px]"/>
+                                                <button onClick={() => removeSlot(day, index)} className="p-2 text-red-500 hover:bg-red-50 rounded-full"><TrashIcon /></button>
+                                            </div>
+                                        ))}
+                                        <button onClick={() => addSlot(day)} className="flex items-center text-sm font-semibold text-blue-600 hover:text-blue-800"><PlusCircleIcon className="w-5 h-5 mr-1"/>Add time slot</button>
                                     </div>
                                 )}
                             </div>
