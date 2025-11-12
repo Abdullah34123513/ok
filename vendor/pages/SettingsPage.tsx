@@ -33,9 +33,6 @@ const SettingToggle: React.FC<ToggleProps> = ({ label, description, enabled, onT
     </div>
 );
 
-// FIX: Use `as const` to create a specific string literal type union for daysOfWeek.
-// This ensures `day` is treated as a specific string, which is a valid React key and child,
-// and also a valid key for `OperatingHours`, resolving the compiler errors.
 const daysOfWeek = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'] as const;
 
 const defaultHours: OperatingHours = {
@@ -78,42 +75,58 @@ const SettingsPage: React.FC = () => {
 
     const handleToggleDay = (day: keyof OperatingHours) => {
         setOperatingHours(prev => {
-            const newHours = { ...prev };
-            const dayState = newHours[day];
-            dayState.isOpen = !dayState.isOpen;
-            // If opening for the first time, add a default slot
-            if (dayState.isOpen && dayState.slots.length === 0) {
-                dayState.slots.push({ open: '09:00', close: '17:00' });
+            const dayState = prev[day];
+            const newIsOpen = !dayState.isOpen;
+            let newSlots = dayState.slots;
+            if (newIsOpen && dayState.slots.length === 0) {
+                newSlots = [{ open: '09:00', close: '17:00' }];
             }
-            return newHours;
+            return {
+                ...prev,
+                [day]: {
+                    ...dayState,
+                    isOpen: newIsOpen,
+                    slots: newSlots,
+                },
+            };
         });
     };
 
     const handleTimeChange = (day: keyof OperatingHours, slotIndex: number, type: 'open' | 'close', value: string) => {
         setOperatingHours(prev => {
-            const newHours = { ...prev };
-            newHours[day].slots[slotIndex][type] = value;
-            return newHours;
+            const newSlots = [...prev[day].slots];
+            newSlots[slotIndex] = { ...newSlots[slotIndex], [type]: value };
+            return {
+                ...prev,
+                [day]: {
+                    ...prev[day],
+                    slots: newSlots,
+                },
+            };
         });
     };
     
     const addSlot = (day: keyof OperatingHours) => {
-        setOperatingHours(prev => {
-            const newHours = { ...prev };
-            newHours[day].slots.push({ open: '17:00', close: '22:00' });
-            return newHours;
-        });
+        setOperatingHours(prev => ({
+            ...prev,
+            [day]: {
+                ...prev[day],
+                slots: [...prev[day].slots, { open: '17:00', close: '22:00' }],
+            },
+        }));
     };
 
     const removeSlot = (day: keyof OperatingHours, slotIndex: number) => {
         setOperatingHours(prev => {
-            const newHours = { ...prev };
-            newHours[day].slots.splice(slotIndex, 1);
-            // If all slots are removed, mark day as closed
-            if (newHours[day].slots.length === 0) {
-                newHours[day].isOpen = false;
-            }
-            return newHours;
+            const newSlots = prev[day].slots.filter((_, index) => index !== slotIndex);
+            return {
+                ...prev,
+                [day]: {
+                    ...prev[day],
+                    slots: newSlots,
+                    isOpen: newSlots.length > 0,
+                },
+            };
         });
     };
 
