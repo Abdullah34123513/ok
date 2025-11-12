@@ -6,6 +6,7 @@ import { StarIcon } from '@components/Icons';
 import { useCart } from '@contexts/CartContext';
 import RelatedFoods from '@components/RelatedFoods';
 import { useNotification } from '@contexts/NotificationContext';
+import { checkAvailability } from '@shared/availability';
 
 interface FoodDetailPageProps {
     foodId: string;
@@ -64,6 +65,7 @@ const FoodDetailPage: React.FC<FoodDetailPageProps> = ({ foodId, location }) => 
     const [selectedCustomizations, setSelectedCustomizations] = useState<Record<string, CustomizationChoice[]>>({});
     const { addItem } = useCart();
     const { showNotification } = useNotification();
+    const [availabilityResult, setAvailabilityResult] = useState<{ isAvailable: boolean; message: string }>({ isAvailable: true, message: '' });
     
     const onFoodClick = (id: string) => {
         window.location.hash = `#/food/${id}`;
@@ -109,6 +111,9 @@ const FoodDetailPage: React.FC<FoodDetailPageProps> = ({ foodId, location }) => 
                     setRestaurant(restaurantData || null);
                     setReviews(reviewsData);
                     setRelatedFoods(relatedData);
+                    if (restaurantData) {
+                        setAvailabilityResult(checkAvailability(foodDetails, restaurantData));
+                    }
                 }
             } catch (error) {
                 console.error("Failed to fetch food details:", error);
@@ -180,10 +185,11 @@ const FoodDetailPage: React.FC<FoodDetailPageProps> = ({ foodId, location }) => 
             imageUrl: food.imageUrl,
             restaurantId: food.restaurantId,
             restaurantName: food.vendor.name,
+            availability: food.availability,
         };
 
         addItem(menuItem, 1, finalCustomizations, currentPrice);
-        showNotification(`${food.name} added to cart!`, 'success');
+        // Notification is handled by CartContext based on availability check
     };
     
     if (isLoading) {
@@ -245,13 +251,15 @@ const FoodDetailPage: React.FC<FoodDetailPageProps> = ({ foodId, location }) => 
 
                         <div className="flex justify-between items-center mb-6">
                             <span className="text-4xl font-bold text-red-500">${currentPrice.toFixed(2)}</span>
-                            <div className="w-48">
+                            <div className="w-48 text-right">
                                 <button
                                     onClick={handleAddToCart}
-                                    className="w-full bg-red-500 text-white font-bold py-3 px-4 rounded-lg hover:bg-red-600 transition duration-300"
+                                    disabled={!availabilityResult.isAvailable}
+                                    className="w-full bg-red-500 text-white font-bold py-3 px-4 rounded-lg hover:bg-red-600 transition duration-300 disabled:bg-gray-400 disabled:cursor-not-allowed"
                                 >
-                                    Add to Cart
+                                    {availabilityResult.isAvailable ? 'Add to Cart' : 'Unavailable'}
                                 </button>
+                                {!availabilityResult.isAvailable && <p className="text-red-500 mt-1 text-xs">{availabilityResult.message}</p>}
                             </div>
                         </div>
 

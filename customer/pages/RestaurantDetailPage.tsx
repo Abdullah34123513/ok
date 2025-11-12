@@ -5,6 +5,7 @@ import * as tracking from '@shared/tracking';
 import { StarIcon, HeartIcon } from '@components/Icons';
 import { useCart } from '@contexts/CartContext';
 import QuantityControl from '@components/QuantityControl';
+import { checkAvailability } from '@shared/availability';
 
 interface RestaurantDetailPageProps {
     restaurantId: string;
@@ -215,7 +216,7 @@ const RestaurantDetailPage: React.FC<RestaurantDetailPageProps> = ({ restaurantI
 
             {/* Tab Content */}
             <div className="container mx-auto p-4 sm:p-6">
-                {activeTab === 'menu' && <MenuSection menu={menu} onFoodClick={onFoodClick} />}
+                {activeTab === 'menu' && <MenuSection menu={menu} restaurant={restaurant} onFoodClick={onFoodClick} />}
                 {activeTab === 'reviews' && <ReviewsSection reviews={reviews} />}
                 {activeTab === 'about' && <AboutSection restaurant={restaurant} />}
             </div>
@@ -234,10 +235,11 @@ const TabButton: React.FC<{ name: string, id: Tab, activeTab: Tab, setActiveTab:
     </button>
 );
 
-const MenuItemCard: React.FC<{ item: MenuItem, onFoodClick: (id: string) => void }> = ({ item, onFoodClick }) => {
+const MenuItemCard: React.FC<{ item: MenuItem, restaurant: Restaurant, onFoodClick: (id: string) => void }> = ({ item, restaurant, onFoodClick }) => {
     const { cartItems, addItem, updateQuantity, removeItem } = useCart();
     const cartItem = cartItems.find(ci => ci.baseItem.id === item.id && ci.selectedCustomizations.length === 0);
     const hasCustomizations = item.customizationOptions && item.customizationOptions.length > 0;
+    const { isAvailable } = checkAvailability(item, restaurant);
 
     const handleDecrement = () => {
         if (cartItem) {
@@ -262,33 +264,39 @@ const MenuItemCard: React.FC<{ item: MenuItem, onFoodClick: (id: string) => void
             </div>
             <div onClick={(e) => e.stopPropagation()} className="text-right flex flex-col justify-between items-end">
                 <p className="font-bold text-gray-800">${item.price.toFixed(2)}{hasCustomizations ? '+' : ''}</p>
-                {hasCustomizations ? (
-                    <button onClick={() => onFoodClick(item.id)} className="bg-gray-100 text-gray-700 font-bold py-1 px-3 text-sm rounded-full hover:bg-gray-200 transition">
-                        Customize
-                    </button>
-                ) : cartItem ? (
-                    <QuantityControl 
-                        quantity={cartItem.quantity}
-                        onIncrement={() => updateQuantity(cartItem.cartItemId, cartItem.quantity + 1)}
-                        onDecrement={handleDecrement}
-                    />
+                {isAvailable ? (
+                    hasCustomizations ? (
+                        <button onClick={() => onFoodClick(item.id)} className="bg-gray-100 text-gray-700 font-bold py-1 px-3 text-sm rounded-full hover:bg-gray-200 transition">
+                            Customize
+                        </button>
+                    ) : cartItem ? (
+                        <QuantityControl 
+                            quantity={cartItem.quantity}
+                            onIncrement={() => updateQuantity(cartItem.cartItemId, cartItem.quantity + 1)}
+                            onDecrement={handleDecrement}
+                        />
+                    ) : (
+                        <button onClick={() => addItem(item, 1, [], item.price)} className="bg-red-100 text-red-600 font-bold py-1 px-3 text-sm rounded-full hover:bg-red-500 hover:text-white transition">
+                            Add
+                        </button>
+                    )
                 ) : (
-                    <button onClick={() => addItem(item, 1, [], item.price)} className="bg-red-100 text-red-600 font-bold py-1 px-3 text-sm rounded-full hover:bg-red-500 hover:text-white transition">
-                        Add
-                    </button>
+                    <div className="bg-gray-100 text-gray-500 font-semibold py-1 px-3 text-sm rounded-full text-center">
+                        Unavailable
+                    </div>
                 )}
             </div>
         </div>
     );
 };
 
-const MenuSection: React.FC<{ menu: MenuCategory[], onFoodClick: (id: string) => void }> = ({ menu, onFoodClick }) => (
+const MenuSection: React.FC<{ menu: MenuCategory[], restaurant: Restaurant, onFoodClick: (id: string) => void }> = ({ menu, restaurant, onFoodClick }) => (
     <div>
         {menu.map(category => (
             <div key={category.name} className="mb-8">
                 <h2 className="text-2xl font-bold border-l-4 border-red-500 pl-3 mb-4">{category.name}</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {category.items.map((item: MenuItem) => <MenuItemCard key={item.id} item={item} onFoodClick={onFoodClick} />)}
+                    {category.items.map((item: MenuItem) => <MenuItemCard key={item.id} item={item} restaurant={restaurant} onFoodClick={onFoodClick} />)}
                 </div>
             </div>
         ))}

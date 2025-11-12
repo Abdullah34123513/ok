@@ -3,12 +3,14 @@ import type { CartItem, MenuItem, Offer, AppliedOffer, SelectedCustomization } f
 import * as api from '@shared/api';
 import * as tracking from '@shared/tracking';
 import { useNotification } from './NotificationContext';
+import { checkAvailability } from '@shared/availability';
+
 
 export const DELIVERY_FEE = 5.99;
 
 interface CartContextType {
   cartItems: CartItem[];
-  addItem: (item: MenuItem, quantity: number, customizations: SelectedCustomization[], totalPrice: number) => void;
+  addItem: (item: MenuItem, quantity: number, customizations: SelectedCustomization[], totalPrice: number) => Promise<void>;
   removeItem: (cartItemId: string) => void;
   updateQuantity: (cartItemId: string, quantity: number) => void;
   clearCart: () => void;
@@ -40,6 +42,18 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const addItem = async (item: MenuItem, quantity: number, customizations: SelectedCustomization[], totalPrice: number) => {
+    const restaurant = await api.getRestaurantDetails(item.restaurantId);
+    if (!restaurant) {
+        showNotification('Could not verify restaurant availability.', 'error');
+        return;
+    }
+
+    const availability = checkAvailability(item, restaurant);
+    if (!availability.isAvailable) {
+        showNotification(availability.message, 'error');
+        return;
+    }
+      
     const updatedCart = await api.addToCart(item, quantity, customizations, totalPrice);
     tracking.trackEvent('add_to_cart', {
         itemId: item.id,
