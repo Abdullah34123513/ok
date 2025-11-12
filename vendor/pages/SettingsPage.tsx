@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { BellIcon, LockClosedIcon, TrashIcon } from '../components/Icons';
+import { BellIcon, LockClosedIcon } from '../components/Icons';
 
 interface ToggleProps {
     label: string;
@@ -40,12 +40,6 @@ const SettingsPage: React.FC = () => {
 
     const handleToggle = (key: keyof typeof notifications) => {
         setNotifications(prev => ({ ...prev, [key]: !prev[key] }));
-    };
-
-    const handleDeactivate = () => {
-        if (window.confirm('Are you sure you want to deactivate your account? This action cannot be undone.')) {
-            alert('Account deactivation functionality is not yet implemented.');
-        }
     };
 
     return (
@@ -92,23 +86,6 @@ const SettingsPage: React.FC = () => {
                 <div>
                      <button className="px-4 py-2 bg-gray-200 text-sm font-semibold rounded-md hover:bg-gray-300">
                         Change Password
-                    </button>
-                </div>
-            </div>
-
-            {/* Danger Zone */}
-            <div className="bg-white p-6 rounded-lg shadow-md border-l-4 border-red-500">
-                 <div className="flex items-center space-x-3 mb-4">
-                    <TrashIcon className="w-6 h-6 text-red-500" />
-                    <h2 className="text-xl font-bold text-red-700">Danger Zone</h2>
-                </div>
-                <p className="text-gray-600 mb-4">These actions are permanent and cannot be undone. Please proceed with caution.</p>
-                <div>
-                     <button
-                        onClick={handleDeactivate}
-                        className="px-4 py-2 bg-red-100 text-red-600 text-sm font-semibold rounded-md hover:bg-red-200"
-                    >
-                        Deactivate Account
                     </button>
                 </div>
             </div>

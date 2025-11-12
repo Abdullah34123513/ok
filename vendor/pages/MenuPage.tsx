@@ -3,12 +3,14 @@ import * as api from '@shared/api';
 import { useAuth } from '../contexts/AuthContext';
 import type { MenuCategory, MenuItem } from '@shared/types';
 import { PlusCircleIcon } from '../components/Icons';
+import AddMenuItemModal from '../components/AddMenuItemModal';
 
 const MenuPage: React.FC = () => {
     const { currentVendor } = useAuth();
     const [menu, setMenu] = useState<MenuCategory[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState('');
+    const [isModalOpen, setIsModalOpen] = useState(false);
 
     const fetchMenu = useCallback(async () => {
         if (!currentVendor) return;
@@ -28,9 +30,9 @@ const MenuPage: React.FC = () => {
         fetchMenu();
     }, [fetchMenu]);
 
-    const handleAddItem = () => {
-        // Placeholder for add item modal
-        alert('Add new item functionality coming soon!');
+    const handleItemAdded = () => {
+        setIsModalOpen(false);
+        fetchMenu();
     };
 
     const handleEditItem = (item: MenuItem) => {
@@ -55,7 +57,7 @@ const MenuPage: React.FC = () => {
             <div className="flex justify-between items-center">
                 <h1 className="text-2xl font-bold text-gray-800">Menu Management</h1>
                 <button
-                    onClick={handleAddItem}
+                    onClick={() => setIsModalOpen(true)}
                     className="flex items-center px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition"
                 >
                     <PlusCircleIcon className="w-5 h-5 mr-2" />
@@ -100,6 +102,14 @@ const MenuPage: React.FC = () => {
                 <div className="text-center py-10 bg-white rounded-lg shadow-md">
                     <p>No menu items found. Click "Add Menu Item" to get started.</p>
                 </div>
+            )}
+            
+            {isModalOpen && (
+                <AddMenuItemModal 
+                    isOpen={isModalOpen}
+                    onClose={() => setIsModalOpen(false)}
+                    onItemAdded={handleItemAdded}
+                />
             )}
         </div>
     );

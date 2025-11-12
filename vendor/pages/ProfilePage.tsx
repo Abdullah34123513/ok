@@ -93,14 +93,6 @@ const ProfilePage: React.FC = () => {
                         <label htmlFor="address" className="block text-sm font-medium text-gray-700">Address</label>
                         <input type="text" name="address" id="address" value={restaurant.address || ''} onChange={handleChange} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"/>
                     </div>
-                    <div>
-                        <label htmlFor="deliveryFee" className="block text-sm font-medium text-gray-700">Delivery Fee ($)</label>
-                        <input type="number" name="deliveryFee" id="deliveryFee" value={restaurant.deliveryFee || ''} onChange={handleChange} step="0.01" className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"/>
-                    </div>
-                     <div>
-                        <label htmlFor="deliveryTime" className="block text-sm font-medium text-gray-700">Avg. Delivery Time (e.g., 25-35 min)</label>
-                        <input type="text" name="deliveryTime" id="deliveryTime" value={restaurant.deliveryTime || ''} onChange={handleChange} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"/>
-                    </div>
                 </div>
                 <div className="mt-6 border-t pt-4">
                     <button type="submit" disabled={isSaving} className="px-6 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition disabled:bg-blue-300">
