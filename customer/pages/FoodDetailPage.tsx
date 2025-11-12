@@ -238,7 +238,7 @@ const FoodDetailPage: React.FC<FoodDetailPageProps> = ({ foodId, location }) => 
                                                         className="mr-3"
                                                     />
                                                     <span className="flex-1">{choice.name}</span>
-                                                    {choice.price > 0 && <span className="font-semibold text-sm text-gray-600">+${choice.price.toFixed(2)}</span>}
+                                                    {choice.price > 0 && <span className="font-semibold text-sm text-gray-600">+৳{choice.price.toFixed(2)}</span>}
                                                 </label>
                                             ))}
                                         </div>
@@ -250,7 +250,7 @@ const FoodDetailPage: React.FC<FoodDetailPageProps> = ({ foodId, location }) => 
                         {!hasCustomizations && <div className="flex-grow"></div>}
 
                         <div className="flex justify-between items-center mb-6">
-                            <span className="text-4xl font-bold text-red-500">${currentPrice.toFixed(2)}</span>
+                            <span className="text-4xl font-bold text-red-500">৳{currentPrice.toFixed(2)}</span>
                             <div className="w-48 text-right">
                                 <button
                                     onClick={handleAddToCart}
@@ -272,7 +272,7 @@ const FoodDetailPage: React.FC<FoodDetailPageProps> = ({ foodId, location }) => 
                                 >
                                     <div>
                                         <p className="font-bold text-red-600">{restaurant.name}</p>
-                                        <p className="text-sm text-gray-500">{restaurant.deliveryTime} &bull; ${restaurant.deliveryFee.toFixed(2)} Fee</p>
+                                        <p className="text-sm text-gray-500">{restaurant.deliveryTime} &bull; ৳{restaurant.deliveryFee.toFixed(2)} Fee</p>
                                     </div>
                                     <span className="text-red-500 font-bold">&rarr;</span>
                                 </a>

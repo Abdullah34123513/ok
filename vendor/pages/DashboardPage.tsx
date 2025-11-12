@@ -174,7 +174,7 @@ const DashboardPage: React.FC = () => {
                                         <div className="font-semibold">{order.customerName}</div>
                                         <div className="text-sm text-gray-600">{order.address.details}</div>
                                     </td>
-                                    <td className="p-4 align-top font-semibold text-lg">${order.total.toFixed(2)}</td>
+                                    <td className="p-4 align-top font-semibold text-lg">৳{order.total.toFixed(2)}</td>
                                     <td className="p-4 align-top text-right">
                                         <OrderStatusButton 
                                             order={order} 
@@ -199,7 +199,7 @@ const DashboardPage: React.FC = () => {
                                     <div className="font-mono text-sm text-blue-600">{order.id.split('-')[1]}</div>
                                     <div className="text-xs text-gray-500">{order.date}</div>
                                 </div>
-                                <div className="font-semibold text-lg">${order.total.toFixed(2)}</div>
+                                <div className="font-semibold text-lg">৳{order.total.toFixed(2)}</div>
                             </div>
                             <ul className="text-sm mt-2 space-y-2 border-t pt-2">
                                 {order.items.map(item => (

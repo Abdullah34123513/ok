@@ -99,7 +99,7 @@ const MenuPage: React.FC = () => {
                                             </div>
                                             <p className="text-sm text-gray-500 max-w-lg">{item.description}</p>
                                         </div>
-                                        <div className="font-semibold text-lg">${item.price.toFixed(2)}</div>
+                                        <div className="font-semibold text-lg">৳{item.price.toFixed(2)}</div>
                                         <div className="flex items-center space-x-2 self-end sm:self-center">
                                             <button onClick={() => handleEditItem(item)} className="p-2 bg-gray-200 text-sm font-semibold rounded-md hover:bg-gray-300">
                                                 <EditIcon className="w-5 h-5 text-gray-600"/>

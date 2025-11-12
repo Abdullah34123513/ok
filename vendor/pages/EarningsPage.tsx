@@ -43,7 +43,7 @@ const EarningsPage: React.FC = () => {
             <h1 className="text-2xl font-bold text-gray-800">Earnings Summary</h1>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <StatCard title="Total Revenue" value={`$${summary?.totalRevenue.toFixed(2)}`} icon={RevenueIcon} color="#10B981" />
+                <StatCard title="Total Revenue" value={`৳${summary?.totalRevenue.toFixed(2)}`} icon={RevenueIcon} color="#10B981" />
                 <StatCard title="Total Orders" value={summary?.totalOrders ?? 0} icon={TotalOrdersIcon} color="#3B82F6" />
                 <StatCard title="Average Rating" value={summary?.averageItemRating.toFixed(1) ?? 'N/A'} icon={RatingIcon} color="#EF4444" />
             </div>

@@ -58,7 +58,7 @@ const FoodCard: React.FC<FoodCardProps> = ({ food, onFoodClick }) => {
         <h3 className="font-bold text-lg text-gray-800 truncate">{food.name}</h3>
         <p className="text-sm text-gray-500 mb-2 flex-grow">{food.vendor.name}</p>
         <div className="flex justify-between items-center">
-          <p className="text-lg font-extrabold text-gray-900">${food.price.toFixed(2)}{hasCustomizations ? '+' : ''}</p>
+          <p className="text-lg font-extrabold text-gray-900">৳{food.price.toFixed(2)}{hasCustomizations ? '+' : ''}</p>
           <div onClick={(e) => e.stopPropagation()}>
             {hasCustomizations ? (
                 <button 

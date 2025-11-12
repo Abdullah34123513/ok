@@ -223,7 +223,7 @@ const CheckoutPage: React.FC<CheckoutPageProps> = () => {
                                         <div key={item.cartItemId} className="ml-2">
                                             <div className="flex justify-between text-sm">
                                                 <span className="truncate pr-2">{item.quantity} x {item.baseItem.name}</span>
-                                                <span className="font-semibold">${item.totalPrice.toFixed(2)}</span>
+                                                <span className="font-semibold">৳{item.totalPrice.toFixed(2)}</span>
                                             </div>
                                             {item.selectedCustomizations.length > 0 && (
                                                 <div className="text-xs text-gray-500 pl-2">
@@ -238,27 +238,27 @@ const CheckoutPage: React.FC<CheckoutPageProps> = () => {
                             <div className="border-t pt-3 space-y-2">
                                 <div className="flex justify-between text-sm">
                                     <span>Subtotal</span>
-                                    <span className="font-semibold">${cartTotal.toFixed(2)}</span>
+                                    <span className="font-semibold">৳{cartTotal.toFixed(2)}</span>
                                 </div>
                                 {appliedOffer && (
                                    <div className="flex justify-between text-sm text-green-600">
                                        <span className="font-semibold">{appliedOffer.title}</span>
-                                       <span className="font-semibold">-${discountAmount.toFixed(2)}</span>
+                                       <span className="font-semibold">-৳{discountAmount.toFixed(2)}</span>
                                    </div>
                                 )}
                                 <div className="flex justify-between text-sm">
                                     <span>Delivery Fee {numberOfRestaurants > 1 && deliveryOption === 'home' ? `(${numberOfRestaurants} restaurants)`: ''}</span>
-                                    <span className="font-semibold">${currentDeliveryFee.toFixed(2)}</span>
+                                    <span className="font-semibold">৳{currentDeliveryFee.toFixed(2)}</span>
                                 </div>
                                 {onlinePaymentDiscount > 0 && (
                                     <div className="flex justify-between text-sm text-green-600">
                                         <span className="font-semibold">Online Payment Discount (5%)</span>
-                                        <span className="font-semibold">-${onlinePaymentDiscount.toFixed(2)}</span>
+                                        <span className="font-semibold">-৳{onlinePaymentDiscount.toFixed(2)}</span>
                                     </div>
                                 )}
                                 <div className="flex justify-between font-bold text-lg text-black mt-2 pt-2 border-t">
                                     <span>Total</span>
-                                    <span>${currentGrandTotal.toFixed(2)}</span>
+                                    <span>৳{currentGrandTotal.toFixed(2)}</span>
                                 </div>
                             </div>
 

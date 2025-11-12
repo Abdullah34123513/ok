@@ -138,7 +138,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     if (offer.minOrderValue && cartTotal < offer.minOrderValue) {
-        showNotification(`Minimum order of $${offer.minOrderValue.toFixed(2)} required.`, 'error');
+        showNotification(`Minimum order of ৳${offer.minOrderValue.toFixed(2)} required.`, 'error');
         return false;
     }
     

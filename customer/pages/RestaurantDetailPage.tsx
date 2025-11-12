@@ -24,7 +24,7 @@ const StickyCartSummary: React.FC = () => {
                     <p className="font-bold text-lg">{cartCount} {cartCount > 1 ? 'items' : 'item'} in cart</p>
                 </div>
                 <div className="flex items-center space-x-4">
-                    <p className="font-extrabold text-xl">${grandTotal.toFixed(2)}</p>
+                    <p className="font-extrabold text-xl">৳{grandTotal.toFixed(2)}</p>
                     <a href="#/cart" className="bg-white text-red-500 font-bold py-2 px-6 rounded-full hover:bg-red-100 transition">
                         View Cart
                     </a>
@@ -180,7 +180,7 @@ const RestaurantDetailPage: React.FC<RestaurantDetailPageProps> = ({ restaurantI
                         <StarIcon className="w-5 h-5 text-yellow-300 mr-1"/>
                         <span className="font-bold">{restaurant.rating}</span>
                         <span className="ml-4">{restaurant.deliveryTime}</span>
-                        <span className="ml-4">${restaurant.deliveryFee.toFixed(2)} Fee</span>
+                        <span className="ml-4">৳{restaurant.deliveryFee.toFixed(2)} Fee</span>
                     </div>
                 </div>
             </div>
@@ -263,7 +263,7 @@ const MenuItemCard: React.FC<{ item: MenuItem, restaurant: Restaurant, onFoodCli
                  {item.isPackage && <span className="text-xs font-bold text-white bg-green-500 px-2 py-1 rounded-full mt-2 inline-block">PACKAGE</span>}
             </div>
             <div onClick={(e) => e.stopPropagation()} className="text-right flex flex-col justify-between items-end">
-                <p className="font-bold text-gray-800">${item.price.toFixed(2)}{hasCustomizations ? '+' : ''}</p>
+                <p className="font-bold text-gray-800">৳{item.price.toFixed(2)}{hasCustomizations ? '+' : ''}</p>
                 {isAvailable ? (
                     hasCustomizations ? (
                         <button onClick={() => onFoodClick(item.id)} className="bg-gray-100 text-gray-700 font-bold py-1 px-3 text-sm rounded-full hover:bg-gray-200 transition">

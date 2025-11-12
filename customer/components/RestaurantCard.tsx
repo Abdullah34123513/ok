@@ -21,7 +21,7 @@ const RestaurantCard: React.FC<RestaurantCardProps> = ({ restaurant, onClick }) 
         <h3 className="font-bold text-lg text-gray-800 truncate">{restaurant.name}</h3>
         <p className="text-sm text-gray-500 mb-2">{restaurant.cuisine}</p>
         <div className="flex justify-between items-center text-sm text-gray-600">
-          <span>${restaurant.deliveryFee.toFixed(2)} Fee</span>
+          <span>৳{restaurant.deliveryFee.toFixed(2)} Fee</span>
           <span>{restaurant.deliveryTime}</span>
         </div>
       </div>

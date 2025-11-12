@@ -142,14 +142,14 @@ const OrderTrackingPage: React.FC<OrderTrackingPageProps> = ({ orderId }) => {
                     {order.items.map((item: CartItem) => (
                         <div key={item.cartItemId} className="flex justify-between text-sm">
                             <span className="truncate pr-2">{item.quantity} x {item.baseItem.name}</span>
-                            <span className="font-semibold">${item.totalPrice.toFixed(2)}</span>
+                            <span className="font-semibold">৳{item.totalPrice.toFixed(2)}</span>
                         </div>
                     ))}
                 </div>
                 <div className="border-t pt-3 mt-3 space-y-1">
-                    <div className="flex justify-between text-sm"><span>Subtotal</span><span className="font-medium">${order.subtotal.toFixed(2)}</span></div>
-                    <div className="flex justify-between text-sm"><span>Delivery Fee</span><span className="font-medium">${order.deliveryFee.toFixed(2)}</span></div>
-                    <div className="flex justify-between font-bold"><span>Total</span><span>${order.total.toFixed(2)}</span></div>
+                    <div className="flex justify-between text-sm"><span>Subtotal</span><span className="font-medium">৳{order.subtotal.toFixed(2)}</span></div>
+                    <div className="flex justify-between text-sm"><span>Delivery Fee</span><span className="font-medium">৳{order.deliveryFee.toFixed(2)}</span></div>
+                    <div className="flex justify-between font-bold"><span>Total</span><span>৳{order.total.toFixed(2)}</span></div>
                 </div>
             </div>
 

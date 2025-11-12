@@ -339,7 +339,7 @@ const OrdersSection: React.FC<{ orders: Order[], filter: OrderFilter, onFilterCh
                                     <p className="text-sm text-gray-500">{order.date}</p>
                                 </div>
                                 <div className="text-right">
-                                   <p className="font-bold text-lg">${order.total.toFixed(2)}</p>
+                                   <p className="font-bold text-lg">৳{order.total.toFixed(2)}</p>
                                    <p className={`text-sm font-semibold ${order.status === 'Delivered' ? 'text-green-600' : 'text-gray-600'}`}>{order.status}</p>
                                 </div>
                             </div>

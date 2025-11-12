@@ -33,7 +33,7 @@ const CartItemRow: React.FC<{ item: CartItem }> = ({ item }) => {
                         ))}
                     </div>
                 )}
-                <p className="text-gray-600 font-semibold mt-1">${pricePerItem.toFixed(2)}</p>
+                <p className="text-gray-600 font-semibold mt-1">৳{pricePerItem.toFixed(2)}</p>
             </div>
             <div className="flex items-center space-x-4">
                 <QuantityControl
@@ -41,7 +41,7 @@ const CartItemRow: React.FC<{ item: CartItem }> = ({ item }) => {
                     onIncrement={() => updateQuantity(item.cartItemId, item.quantity + 1)}
                     onDecrement={handleDecrement}
                 />
-                <p className="font-bold w-20 text-right">${item.totalPrice.toFixed(2)}</p>
+                <p className="font-bold w-20 text-right">৳{item.totalPrice.toFixed(2)}</p>
                 <button onClick={() => removeItem(item.cartItemId)} className="text-gray-500 hover:text-red-500 p-2">
                     <TrashIcon />
                 </button>
@@ -136,7 +136,7 @@ const CartPage: React.FC<CartPageProps> = () => {
                         <div className="space-y-3 text-gray-700">
                            <div className="flex justify-between">
                                <span>Subtotal</span>
-                               <span className="font-semibold">${cartTotal.toFixed(2)}</span>
+                               <span className="font-semibold">৳{cartTotal.toFixed(2)}</span>
                            </div>
                            {appliedOffer && (
                                <div className="flex justify-between text-green-600">
@@ -144,16 +144,16 @@ const CartPage: React.FC<CartPageProps> = () => {
                                         <span className="font-semibold">Discount</span>
                                         <button onClick={removeOffer} className="ml-2 text-xs text-red-500 hover:underline">[Remove]</button>
                                     </div>
-                                   <span className="font-semibold">-${discountAmount.toFixed(2)}</span>
+                                   <span className="font-semibold">-৳{discountAmount.toFixed(2)}</span>
                                </div>
                            )}
                            <div className="flex justify-between">
                                <span>Delivery Fee {numberOfRestaurants > 1 ? `(${numberOfRestaurants} restaurants)`: ''}</span>
-                               <span className="font-semibold">${deliveryFee.toFixed(2)}</span>
+                               <span className="font-semibold">৳{deliveryFee.toFixed(2)}</span>
                            </div>
                            <div className="border-t pt-3 mt-3 flex justify-between font-bold text-xl text-black">
                                <span>Total</span>
-                               <span>${grandTotal.toFixed(2)}</span>
+                               <span>৳{grandTotal.toFixed(2)}</span>
                            </div>
                         </div>
                         <a href="#/checkout" className="block text-center w-full mt-6 bg-red-500 text-white font-bold py-3 px-4 rounded-lg hover:bg-red-600 transition duration-300">
