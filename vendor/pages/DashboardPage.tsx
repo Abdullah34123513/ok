@@ -28,7 +28,12 @@ const OrderStatusBadge: React.FC<{ status: Order['status'] }> = ({ status }) => 
 };
 
 
-const OrderStatusButton: React.FC<{ order: Order, onUpdate: (orderId: string, status: Order['status']) => void, className?: string }> = ({ order, onUpdate, className }) => {
+const OrderStatusButton: React.FC<{ 
+    order: Order, 
+    onUpdate: (orderId: string, status: Order['status']) => void, 
+    isUpdating: boolean,
+    className?: string 
+}> = ({ order, onUpdate, isUpdating, className }) => {
     const [loadingAction, setLoadingAction] = useState<Order['status'] | null>(null);
 
     const handleClick = async (newStatus: Order['status']) => {
@@ -38,6 +43,7 @@ const OrderStatusButton: React.FC<{ order: Order, onUpdate: (orderId: string, st
     };
 
     const baseClasses = "px-3 py-1 text-sm font-semibold rounded-md transition-colors disabled:opacity-50";
+    const isDisabled = !!loadingAction || isUpdating;
 
     switch (order.status) {
         case 'Placed':
@@ -45,14 +51,14 @@ const OrderStatusButton: React.FC<{ order: Order, onUpdate: (orderId: string, st
                 <div className={`flex items-center space-x-2 ${className}`}>
                     <button 
                         onClick={() => handleClick('Cancelled')} 
-                        disabled={!!loadingAction} 
+                        disabled={isDisabled} 
                         className={`${baseClasses} bg-red-500 text-white hover:bg-red-600 disabled:bg-red-300`}
                     >
                         {loadingAction === 'Cancelled' ? '...' : 'Reject'}
                     </button>
                     <button 
                         onClick={() => handleClick('Preparing')} 
-                        disabled={!!loadingAction} 
+                        disabled={isDisabled} 
                         className={`${baseClasses} bg-green-500 text-white hover:bg-green-600 disabled:bg-green-300`}
                     >
                         {loadingAction === 'Preparing' ? '...' : 'Accept'}
@@ -60,7 +66,7 @@ const OrderStatusButton: React.FC<{ order: Order, onUpdate: (orderId: string, st
                 </div>
             );
         case 'Preparing':
-            return <button onClick={() => handleClick('On its way')} disabled={!!loadingAction} className={`${baseClasses} bg-blue-500 text-white hover:bg-blue-600 disabled:bg-blue-300 ${className}`}>
+            return <button onClick={() => handleClick('On its way')} disabled={isDisabled} className={`${baseClasses} bg-blue-500 text-white hover:bg-blue-600 disabled:bg-blue-300 ${className}`}>
                 {loadingAction === 'On its way' ? '...' : 'Mark as Ready'}
             </button>;
         case 'On its way':
@@ -76,6 +82,7 @@ const DashboardPage: React.FC = () => {
     const [orders, setOrders] = useState<Order[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState('');
+    const [recentlyUpdated, setRecentlyUpdated] = useState<Set<string>>(new Set());
 
     const fetchOrders = useCallback(async () => {
         if (!currentVendor) return;
@@ -109,8 +116,18 @@ const DashboardPage: React.FC = () => {
     }, [fetchOrders]);
     
     const handleUpdateStatus = async (orderId: string, newStatus: Order['status']) => {
+        setRecentlyUpdated(prev => new Set(prev).add(orderId));
+        
         await api.updateOrderStatus(orderId, newStatus);
-        fetchOrders(); // Refetch orders immediately to reflect the change
+        await fetchOrders(); // Refetch orders immediately to reflect the change
+
+        setTimeout(() => {
+            setRecentlyUpdated(prev => {
+                const newSet = new Set(prev);
+                newSet.delete(orderId);
+                return newSet;
+            });
+        }, 3000); // Keep button disabled for 3 seconds for feedback
     };
 
     const renderContent = () => {
@@ -146,9 +163,14 @@ const DashboardPage: React.FC = () => {
                                     <td className="p-4 align-top">
                                         <div className="font-mono text-sm text-blue-600 font-semibold">{order.id.split('-')[1]}</div>
                                         <div className="text-xs text-gray-500">{order.date}</div>
-                                        <ul className="text-sm mt-2 space-y-1">
+                                        <ul className="text-sm mt-2 space-y-2">
                                             {order.items.map(item => (
-                                                <li key={item.cartItemId}>{item.quantity} x {item.baseItem.name}</li>
+                                                <li key={item.cartItemId} className="flex items-center space-x-2">
+                                                    <img src={item.baseItem.imageUrl} alt={item.baseItem.name} className="w-12 h-12 rounded object-cover" />
+                                                    <div>
+                                                        <span>{item.quantity} x {item.baseItem.name}</span>
+                                                    </div>
+                                                </li>
                                             ))}
                                         </ul>
                                     </td>
@@ -158,7 +180,11 @@ const DashboardPage: React.FC = () => {
                                     </td>
                                     <td className="p-4 align-top font-semibold text-lg">${order.total.toFixed(2)}</td>
                                     <td className="p-4 align-top text-right">
-                                        <OrderStatusButton order={order} onUpdate={handleUpdateStatus} />
+                                        <OrderStatusButton 
+                                            order={order} 
+                                            onUpdate={handleUpdateStatus} 
+                                            isUpdating={recentlyUpdated.has(order.id)}
+                                        />
                                     </td>
                                 </tr>
                             ))}
@@ -179,13 +205,22 @@ const DashboardPage: React.FC = () => {
                                 </div>
                                 <div className="font-semibold text-lg">${order.total.toFixed(2)}</div>
                             </div>
-                            <ul className="text-sm mt-2 space-y-1 border-t pt-2">
+                            <ul className="text-sm mt-2 space-y-2 border-t pt-2">
                                 {order.items.map(item => (
-                                    <li key={item.cartItemId}>{item.quantity} x {item.baseItem.name}</li>
+                                    <li key={item.cartItemId} className="flex items-center space-x-3">
+                                        <img src={item.baseItem.imageUrl} alt={item.baseItem.name} className="w-14 h-14 rounded-md object-cover" />
+                                        <div>
+                                            <span>{item.quantity} x {item.baseItem.name}</span>
+                                        </div>
+                                    </li>
                                 ))}
                             </ul>
                             <div className="mt-4 pt-2 border-t text-right">
-                                <OrderStatusButton order={order} onUpdate={handleUpdateStatus} />
+                                <OrderStatusButton 
+                                    order={order} 
+                                    onUpdate={handleUpdateStatus} 
+                                    isUpdating={recentlyUpdated.has(order.id)}
+                                />
                             </div>
                         </div>
                     ))}
