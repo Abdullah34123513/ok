@@ -167,6 +167,7 @@ export interface Order {
     estimatedDeliveryTime?: string;
     rider?: Rider;
     isReviewed?: boolean;
+    customerName?: string; // For vendor view
 }
 
 export interface OrderReview {
@@ -207,6 +208,7 @@ export interface SignupData {
 export interface AuthResponse {
     user: User;
     token: string;
+    vendorId?: string; // For vendor login
 }
 
 export interface ChatMessage {
@@ -218,4 +220,18 @@ export interface ChatMessage {
 
 export interface SupportInfo {
     phoneNumber: string;
+}
+
+// --- Vendor Types ---
+export interface Vendor {
+    id: string;
+    restaurantId: string;
+    name: string;
+}
+
+export interface VendorDashboardSummary {
+    totalRevenue: number;
+    totalOrders: number;
+    activeOrders: number;
+    averageItemRating: number;
 }

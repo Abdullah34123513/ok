@@ -139,10 +139,11 @@ const OrderTrackingPage: React.FC<OrderTrackingPageProps> = ({ orderId }) => {
             <div>
                 <h3 className="font-bold text-lg mb-2">Order Summary</h3>
                 <div className="bg-gray-50 p-4 rounded-lg space-y-2 max-h-48 overflow-y-auto">
+                    {/* FIX: Correctly access nested properties on `CartItem` for key, name, and price. */}
                     {order.items.map(item => (
-                        <div key={item.id} className="flex justify-between text-sm">
-                            <span className="truncate pr-2">{item.quantity} x {item.name}</span>
-                            <span className="font-semibold">${(item.price * item.quantity).toFixed(2)}</span>
+                        <div key={item.cartItemId} className="flex justify-between text-sm">
+                            <span className="truncate pr-2">{item.quantity} x {item.baseItem.name}</span>
+                            <span className="font-semibold">${item.totalPrice.toFixed(2)}</span>
                         </div>
                     ))}
                 </div>

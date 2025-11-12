@@ -1,5 +1,5 @@
 
-import type { Offer, Restaurant, Food, PaginatedFoods, SearchResult, PaginatedRestaurants, MenuCategory, Review, CartItem, MenuItem, Address, Order, AddressSuggestion, AddressDetails, User, LoginCredentials, SignupData, AuthResponse, LocationPoint, SupportInfo, ChatMessage, OrderReview, SelectedCustomization, CustomizationOption } from '../types';
+import type { Offer, Restaurant, Food, PaginatedFoods, SearchResult, PaginatedRestaurants, MenuCategory, Review, CartItem, MenuItem, Address, Order, AddressSuggestion, AddressDetails, User, LoginCredentials, SignupData, AuthResponse, LocationPoint, SupportInfo, ChatMessage, OrderReview, SelectedCustomization, CustomizationOption, Vendor, VendorDashboardSummary } from '../types';
 
 // --- Location-based data simulation helpers ---
 
@@ -37,12 +37,14 @@ const shuffleArray = <T,>(array: T[], seed: number): T[] => {
 
 // --- Mock Databases ---
 let mockUsers: User[] = [
-    { name: 'Alex Doe', email: 'alex.doe@example.com', phone: '123-456-7890', age: 30, gender: 'male' }
+    { name: 'Alex Doe', email: 'alex.doe@example.com', phone: '123-456-7890', age: 30, gender: 'male' },
+    { name: 'Vendor One', email: 'vendor1@example.com', phone: '555-0101' },
 ];
 
 // In a real app, passwords would be hashed. For this mock, we'll store them in a separate map.
 const mockUserPasswords = new Map<string, string>([
-    ['alex.doe@example.com', 'password123']
+    ['alex.doe@example.com', 'password123'],
+    ['vendor1@example.com', 'vendorpass1'],
 ]);
 
 // Helper to create future expiry dates
@@ -57,7 +59,7 @@ const createMockFood = (id: number, restaurant: Restaurant): Food => ({
   price: parseFloat((Math.random() * 20 + 5).toFixed(2)),
   rating: parseFloat((Math.random() * 2 + 3).toFixed(1)),
   restaurantId: restaurant.id,
-  description: 'A beautifully crafted dish made with the freshest ingredients, guaranteed to delight your taste buds. Perfect for any occasion, combining rich flavors and a stunning presentation.',
+  description: 'A beautifully crafted dish made with the freshest ingredients, guaranteed to delight your taste buds.',
   vendor: {
     name: restaurant.name,
   },
@@ -100,13 +102,6 @@ const mockOffers: Offer[] = [
     expiry: createExpiryDate(1),
   },
   {
-    id: 'offer-3',
-    imageUrl: 'https://picsum.photos/seed/banner3/1200/400',
-    title: 'Special Combo Deals',
-    description: 'Check out our new combo and family packages for great value!',
-    applicableFoods: ['food-combo-1', 'food-family-pack-1'],
-  },
-  {
     id: 'offer-r1-10off',
     imageUrl: 'https://picsum.photos/seed/offerR1/600/300',
     title: '10% Off Restaurant Hub 1',
@@ -117,20 +112,10 @@ const mockOffers: Offer[] = [
     couponCode: 'HUB10',
     expiry: createExpiryDate(5),
   },
-  {
-    id: 'offer-r2-5flat',
-    imageUrl: 'https://picsum.photos/seed/offerR2/600/300',
-    title: '$5 Flat Off at Restaurant Hub 2',
-    description: 'Get a flat $5 discount on orders above $30 from Restaurant Hub 2.',
-    discountType: 'FIXED',
-    discountValue: 5,
-    minOrderValue: 30,
-    applicableTo: { type: 'RESTAURANT', id: 'restaurant-2' }
-  },
 ];
 
-const allMockRestaurants: Restaurant[] = Array.from({ length: 50 }, (_, i) => createMockRestaurant(i + 1));
-const allMockFoods: Food[] = Array.from({ length: 100 }, (_, i) => createMockFood(i + 1, allMockRestaurants[(i % 10)]));
+const allMockRestaurants: Restaurant[] = Array.from({ length: 20 }, (_, i) => createMockRestaurant(i + 1));
+let allMockFoods: Food[] = Array.from({ length: 40 }, (_, i) => createMockFood(i + 1, allMockRestaurants[(i % 10)]));
 
 
 // --- Add More Customizable Items ---
@@ -147,17 +132,6 @@ const pizzaCustomizations: CustomizationOption[] = [
         ]
     },
     {
-        id: 'crust',
-        name: 'Crust',
-        type: 'SINGLE',
-        required: true,
-        choices: [
-            { name: 'Classic', price: 0 },
-            { name: 'Thin Crust', price: 0 },
-            { name: 'Stuffed Crust', price: 2.50 },
-        ]
-    },
-    {
         id: 'toppings',
         name: 'Toppings',
         type: 'MULTIPLE',
@@ -166,8 +140,6 @@ const pizzaCustomizations: CustomizationOption[] = [
             { name: 'Extra Cheese', price: 1.50 },
             { name: 'Pepperoni', price: 1.00 },
             { name: 'Mushrooms', price: 0.75 },
-            { name: 'Onions', price: 0.50 },
-            { name: 'Olives', price: 0.75 },
         ]
     }
 ];
@@ -192,71 +164,10 @@ const burgerCustomizations: CustomizationOption[] = [
         choices: [
             { name: 'French Fries', price: 0 },
             { name: 'Onion Rings', price: 1.00 },
-            { name: 'Side Salad', price: 1.50 },
         ]
     }
 ];
 
-const saladCustomizations: CustomizationOption[] = [
-    {
-        id: 'dressing',
-        name: 'Choose Your Dressing',
-        type: 'SINGLE',
-        required: true,
-        choices: [
-            { name: 'Italian Vinaigrette', price: 0 },
-            { name: 'Ranch Dressing', price: 0 },
-            { name: 'Caesar Dressing', price: 0.50 },
-        ]
-    },
-    {
-        id: 'protein',
-        name: 'Add a Protein',
-        type: 'SINGLE',
-        required: false,
-        choices: [
-            { name: 'Grilled Chicken', price: 3.50 },
-            { name: 'Crispy Tofu', price: 2.50 },
-            { name: 'Shrimp', price: 4.50 },
-        ]
-    },
-     {
-        id: 'extras',
-        name: 'Extras',
-        type: 'MULTIPLE',
-        required: false,
-        choices: [
-            { name: 'Avocado', price: 1.50 },
-            { name: 'Feta Cheese', price: 1.00 },
-            { name: 'Croutons', price: 0.50 },
-        ]
-    }
-];
-
-const pastaCustomizations: CustomizationOption[] = [
-    {
-        id: 'sauce',
-        name: 'Pick Your Sauce',
-        type: 'SINGLE',
-        required: true,
-        choices: [
-            { name: 'Classic Marinara', price: 0 },
-            { name: 'Creamy Alfredo', price: 1.50 },
-            { name: 'Basil Pesto', price: 1.50 },
-        ]
-    },
-    {
-        id: 'addons',
-        name: 'Add-ons',
-        type: 'MULTIPLE',
-        required: false,
-        choices: [
-            { name: 'Meatballs (3)', price: 3.00 },
-            { name: 'Sausage', price: 2.50 },
-            { name: 'Extra Veggies', price: 1.75 },
-        ]
-    }
-];
 
 allMockFoods.unshift({
   id: 'food-pizza-1',
@@ -265,7 +176,7 @@ allMockFoods.unshift({
   price: 12.99,
   rating: 4.8,
   restaurantId: allMockRestaurants[0].id,
-  description: 'Classic delight with 100% real mozzarella cheese, fresh tomatoes, and a savory tomato sauce base. Customize it to your liking!',
+  description: 'Classic delight with 100% real mozzarella cheese. Customize it to your liking!',
   vendor: { name: allMockRestaurants[0].name },
   customizationOptions: pizzaCustomizations,
 });
@@ -279,573 +190,495 @@ allMockFoods.push({
     price: 9.99,
     rating: 4.6,
     restaurantId: burgerRestaurant.id,
-    description: 'A juicy, all-beef patty with lettuce, tomato, and our special sauce on a toasted bun. Customize it with your favorite sides and add-ons!',
+    description: 'A juicy, all-beef patty with your choice of sides and add-ons!',
     vendor: { name: burgerRestaurant.name },
     customizationOptions: burgerCustomizations,
 });
 
-// Add a customizable salad
-const saladRestaurant = allMockRestaurants.find(r => r.cuisine === 'American') || allMockRestaurants[5];
-allMockFoods.push({
-    id: `food-salad-1`,
-    imageUrl: `https://picsum.photos/seed/salad1/400/300`,
-    name: `Build Your Own Garden Salad`,
-    price: 8.50,
-    rating: 4.4,
-    restaurantId: saladRestaurant.id,
-    description: 'A fresh bed of mixed greens and seasonal vegetables. Make it your own with our delicious dressings and protein add-ons!',
-    vendor: { name: saladRestaurant.name },
-    customizationOptions: saladCustomizations,
-});
 
-// Add a customizable pasta
-const pastaRestaurant = allMockRestaurants.find(r => r.cuisine === 'Italian') || allMockRestaurants[0];
-allMockFoods.push({
-    id: `food-pasta-1`,
-    imageUrl: `https://picsum.photos/seed/pasta1/400/300`,
-    name: `Create Your Own Pasta Bowl`,
-    price: 11.99,
-    rating: 4.7,
-    restaurantId: pastaRestaurant.id,
-    description: 'Your perfect pasta, your way. Choose your favorite sauce and load up on tasty add-ons for a meal you\'ll love.',
-    vendor: { name: pastaRestaurant.name },
-    customizationOptions: pastaCustomizations,
-});
+let mockCart: CartItem[] = [];
 
+let mockAddresses: Address[] = [
+    { id: 'addr-1', label: 'Home', details: '123 Main St, Anytown, USA 12345' },
+    { id: 'addr-2', label: 'Work', details: '456 Business Ave, Corp City, USA 54321' },
+];
 
-// --- Add Combo and Family Packages ---
-allMockFoods.push({
-  id: 'food-combo-1',
-  imageUrl: 'https://picsum.photos/seed/combo1/400/300',
-  name: 'Solo Combo Deal',
-  price: 18.99,
-  rating: 4.5,
-  restaurantId: allMockRestaurants[1].id,
-  description: 'The perfect meal for one! Includes a classic cheeseburger, medium fries, and a soft drink of your choice.',
-  vendor: { name: allMockRestaurants[1].name },
-  isPackage: true,
-});
+let mockOrders: Order[] = []; // This will be populated as orders are created
 
-allMockFoods.push({
-  id: 'food-family-pack-1',
-  imageUrl: 'https://picsum.photos/seed/familypack1/400/300',
-  name: 'Family Pizza Night Package',
-  price: 39.99,
-  rating: 4.7,
-  restaurantId: allMockRestaurants[0].id,
-  description: 'Everything you need for a family feast. Includes two large classic pizzas, a large portion of garlic bread, and a 2-liter soft drink.',
-  vendor: { name: allMockRestaurants[0].name },
-  isPackage: true,
-});
+const allMockReviews: Review[] = Array.from({ length: 15 }, (_, i) => ({
+    id: `review-${i+1}`,
+    author: `Customer ${i+1}`,
+    rating: parseFloat((Math.random() * 1.5 + 3.5).toFixed(1)),
+    text: 'This was an amazing experience! The food was delicious and the service was top-notch. Highly recommended.',
+    avatarUrl: `https://i.pravatar.cc/48?u=customer${i+1}`
+}));
 
+const mockChatHistory = new Map<string, ChatMessage[]>();
 
-// --- Location-aware data helpers ---
-const getRestaurantsForLocation = (location: string): Restaurant[] => {
-    const seed = locationHash(location);
-    return shuffleArray(allMockRestaurants, seed);
-};
+const mockVendors: Vendor[] = [
+    { id: 'vendor-1', restaurantId: 'restaurant-1', name: 'Vendor One' }
+];
 
-const getFoodsForLocation = (location: string): Food[] => {
-    const seed = locationHash(location);
-    const locationRestaurants = getRestaurantsForLocation(location);
-    const locationRestaurantIds = new Set(locationRestaurants.map(r => r.id));
-    // Filter foods to only include those from restaurants in the current location
-    const locationFoods = allMockFoods.filter(food => locationRestaurantIds.has(food.restaurantId));
-    return shuffleArray(locationFoods, seed);
-}
+// --- API Simulation ---
 
-// API simulation functions
-const simulateNetwork = <T,>(data: T, delay?: number): Promise<T> =>
-  new Promise(resolve => setTimeout(() => resolve(data), delay ?? Math.random() * 800 + 200));
+const simulateDelay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-const simulateError = (message: string, delay?: number): Promise<any> =>
-  new Promise((_, reject) => setTimeout(() => reject(new Error(message)), delay ?? 500));
-
-// --- Auth APIs ---
-export const signup = (data: SignupData): Promise<AuthResponse> => {
-    console.log('API: Attempting signup for', data.email);
-    if (mockUsers.some(u => u.email === data.email)) {
-        return simulateError('A user with this email already exists.');
-    }
-    const newUser: User = { 
-        name: data.name, 
-        email: data.email, 
-        phone: data.phone, 
-        age: data.age, 
-        gender: data.gender 
-    };
-    mockUsers.push(newUser);
-    mockUserPasswords.set(data.email, data.password);
-
-    const token = `mock-token-${Date.now()}`;
-    return simulateNetwork({ user: newUser, token });
-};
-
-export const login = (credentials: LoginCredentials): Promise<AuthResponse> => {
-    console.log('API: Attempting login for', credentials.email);
-    const user = mockUsers.find(u => u.email === credentials.email);
-    const storedPassword = mockUserPasswords.get(credentials.email);
-
-    if (user && storedPassword === credentials.password) {
-        const token = `mock-token-${Date.now()}`;
-        return simulateNetwork({ user, token });
-    }
-    return simulateError('Invalid email or password.');
-};
-
-
-export const getOffers = (location: string): Promise<Offer[]> => {
-  console.log(`API: Fetching offers for ${location}...`);
-  // To make it feel real, let's say only a subset of restaurants are available in any location.
-  const locationRestaurants = getRestaurantsForLocation(location).slice(0, 25); // Top 25 for this area
-  const locationRestaurantIds = new Set(locationRestaurants.map(r => r.id));
-
-  const locationOffers = mockOffers.filter(offer => {
-      // Show offers applicable to all restaurants
-      if (offer.applicableTo === 'ALL') {
-          return true;
-      }
-      // Show offers for restaurants within the user's location
-      if (offer.applicableTo && typeof offer.applicableTo === 'object' && 'id' in offer.applicableTo) {
-          return locationRestaurantIds.has(offer.applicableTo.id);
-      }
-      // Show offers that are not tied to any specific restaurant (e.g., food-specific offers)
-      if (!offer.applicableTo) {
-          return true;
-      }
-      return false;
-  });
-
+export const getOffers = async (location: string): Promise<Offer[]> => {
+  await simulateDelay(500);
   const seed = locationHash(location);
-  // Also shuffle the resulting offers to make it seem dynamic per location
-  return simulateNetwork(shuffleArray(locationOffers, seed));
+  return shuffleArray(mockOffers, seed).slice(0, 5);
 };
 
-export const getTopRestaurants = (location: string): Promise<Restaurant[]> => {
-  console.log(`API: Fetching top restaurants for ${location}...`);
-  const locationRestaurants = getRestaurantsForLocation(location);
-  return simulateNetwork(locationRestaurants.slice(0, 10));
+export const getActiveOffers = async (location: string): Promise<Offer[]> => {
+    await simulateDelay(500);
+    const seed = locationHash(location);
+    const now = new Date();
+    const active = mockOffers.filter(o => o.expiry && new Date(o.expiry) > now);
+    return shuffleArray(active, seed);
 };
 
-export const getFoods = (location: string, page: number, limit = 10): Promise<PaginatedFoods> => {
-  console.log(`API: Fetching foods for ${location}, page ${page}...`);
-  const locationFoods = getFoodsForLocation(location);
-  const startIndex = (page - 1) * limit;
-  const endIndex = startIndex + limit;
-  const paginatedFoods = locationFoods.slice(startIndex, endIndex);
-
-  return simulateNetwork({
-    foods: paginatedFoods,
-    hasMore: endIndex < locationFoods.length,
-    nextPage: page + 1,
-  });
+export const getOfferDetails = async (offerId: string): Promise<Offer | undefined> => {
+    await simulateDelay(400);
+    return mockOffers.find(o => o.id === offerId);
 };
 
-export const search = (query: string, location: string): Promise<SearchResult> => {
-    console.log(`API: Searching for "${query}" in ${location}...`);
-    const lowerCaseQuery = query.toLowerCase();
+// FIX: Added the missing function to fetch offers for a specific restaurant.
+export const getOffersForRestaurant = async (restaurantId: string): Promise<Offer[]> => {
+    await simulateDelay(400);
+    const now = new Date();
+    // Filter for offers that are either for this specific restaurant or for ALL, and are not expired.
+    return mockOffers.filter(o => {
+        const isExpired = o.expiry && new Date(o.expiry) < now;
+        if (isExpired) return false;
 
-    const locationFoods = getFoodsForLocation(location);
-    const locationRestaurants = getRestaurantsForLocation(location);
-
-    const matchingFoods = locationFoods.filter(
-        food => food.name.toLowerCase().includes(lowerCaseQuery) || food.vendor.name.toLowerCase().includes(lowerCaseQuery)
-    ).slice(0, 5);
-
-    const matchingRestaurants = locationRestaurants.filter(
-        restaurant => restaurant.name.toLowerCase().includes(lowerCaseQuery) || restaurant.cuisine.toLowerCase().includes(lowerCaseQuery)
-    ).slice(0, 5);
-
-    return simulateNetwork({ restaurants: matchingRestaurants, foods: matchingFoods });
-};
-
-export const getActiveOffers = (location: string): Promise<Offer[]> => {
-    console.log(`API: Fetching active offers for ${location}...`);
-    // In this mock, this is the same as getOffers.
-    return getOffers(location);
-};
-
-export const getRestaurants = (location: string, page: number, filters: Record<string, any> = {}, limit = 12): Promise<PaginatedRestaurants> => {
-    console.log(`API: Fetching restaurants for ${location}, page ${page} with filters`, filters);
-    const locationRestaurants = getRestaurantsForLocation(location);
-    const startIndex = (page - 1) * limit;
-    const endIndex = startIndex + limit;
-    const paginatedRestaurants = locationRestaurants.slice(startIndex, endIndex);
-
-    return simulateNetwork({
-        restaurants: paginatedRestaurants,
-        hasMore: endIndex < locationRestaurants.length,
-        nextPage: page + 1,
+        if (o.applicableTo === 'ALL') {
+            return true;
+        }
+        if (o.applicableTo && typeof o.applicableTo === 'object' && o.applicableTo.id === restaurantId) {
+            return true;
+        }
+        return false;
     });
 };
 
-let mockFavoriteRestaurantIds = new Set(['restaurant-2', 'restaurant-5', 'restaurant-8']);
-
-export const getRestaurantDetails = (id: string): Promise<Restaurant | undefined> => {
-    console.log(`API: Fetching details for restaurant ${id}...`);
-    const restaurant = allMockRestaurants.find(r => r.id === id);
-    if (restaurant) {
-        return simulateNetwork({ ...restaurant, isFavorite: mockFavoriteRestaurantIds.has(id) });
+export const getFoodsForOffer = async (offerId: string, location: string): Promise<Food[]> => {
+    await simulateDelay(600);
+    const offer = mockOffers.find(o => o.id === offerId);
+    if (!offer) return [];
+    if (offer.applicableTo === 'ALL') {
+        return getFoods(location, 1).then(p => p.foods.slice(0, 8));
     }
-    return simulateNetwork(undefined);
+    // FIX: Added type guard to ensure `offer.applicableTo` is an object with a `type` property before accessing its `id`.
+    if (offer.applicableTo && typeof offer.applicableTo === 'object' && 'id' in offer.applicableTo) {
+        return allMockFoods.filter(f => f.restaurantId === offer.applicableTo.id).slice(0, 8);
+    }
+    if (offer.applicableFoods) {
+        return allMockFoods.filter(f => offer.applicableFoods?.includes(f.id));
+    }
+    return [];
 };
 
-export const getRestaurantMenu = (id: string): Promise<MenuCategory[]> => {
-    console.log(`API: Fetching menu for restaurant ${id}...`);
-    const restaurant = allMockRestaurants.find(r => r.id === id);
-    if (!restaurant) return simulateNetwork([]);
+export const getTopRestaurants = async (location: string): Promise<Restaurant[]> => {
+  await simulateDelay(600);
+  const seed = locationHash(location);
+  return shuffleArray(allMockRestaurants, seed).slice(0, 10);
+};
 
-    const itemsForRestaurant = allMockFoods
-        .filter(food => food.restaurantId === id)
-        .map(food => ({
+export const getRestaurants = async (location: string, page: number, limit = 12): Promise<PaginatedRestaurants> => {
+    await simulateDelay(800);
+    const seed = locationHash(location);
+    const shuffled = shuffleArray(allMockRestaurants, seed);
+    const start = (page - 1) * limit;
+    const end = start + limit;
+    const restaurants = shuffled.slice(start, end);
+    return {
+        restaurants,
+        hasMore: end < shuffled.length,
+        nextPage: page + 1,
+    };
+};
+
+export const getFoods = async (location: string, page: number, limit = 12): Promise<PaginatedFoods> => {
+  await simulateDelay(1000);
+  const seed = locationHash(location);
+  const shuffled = shuffleArray(allMockFoods, seed);
+  const start = (page - 1) * limit;
+  const end = start + limit;
+  const foods = shuffled.slice(start, end);
+  return {
+    foods,
+    hasMore: end < shuffled.length,
+    nextPage: page + 1,
+  };
+};
+
+export const search = async (query: string, location: string): Promise<SearchResult> => {
+    await simulateDelay(500);
+    const lowerQuery = query.toLowerCase();
+    const seed = locationHash(location);
+    const shuffledRestaurants = shuffleArray(allMockRestaurants, seed);
+    const shuffledFoods = shuffleArray(allMockFoods, seed);
+
+    const restaurants = shuffledRestaurants.filter(r =>
+        r.name.toLowerCase().includes(lowerQuery) ||
+        r.cuisine.toLowerCase().includes(lowerQuery)
+    ).slice(0, 6);
+
+    const foods = shuffledFoods.filter(f =>
+        f.name.toLowerCase().includes(lowerQuery) ||
+        f.vendor.name.toLowerCase().includes(lowerQuery)
+    ).slice(0, 8);
+
+    return { restaurants, foods };
+};
+
+export const getRestaurantDetails = async (id: string): Promise<Restaurant | undefined> => {
+    await simulateDelay(400);
+    const restaurant = allMockRestaurants.find(r => r.id === id);
+    if (restaurant) {
+        // Simulate fetching favorite status
+        const favs = JSON.parse(localStorage.getItem('favorite_restaurants') || '[]');
+        return { ...restaurant, isFavorite: favs.includes(id) };
+    }
+    return undefined;
+};
+
+export const getRestaurantMenu = async (restaurantId: string): Promise<MenuCategory[]> => {
+    await simulateDelay(500);
+    const items = allMockFoods
+        .filter(f => f.restaurantId === restaurantId)
+        .map(food => ({ // Convert Food to MenuItem
             id: food.id,
             name: food.name,
             description: food.description,
             price: food.price,
             imageUrl: food.imageUrl,
             restaurantId: food.restaurantId,
-            restaurantName: restaurant.name,
+            restaurantName: food.vendor.name,
             customizationOptions: food.customizationOptions,
             isPackage: food.isPackage,
         }));
 
-    // Simple categorization for the mock
-    const appetizers = itemsForRestaurant.slice(0, 5);
-    const mains = itemsForRestaurant.slice(5);
+    // Simple categorization logic for the mock
+    const appetizers = items.filter(i => i.name.toLowerCase().includes('salad') || i.name.toLowerCase().includes('wings')).slice(0, 5);
+    const mains = items.filter(i => !appetizers.map(a => a.id).includes(i.id)).slice(0, 10);
 
-    const menu: MenuCategory[] = [];
-    if (appetizers.length > 0) menu.push({ name: 'Popular Items', items: appetizers });
-    if (mains.length > 0) menu.push({ name: 'Main Menu', items: mains });
+    const categories: MenuCategory[] = [];
+    if (appetizers.length > 0) categories.push({ name: 'Appetizers', items: appetizers });
+    if (mains.length > 0) categories.push({ name: 'Main Courses', items: mains });
+    if (categories.length === 0 && items.length > 0) categories.push({ name: 'Menu', items });
 
-    return simulateNetwork(menu);
+    return categories;
 };
 
-export const getRestaurantReviews = (id: string): Promise<Review[]> => {
-    console.log(`API: Fetching reviews for restaurant ${id}...`);
-    const reviews: Review[] = Array.from({length: 8}, (_, i) => ({
-        id: `review-${i}`,
-        author: `Diner ${i+1}`,
-        rating: Math.floor(Math.random() * 2) + 4, // 4 or 5 stars
-        text: 'This place was amazing! The food was delicious and the service was top-notch. Highly recommend to everyone visiting the city. I will definitely be back for more!',
-        avatarUrl: `https://i.pravatar.cc/48?u=user${i}`
-    }));
-    return simulateNetwork(reviews);
+export const getRestaurantReviews = async (restaurantId: string): Promise<Review[]> => {
+    await simulateDelay(300);
+    const seed = locationHash(restaurantId); // Use restaurant ID for deterministic reviews
+    return shuffleArray(allMockReviews, seed).slice(0, 5);
 };
 
-// --- Food Detail APIs ---
-export const getFoodDetails = (id: string): Promise<Food | undefined> => {
-    console.log(`API: Fetching details for food ${id}...`);
-    return simulateNetwork(allMockFoods.find(f => f.id === id));
+export const getFoodDetails = async (id: string): Promise<Food | undefined> => {
+    await simulateDelay(400);
+    return allMockFoods.find(f => f.id === id);
 };
 
-export const getFoodReviews = (id: string): Promise<Review[]> => {
-    console.log(`API: Fetching reviews for food ${id}...`);
-    const reviews: Review[] = Array.from({length: 5}, (_, i) => ({
-        id: `food-review-${id}-${i}`,
-        author: `Foodie ${i+1}`,
-        rating: Math.floor(Math.random() * 2) + 4, // 4 or 5 stars
-        text: 'Absolutely delicious! One of the best I have ever had. The flavors were perfectly balanced and it was cooked to perfection. A must-try!',
-        avatarUrl: `https://i.pravatar.cc/48?u=foodie${i}`
-    }));
-    return simulateNetwork(reviews);
+export const getFoodReviews = async (foodId: string): Promise<Review[]> => {
+    await simulateDelay(300);
+    const seed = locationHash(foodId);
+    return shuffleArray(allMockReviews, seed).slice(0, 3);
 };
 
-export const getRelatedFoods = (foodId: string, location: string): Promise<Food[]> => {
-    console.log(`API: Fetching related foods for ${foodId} in ${location}...`);
-    const locationFoods = getFoodsForLocation(location);
-    // Simple mock: return a few random items from the current location, excluding the current one
-    const related = locationFoods.filter(f => f.id !== foodId).slice(0, 8);
-    return simulateNetwork(related);
+export const getRelatedFoods = async (foodId: string, location: string): Promise<Food[]> => {
+    await simulateDelay(700);
+    const food = allMockFoods.find(f => f.id === foodId);
+    if (!food) return [];
+    
+    const seed = locationHash(location);
+    const shuffled = shuffleArray(allMockFoods, seed);
+
+    return shuffled.filter(
+        f => f.id !== foodId && (f.restaurantId === food.restaurantId)
+    ).slice(0, 5);
 };
 
 
-// --- Cart, Checkout, and Order APIs ---
+// --- Cart API ---
+export const getCart = async (): Promise<CartItem[]> => {
+    await simulateDelay(100);
+    return [...mockCart];
+};
 
-let mockCart: CartItem[] = [];
-let mockAddresses: Address[] = [
-    { id: 'addr-1', label: 'Home', details: '123 Main St, Food City, 12345' },
-    { id: 'addr-2', label: 'Work', details: '456 Business Ave, Suite 500, Food City, 12345' }
-];
-let mockOrders: Order[] = [
-    { id: 'order-1', items: [], subtotal: 45.50, deliveryFee: 5.99, total: 51.49, address: mockAddresses[0], paymentMethod: 'cod', deliveryOption: 'home', status: 'Delivered', restaurantName: 'Restaurant Hub 1', date: '2023-10-26', isReviewed: false },
-    { id: 'order-2', items: [], subtotal: 22.00, deliveryFee: 5.99, total: 27.99, address: mockAddresses[1], paymentMethod: 'online', deliveryOption: 'home', status: 'Cancelled', restaurantName: 'Restaurant Hub 3', date: '2023-10-25' },
-    { 
-        id: 'order-3', 
-        items: [],
-        subtotal: 31.80, 
-        deliveryFee: 5.99, 
-        total: 37.79, 
-        address: mockAddresses[0], 
-        paymentMethod: 'online', 
-        deliveryOption: 'home', 
-        status: 'On its way', 
-        restaurantName: 'Restaurant Hub 2', 
-        date: '2023-10-27',
-        restaurantLocation: { lat: 34.0522, lng: -118.2437 },
-        deliveryLocation: { lat: 34.0622, lng: -118.2537 },
-        estimatedDeliveryTime: '10:45 AM',
-        rider: {
-            name: 'John R.',
-            phone: '555-123-4567',
-            vehicle: 'Scooter - XYZ 789',
-            rating: 4.9,
-            location: { lat: 34.0572, lng: -118.2487 },
-        }
-    },
-    { id: 'order-4', items: [], subtotal: 25.00, deliveryFee: 5.99, total: 30.99, address: mockAddresses[0], paymentMethod: 'online', deliveryOption: 'home', status: 'Delivered', restaurantName: 'Restaurant Hub 4', date: '2023-10-24', isReviewed: true },
-];
-let riderLocations = new Map<string, LocationPoint>([
-    ['order-3', { lat: 34.0572, lng: -118.2487 }]
-]);
-
-
-export const getCart = (): Promise<CartItem[]> => {
-    console.log('API: Getting cart');
-    return simulateNetwork([...mockCart], 100);
-}
-
-export const addToCart = (item: MenuItem, quantity: number, customizations: SelectedCustomization[], totalPrice: number): Promise<CartItem[]> => {
-    console.log(`API: Adding item ${item.id} to cart with customizations`);
+export const addToCart = async (item: MenuItem, quantity: number, customizations: SelectedCustomization[], totalPrice: number): Promise<CartItem[]> => {
+    await simulateDelay(200);
     
     const newCartItem: CartItem = {
-        cartItemId: `${item.id}-${Math.random().toString(36).substr(2, 9)}`,
+        cartItemId: `cart-item-${Date.now()}-${Math.random()}`,
         baseItem: item,
-        quantity: quantity,
+        quantity,
         selectedCustomizations: customizations,
         totalPrice: totalPrice * quantity,
     };
 
+    // For simplicity in this mock, we just add it. A real app would check for existing identical items.
     mockCart.push(newCartItem);
-    return simulateNetwork([...mockCart]);
-}
+    return [...mockCart];
+};
 
-export const updateCartItemQuantity = (cartItemId: string, quantity: number): Promise<CartItem[]> => {
-    console.log(`API: Updating item ${cartItemId} quantity to ${quantity}`);
-    const itemIndex = mockCart.findIndex(cartItem => cartItem.cartItemId === cartItemId);
-    if (itemIndex > -1) {
-        if (quantity <= 0) {
-            mockCart.splice(itemIndex, 1);
-        } else {
-            const item = mockCart[itemIndex];
-            const pricePerItem = item.totalPrice / item.quantity;
-            item.quantity = quantity;
-            item.totalPrice = pricePerItem * quantity;
-        }
-    }
-    return simulateNetwork([...mockCart]);
-}
-
-export const removeCartItem = (cartItemId: string): Promise<CartItem[]> => {
-    console.log(`API: Removing item ${cartItemId} from cart`);
+export const removeCartItem = async (cartItemId: string): Promise<CartItem[]> => {
+    await simulateDelay(150);
     mockCart = mockCart.filter(item => item.cartItemId !== cartItemId);
-    return simulateNetwork([...mockCart]);
-}
-
-export const getAddresses = (): Promise<Address[]> => {
-    console.log('API: Getting addresses');
-    return simulateNetwork([...mockAddresses]);
-}
-
-export const createOrder = (orderPayload: Omit<Order, 'id' | 'status' | 'restaurantName' | 'date'>): Promise<Order> => {
-    console.log('API: Creating order with payload:', orderPayload);
-    const restaurantNames = [...new Set(orderPayload.items.map(item => item.baseItem.restaurantName))].join(', ');
-
-    const newOrder: Order = {
-        ...orderPayload,
-        id: `order-${Date.now()}`,
-        status: 'Placed',
-        restaurantName: restaurantNames || 'Unknown Restaurant',
-        date: new Date().toISOString().split('T')[0],
-    };
-    mockOrders.unshift(newOrder);
-    mockCart = []; // Clear the cart after order is placed
-    return simulateNetwork(newOrder, 1500);
-}
-
-// --- Mock Maps API ---
-
-const mockAddressSuggestionsDb: Record<string, AddressSuggestion[]> = {
-    '123': [{ id: 'place-1', description: '123 Main St, Food City, FC 12345, Foodland' }],
-    'park': [
-        { id: 'place-2', description: 'Park Avenue, Food City, FC 12345, Foodland' },
-        { id: 'place-3', description: 'Central Park, Metroville, MV 54321, Foodland' },
-    ],
-    'downtown': [{ id: 'place-4', description: '1 Downtown Square, Food City, FC 11111, Foodland' }],
+    return [...mockCart];
 };
 
-const mockAddressDetailsDb: Record<string, AddressDetails> = {
-    'place-1': { street: '123 Main St', city: 'Food City', postalCode: '12345', country: 'Foodland' },
-    'place-2': { street: 'Park Avenue', city: 'Food City', postalCode: '12345', country: 'Foodland' },
-    'place-3': { street: 'Central Park', city: 'Metroville', postalCode: '54321', country: 'Foodland' },
-    'place-4': { street: '1 Downtown Square', city: 'Food City', postalCode: '11111', country: 'Foodland' },
-};
-
-export const searchAddresses = (query: string): Promise<AddressSuggestion[]> => {
-    console.log(`API: Searching addresses for "${query}"`);
-    if (!query.trim()) {
-        return Promise.resolve([]);
+export const updateCartItemQuantity = async (cartItemId: string, quantity: number): Promise<CartItem[]> => {
+    await simulateDelay(150);
+    const itemIndex = mockCart.findIndex(item => item.cartItemId === cartItemId);
+    if (itemIndex > -1 && quantity > 0) {
+        const item = mockCart[itemIndex];
+        const pricePerItem = item.totalPrice / item.quantity;
+        item.quantity = quantity;
+        item.totalPrice = pricePerItem * quantity;
     }
-    const lowerQuery = query.toLowerCase();
-    const results = Object.keys(mockAddressSuggestionsDb)
-        .filter(key => lowerQuery.includes(key))
-        .flatMap(key => mockAddressSuggestionsDb[key]);
-    return simulateNetwork(results || [], 250);
+    return [...mockCart];
 };
 
-export const getAddressDetails = (placeId: string): Promise<AddressDetails | null> => {
-    console.log(`API: Getting details for place ID "${placeId}"`);
-    return simulateNetwork(mockAddressDetailsDb[placeId] || null, 300);
+
+// --- Address & Geocoding ---
+
+export const reverseGeocode = async (lat: number, lng: number): Promise<string> => {
+    await simulateDelay(500);
+    // In a real app, this would call a geocoding API.
+    return "Downtown, Food City";
 };
 
-export const addAddress = (label: string, details: AddressDetails): Promise<Address[]> => {
-    console.log('API: Adding new address', { label, details });
-    const formattedDetails = `${details.street}, ${details.city}, ${details.postalCode}`;
-    const newAddress = { id: `addr-${Date.now()}`, label, details: formattedDetails };
+export const searchAddresses = async (query: string): Promise<AddressSuggestion[]> => {
+    await simulateDelay(300);
+    // Mock address suggestions
+    return [
+        { id: 'place-1', description: `${query}, 123 Main St, Anytown` },
+        { id: 'place-2', description: `${query}, 456 Oak Ave, Someville` },
+        { id: 'place-3', description: `${query}, 789 Pine Ln, Otherplace` },
+    ];
+};
+
+export const getAddressDetails = async (placeId: string): Promise<AddressDetails> => {
+    await simulateDelay(400);
+    // Mock details for a selected place
+    return {
+        street: '123 Main St',
+        city: 'Anytown',
+        postalCode: '12345',
+        country: 'USA'
+    };
+};
+
+export const getAddresses = async (): Promise<Address[]> => {
+    await simulateDelay(200);
+    return [...mockAddresses];
+};
+
+export const addAddress = async (label: string, details: AddressDetails): Promise<Address[]> => {
+    await simulateDelay(500);
+    const newAddress: Address = {
+        id: `addr-${Date.now()}`,
+        label,
+        details: `${details.street}, ${details.city}, ${details.postalCode}`
+    };
     mockAddresses.push(newAddress);
-    return simulateNetwork([...mockAddresses]);
+    return [...mockAddresses];
 };
 
-const mockCities = [
-    { name: 'Riyadh', lat: 24.7136, lng: 46.6753 },
-    { name: 'New York', lat: 40.7128, lng: -74.0060 },
-    { name: 'London', lat: 51.5074, lng: -0.1278 },
-    { name: 'Tokyo', lat: 35.6895, lng: 139.6917 },
-];
-
-// Simple distance calculation (not geographically accurate, but fine for a mock)
-const calculateDistance = (lat1: number, lng1: number, lat2: number, lng2: number) => {
-    return Math.sqrt(Math.pow(lat1 - lat2, 2) + Math.pow(lng1 - lng2, 2));
+export const removeAddress = async (id: string): Promise<Address[]> => {
+    await simulateDelay(300);
+    mockAddresses = mockAddresses.filter(a => a.id !== id);
+    return [...mockAddresses];
 };
 
-export const reverseGeocode = (lat: number, lng: number): Promise<string> => {
-    console.log(`API: Reverse geocoding for lat: ${lat}, lng: ${lng}`);
-    
-    let closestCity = null;
-    let minDistance = Infinity;
-
-    for (const city of mockCities) {
-        const distance = calculateDistance(lat, lng, city.lat, city.lng);
-        if (distance < minDistance) {
-            minDistance = distance;
-            closestCity = city;
-        }
-    }
-    
-    // If the closest city is reasonably close (e.g., within ~500km, which is roughly 5 degrees), use it.
-    if (closestCity && minDistance < 5) {
-        return simulateNetwork(`${closestCity.name} (Auto)`, 750);
-    }
-    
-    return simulateNetwork(`Your Location (Auto)`, 750);
-};
-
-
-// --- Profile Page & Order Tracking APIs ---
-
-export const getUserProfile = (): Promise<User> => {
-    console.log('API: Getting user profile');
-    // In a real app, you'd get this based on an auth token. Here we get the first mock user.
-    return simulateNetwork(mockUsers[0]);
-};
-
-export const updateUserProfile = (updatedProfile: User): Promise<User> => {
-    console.log('API: Updating user profile', updatedProfile);
-    const userIndex = mockUsers.findIndex(u => u.email === updatedProfile.email);
-    if (userIndex > -1) {
-        mockUsers[userIndex] = { ...updatedProfile };
-        return simulateNetwork(mockUsers[userIndex]);
-    }
-    return simulateError('User not found for update.');
-};
-
-export const removeAddress = (addressId: string): Promise<Address[]> => {
-    console.log(`API: Removing address ${addressId}`);
-    mockAddresses = mockAddresses.filter(addr => addr.id !== addressId);
-    return simulateNetwork([...mockAddresses]);
-};
-
-export const getOrders = (status: 'ongoing' | 'past' | 'cancelled'): Promise<Order[]> => {
-    console.log(`API: Getting orders with status: ${status}`);
-    const filtered = mockOrders.filter(order => {
-        if (status === 'ongoing') return ['Placed', 'Preparing', 'On its way'].includes(order.status);
-        if (status === 'past') return order.status === 'Delivered';
-        if (status === 'cancelled') return order.status === 'Cancelled';
-        return false;
-    });
-    return simulateNetwork(filtered);
-};
-
-export const getFavoriteRestaurants = (): Promise<Restaurant[]> => {
-    console.log('API: Getting favorite restaurants');
-    const favorites = allMockRestaurants.filter(r => mockFavoriteRestaurantIds.has(r.id));
-    return simulateNetwork(favorites);
-};
-
-export const addFavoriteRestaurant = (restaurantId: string): Promise<{ success: boolean }> => {
-    console.log(`API: Adding favorite restaurant ${restaurantId}`);
-    mockFavoriteRestaurantIds.add(restaurantId);
-    return simulateNetwork({ success: true });
-};
-
-export const removeFavoriteRestaurant = (restaurantId: string): Promise<{ success: boolean }> => {
-    console.log(`API: Removing favorite restaurant ${restaurantId}`);
-    mockFavoriteRestaurantIds.delete(restaurantId);
-    return simulateNetwork({ success: true });
-};
-
-export const getOrderDetails = (orderId: string): Promise<Order | undefined> => {
-    console.log(`API: Getting details for order ${orderId}`);
-    return simulateNetwork(mockOrders.find(o => o.id === orderId));
-}
-
-export const getRiderLocation = (orderId: string): Promise<LocationPoint | null> => {
-    console.log(`API: Getting rider location for order ${orderId}`);
-    const currentLoc = riderLocations.get(orderId);
-    if (!currentLoc) {
-        return simulateNetwork(null, 100);
-    }
-    // Simulate movement
-    const newLoc = {
-        lat: currentLoc.lat + (Math.random() - 0.5) * 0.0005,
-        lng: currentLoc.lng + (Math.random() - 0.5) * 0.0005,
+// --- Order API ---
+export const createOrder = async (orderData: Omit<Order, 'id' | 'status' | 'restaurantName'| 'date'>): Promise<Order> => {
+    await simulateDelay(1000);
+    const restaurants = [...new Set(orderData.items.map(item => item.baseItem.restaurantName))];
+    const newOrder: Order = {
+        id: `ORDER-${Date.now()}`,
+        status: 'Placed',
+        date: new Date().toLocaleDateString(),
+        restaurantName: restaurants.join(', '),
+        ...orderData,
+        // Mock tracking data
+        restaurantLocation: { lat: 34.0522, lng: -118.2437 }, // Downtown LA
+        deliveryLocation: { lat: 34.0622, lng: -118.2537 },
+        estimatedDeliveryTime: '8:45 PM',
+        rider: {
+            name: 'John Rider',
+            phone: '555-1234',
+            vehicle: 'Honda Activa',
+            rating: 4.8,
+            location: { lat: 34.0522, lng: -118.2437 }
+        },
+        isReviewed: false,
     };
-    riderLocations.set(orderId, newLoc);
-    return simulateNetwork(newLoc, 100);
-}
-
-// --- Support Mock Data ---
-const mockSupportInfo: SupportInfo = {
-    phoneNumber: '1-800-FOOD-FAST'
+    mockOrders.unshift(newOrder); // Add to the beginning of the list
+    mockCart = []; // Clear the cart after order
+    return newOrder;
 };
 
-let mockChatHistory: ChatMessage[] = [
-    { id: 'chat-1', text: 'Hello! How can I help you today?', sender: 'support', timestamp: new Date(Date.now() - 60000 * 5).toISOString() },
-    { id: 'chat-2', text: 'Hi, I have a question about my last order.', sender: 'user', timestamp: new Date(Date.now() - 60000 * 4).toISOString() },
-    { id: 'chat-3', text: 'Of course, I can help with that. What is the order ID?', sender: 'support', timestamp: new Date(Date.now() - 60000 * 3).toISOString() },
-];
-
-// --- Support APIs ---
-export const getSupportInfo = (): Promise<SupportInfo> => {
-    console.log('API: Fetching support info...');
-    return simulateNetwork(mockSupportInfo);
+export const getOrderDetails = async (orderId: string): Promise<Order | undefined> => {
+    await simulateDelay(500);
+    return mockOrders.find(o => o.id === orderId);
 };
 
-export const getChatHistory = (userId: string): Promise<ChatMessage[]> => {
-    console.log(`API: Fetching chat history for user ${userId}...`);
-    return simulateNetwork([...mockChatHistory]);
+export const getRiderLocation = async (orderId: string): Promise<LocationPoint | null> => {
+    await simulateDelay(200);
+    const order = mockOrders.find(o => o.id === orderId);
+    if (!order || !order.rider || !order.deliveryLocation) return null;
+
+    // Simulate rider moving towards destination
+    const riderLoc = order.rider.location;
+    const destLoc = order.deliveryLocation;
+    
+    const latDiff = destLoc.lat - riderLoc.lat;
+    const lngDiff = destLoc.lng - riderLoc.lng;
+
+    // Move 20% of the remaining distance
+    riderLoc.lat += latDiff * 0.2;
+    riderLoc.lng += lngDiff * 0.2;
+
+    return { ...riderLoc };
 };
 
-export const sendChatMessage = (messageText: string, userId: string): Promise<ChatMessage> => {
-    console.log(`API: Sending chat message for user ${userId}`);
+export const getOrders = async (filter: 'ongoing' | 'past' | 'cancelled' = 'ongoing'): Promise<Order[]> => {
+    await simulateDelay(600);
+    const ongoingStatuses: Order['status'][] = ['Placed', 'Preparing', 'On its way'];
+    const pastStatuses: Order['status'][] = ['Delivered'];
+    
+    if (filter === 'ongoing') {
+        return mockOrders.filter(o => ongoingStatuses.includes(o.status));
+    }
+    if (filter === 'past') {
+        return mockOrders.filter(o => pastStatuses.includes(o.status));
+    }
+    if (filter === 'cancelled') {
+        return mockOrders.filter(o => o.status === 'Cancelled');
+    }
+    return [];
+};
+
+
+export const submitOrderReview = async (review: OrderReview): Promise<void> => {
+    await simulateDelay(800);
+    const orderIndex = mockOrders.findIndex(o => o.id === review.orderId);
+    if (orderIndex > -1) {
+        mockOrders[orderIndex].isReviewed = true;
+    }
+    console.log("Review submitted:", review);
+    return;
+};
+
+// --- User Profile & Favorites ---
+export const getUserProfile = async (): Promise<User> => {
+    await simulateDelay(300);
+    // In a real app, you'd get this based on the auth token
+    return mockUsers[0];
+};
+
+export const updateUserProfile = async (userData: User): Promise<User> => {
+    await simulateDelay(500);
+    const userIndex = mockUsers.findIndex(u => u.email === userData.email);
+    if (userIndex > -1) {
+        mockUsers[userIndex] = { ...mockUsers[userIndex], ...userData };
+    }
+    return mockUsers[userIndex];
+};
+
+export const getFavoriteRestaurants = async (): Promise<Restaurant[]> => {
+    await simulateDelay(400);
+    const favIds: string[] = JSON.parse(localStorage.getItem('favorite_restaurants') || '[]');
+    return allMockRestaurants.filter(r => favIds.includes(r.id));
+};
+
+export const addFavoriteRestaurant = async (restaurantId: string): Promise<void> => {
+    await simulateDelay(200);
+    const favs: string[] = JSON.parse(localStorage.getItem('favorite_restaurants') || '[]');
+    if (!favs.includes(restaurantId)) {
+        favs.push(restaurantId);
+        localStorage.setItem('favorite_restaurants', JSON.stringify(favs));
+    }
+};
+
+export const removeFavoriteRestaurant = async (restaurantId: string): Promise<void> => {
+    await simulateDelay(200);
+    let favs: string[] = JSON.parse(localStorage.getItem('favorite_restaurants') || '[]');
+    favs = favs.filter(id => id !== restaurantId);
+    localStorage.setItem('favorite_restaurants', JSON.stringify(favs));
+};
+
+// --- Auth API ---
+export const login = async (credentials: LoginCredentials): Promise<AuthResponse> => {
+    await simulateDelay(800);
+    const user = mockUsers.find(u => u.email === credentials.email);
+    const password = mockUserPasswords.get(credentials.email);
+
+    if (user && password === credentials.password) {
+        const vendor = mockVendors.find(v => v.name === user.name);
+        return { 
+            user, 
+            token: `mock-auth-token-${Date.now()}`,
+            vendorId: vendor ? vendor.id : undefined,
+        };
+    } else {
+        throw new Error('Invalid email or password.');
+    }
+};
+
+export const signup = async (data: SignupData): Promise<AuthResponse> => {
+    await simulateDelay(1000);
+    if (mockUsers.some(u => u.email === data.email)) {
+        throw new Error('An account with this email already exists.');
+    }
+
+    const newUser: User = {
+        name: data.name,
+        email: data.email,
+        phone: data.phone,
+        age: data.age,
+        gender: data.gender,
+    };
+
+    mockUsers.push(newUser);
+    mockUserPasswords.set(data.email, data.password);
+    
+    return { user: newUser, token: `mock-auth-token-${Date.now()}` };
+};
+
+// --- Support API ---
+export const getSupportInfo = async (): Promise<SupportInfo> => {
+    await simulateDelay(100);
+    return { phoneNumber: '1-800-FOOD-FIND' };
+};
+
+export const getChatHistory = async (userId: string): Promise<ChatMessage[]> => {
+    await simulateDelay(200);
+    if (!mockChatHistory.has(userId)) {
+        mockChatHistory.set(userId, [
+            { id: 'chat-1', text: 'Hello! How can I help you today?', sender: 'support', timestamp: new Date().toISOString() }
+        ]);
+    }
+    return mockChatHistory.get(userId) || [];
+};
+
+export const sendChatMessage = async (text: string, userId: string): Promise<ChatMessage[]> => {
+    await simulateDelay(500);
+    const history = mockChatHistory.get(userId) || [];
+    
     const userMessage: ChatMessage = {
         id: `chat-${Date.now()}`,
-        text: messageText,
+        text,
         sender: 'user',
         timestamp: new Date().toISOString()
     };
-    mockChatHistory.push(userMessage);
+    history.push(userMessage);
 
-    // Simulate support agent replying after a short delay
+    // Simulate support reply
     setTimeout(() => {
         const supportReply: ChatMessage = {
             id: `chat-${Date.now() + 1}`,
@@ -853,75 +686,126 @@ export const sendChatMessage = (messageText: string, userId: string): Promise<Ch
             sender: 'support',
             timestamp: new Date().toISOString()
         };
-        mockChatHistory.push(supportReply);
+        history.push(supportReply);
     }, 1500);
-
-    return simulateNetwork(userMessage);
+    
+    return history;
 };
 
-// --- Review API ---
-export const submitOrderReview = (review: OrderReview): Promise<{ success: boolean }> => {
-    console.log('API: Submitting review for order:', review);
-    const orderIndex = mockOrders.findIndex(o => o.id === review.orderId);
-    if (orderIndex > -1) {
-        mockOrders[orderIndex].isReviewed = true;
-        return simulateNetwork({ success: true }, 1000);
+
+// --- Coupon API ---
+export const validateCoupon = async (code: string): Promise<Offer | null> => {
+    await simulateDelay(400);
+    const offer = mockOffers.find(o => o.couponCode === code);
+    if (offer && (!offer.expiry || new Date(offer.expiry) > new Date())) {
+        return offer;
     }
-    return simulateError('Order not found for review.');
+    return null;
 };
 
-// --- New Offer APIs ---
-export const getOffersForRestaurant = (restaurantId: string): Promise<Offer[]> => {
-  console.log(`API: Fetching offers for restaurant ${restaurantId}...`);
-  // Fix: Added explicit type guard to safely access properties on the 'applicableTo' union type.
-  const restaurantOffers = mockOffers.filter(
-    offer => offer.applicableTo && typeof offer.applicableTo === 'object' && 'id' in offer.applicableTo && offer.applicableTo.id === restaurantId
-  );
-  return simulateNetwork(restaurantOffers);
+// --- Tracking API ---
+export const logTrackingEvent = async (eventName: string, payload: Record<string, any>, userEmail?: string): Promise<void> => {
+    // This is a fire-and-forget call
+    await simulateDelay(50);
+    console.log(`[TRACKING] Event: ${eventName}`, {
+        user: userEmail || 'guest',
+        timestamp: new Date().toISOString(),
+        ...payload,
+    });
 };
 
-export const validateCoupon = (code: string): Promise<Offer | null> => {
-    console.log(`API: Validating coupon code "${code}"...`);
-    if (!code) return simulateNetwork(null);
-    const offer = mockOffers.find(o => o.couponCode?.toUpperCase() === code.toUpperCase());
-    return simulateNetwork(offer || null);
+
+// --- VENDOR-SPECIFIC APIS ---
+
+export const getVendorDashboardSummary = async (vendorId: string): Promise<VendorDashboardSummary> => {
+    await simulateDelay(600);
+    const vendor = mockVendors.find(v => v.id === vendorId);
+    if (!vendor) throw new Error("Vendor not found");
+
+    const vendorOrders = mockOrders.filter(o => o.items.some(i => i.baseItem.restaurantId === vendor.restaurantId));
+    
+    return {
+        totalRevenue: vendorOrders.reduce((sum, order) => sum + order.total, 0),
+        totalOrders: vendorOrders.length,
+        activeOrders: vendorOrders.filter(o => ['Placed', 'Preparing'].includes(o.status)).length,
+        averageItemRating: 4.6, // Mocked value
+    };
 };
 
-export const getOfferDetails = (offerId: string): Promise<Offer | undefined> => {
-    console.log(`API: Fetching details for offer ${offerId}...`);
-    return simulateNetwork(mockOffers.find(o => o.id === offerId));
+export const getVendorOrders = async (vendorId: string, status: Order['status'] | 'New'): Promise<Order[]> => {
+    await simulateDelay(700);
+    const vendor = mockVendors.find(v => v.id === vendorId);
+    if (!vendor) throw new Error("Vendor not found");
+
+    const statusesToFetch = status === 'New' ? ['Placed'] : [status];
+
+    return mockOrders.filter(o => 
+        statusesToFetch.includes(o.status) &&
+        o.items.some(i => i.baseItem.restaurantId === vendor.restaurantId)
+    ).map(o => ({ ...o, customerName: mockUsers[0].name })); // Add customer name for vendor view
 };
 
-export const getFoodsForOffer = (offerId: string, location: string): Promise<Food[]> => {
-    console.log(`API: Fetching foods for offer ${offerId} in ${location}...`);
-    const offer = mockOffers.find(o => o.id === offerId);
-    if (!offer) {
-        return simulateNetwork([]);
-    }
 
-    const locationFoods = getFoodsForLocation(location);
-    let offerFoods: Food[] = [];
-
-    if (offer.applicableFoods) {
-        const applicableFoodIds = new Set(offer.applicableFoods);
-        offerFoods = locationFoods.filter(food => applicableFoodIds.has(food.id));
-    } else if (offer.applicableTo && typeof offer.applicableTo === 'object' && offer.applicableTo.type === 'RESTAURANT') {
-        offerFoods = locationFoods.filter(food => food.restaurantId === offer.applicableTo.id);
-    }
-
-    return simulateNetwork(offerFoods);
+export const updateOrderStatus = async (orderId: string, newStatus: Order['status']): Promise<Order> => {
+    await simulateDelay(400);
+    const order = mockOrders.find(o => o.id === orderId);
+    if (!order) throw new Error("Order not found");
+    order.status = newStatus;
+    return order;
 };
 
-// --- New Tracking API ---
-export const logTrackingEvent = (eventName: string, payload: Record<string, any>, userEmail?: string): Promise<{ success: boolean }> => {
-    // In a real backend, you'd save this event to a database/analytics service.
-    // Here we just log it to the console to simulate the process.
-    console.log(
-        `[USER TRACKING EVENT]
-        User: ${userEmail || 'anonymous'}
-        Event: ${eventName}
-        Payload: ${JSON.stringify(payload, null, 2)}
-        Timestamp: ${new Date().toISOString()}`
-    );
-    return simulateNetwork({ success: true }, 50); // Simulate a quick network request
+export const addMenuItem = async (vendorId: string, item: Omit<MenuItem, 'id' | 'restaurantId' | 'restaurantName'>): Promise<MenuItem> => {
+    await simulateDelay(500);
+    const vendor = mockVendors.find(v => v.id === vendorId);
+    if (!vendor) throw new Error("Vendor not found");
+
+    const newMenuItem: MenuItem = {
+        id: `food-${Date.now()}`,
+        restaurantId: vendor.restaurantId,
+        restaurantName: allMockRestaurants.find(r => r.id === vendor.restaurantId)?.name || 'N/A',
+        ...item,
+    };
+
+    allMockFoods.push({
+        id: newMenuItem.id,
+        name: newMenuItem.name,
+        description: newMenuItem.description,
+        price: newMenuItem.price,
+        imageUrl: newMenuItem.imageUrl,
+        restaurantId: newMenuItem.restaurantId,
+        rating: 4.0, // Default rating
+        vendor: { name: newMenuItem.restaurantName },
+        customizationOptions: newMenuItem.customizationOptions,
+    });
+    
+    return newMenuItem;
+};
+
+export const updateMenuItem = async (vendorId: string, item: MenuItem): Promise<MenuItem> => {
+    await simulateDelay(500);
+    const vendor = mockVendors.find(v => v.id === vendorId);
+    if (!vendor) throw new Error("Vendor not found");
+
+    const foodIndex = allMockFoods.findIndex(f => f.id === item.id && f.restaurantId === vendor.restaurantId);
+    if (foodIndex === -1) throw new Error("Menu item not found");
+
+    const updatedFood = {
+        ...allMockFoods[foodIndex],
+        name: item.name,
+        description: item.description,
+        price: item.price,
+        imageUrl: item.imageUrl,
+        customizationOptions: item.customizationOptions,
+    };
+    allMockFoods[foodIndex] = updatedFood;
+
+    return item;
+};
+
+export const deleteMenuItem = async (vendorId: string, itemId: string): Promise<void> => {
+    await simulateDelay(500);
+    const vendor = mockVendors.find(v => v.id === vendorId);
+    if (!vendor) throw new Error("Vendor not found");
+
+    allMockFoods = allMockFoods.filter(f => !(f.id === itemId && f.restaurantId === vendor.restaurantId));
 };

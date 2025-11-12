@@ -1,0 +1,103 @@
+import React, { useState, useEffect, useCallback } from 'react';
+import * as api from '../../services/api';
+import { useAuth } from '../contexts/AuthContext';
+import type { MenuCategory, MenuItem } from '../../types';
+import { PlusCircleIcon } from '../components/Icons';
+
+const MenuPage: React.FC = () => {
+    const { currentVendor } = useAuth();
+    const [menu, setMenu] = useState<MenuCategory[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState('');
+
+    const fetchMenu = useCallback(async () => {
+        if (!currentVendor) return;
+        setIsLoading(true);
+        setError('');
+        try {
+            const data = await api.getRestaurantMenu(currentVendor.restaurantId);
+            setMenu(data);
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Failed to load menu.');
+        } finally {
+            setIsLoading(false);
+        }
+    }, [currentVendor]);
+
+    useEffect(() => {
+        fetchMenu();
+    }, [fetchMenu]);
+
+    const handleAddItem = () => {
+        // Placeholder for add item modal
+        alert('Add new item functionality coming soon!');
+    };
+
+    const handleEditItem = (item: MenuItem) => {
+        // Placeholder for edit item modal
+        alert(`Editing "${item.name}" functionality coming soon!`);
+    };
+
+    const handleDeleteItem = async (itemId: string) => {
+        if (window.confirm('Are you sure you want to delete this item?')) {
+            if (!currentVendor) return;
+            try {
+                await api.deleteMenuItem(currentVendor.id, itemId);
+                fetchMenu(); // Refresh menu
+            } catch (err) {
+                alert('Failed to delete item.');
+            }
+        }
+    };
+
+    return (
+        <div className="p-6 space-y-6">
+            <div className="flex justify-between items-center">
+                <h1 className="text-2xl font-bold text-gray-800">Menu Management</h1>
+                <button
+                    onClick={handleAddItem}
+                    className="flex items-center px-4 py-2 bg-red-500 text-white font-semibold rounded-lg hover:bg-red-600 transition"
+                >
+                    <PlusCircleIcon className="w-5 h-5 mr-2" />
+                    Add Menu Item
+                </button>
+            </div>
+            
+            {isLoading ? (
+                <div>Loading menu...</div>
+            ) : error ? (
+                <div className="text-red-500">{error}</div>
+            ) : menu.length > 0 ? (
+                <div className="space-y-8">
+                    {menu.map(category => (
+                        <div key={category.name}>
+                            <h2 className="text-xl font-bold text-gray-700 mb-4 pb-2 border-b">{category.name}</h2>
+                            <div className="space-y-4">
+                                {category.items.map(item => (
+                                    <div key={item.id} className="bg-white p-4 rounded-lg shadow-md flex items-center space-x-4">
+                                        <img src={item.imageUrl} alt={item.name} className="w-20 h-20 rounded-md object-cover"/>
+                                        <div className="flex-1">
+                                            <h3 className="font-bold">{item.name}</h3>
+                                            <p className="text-sm text-gray-500 max-w-lg truncate">{item.description}</p>
+                                        </div>
+                                        <div className="font-semibold text-lg">${item.price.toFixed(2)}</div>
+                                        <div className="space-x-2">
+                                            <button onClick={() => handleEditItem(item)} className="px-3 py-1 bg-gray-200 text-sm font-semibold rounded-md hover:bg-gray-300">Edit</button>
+                                            <button onClick={() => handleDeleteItem(item.id)} className="px-3 py-1 bg-red-100 text-red-600 text-sm font-semibold rounded-md hover:bg-red-200">Delete</button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            ) : (
+                <div className="text-center py-10 bg-white rounded-lg shadow-md">
+                    <p>No menu items found. Click "Add Menu Item" to get started.</p>
+                </div>
+            )}
+        </div>
+    );
+};
+
+export default MenuPage;

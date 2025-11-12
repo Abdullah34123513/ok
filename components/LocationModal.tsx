@@ -13,7 +13,6 @@ interface LocationModalProps {
 }
 
 const LocationModal: React.FC<LocationModalProps> = ({ onLocationSet }) => {
-  const [manualLocation, setManualLocation] = useState('');
   const [isDetecting, setIsDetecting] = useState(false);
   const [error, setError] = useState<{ type: 'permission' | 'timeout' | 'generic', message: string } | null>(null);
 
@@ -79,58 +78,24 @@ const LocationModal: React.FC<LocationModalProps> = ({ onLocationSet }) => {
     }
   };
 
-  const handleManualSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (manualLocation.trim()) {
-      onLocationSet(manualLocation.trim());
-    }
-  };
-
   return (
     <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-2xl p-6 sm:p-8 w-full max-w-md animate-fade-in-up">
-        <h2 className="text-2xl font-bold text-gray-800 mb-2">Welcome to FoodieFind!</h2>
-        <p className="text-gray-600 mb-6">Please set your location to see restaurants near you.</p>
+      <div className="bg-white rounded-lg shadow-2xl p-6 sm:p-8 w-full max-w-md animate-fade-in-up text-center">
+        <LocationIcon className="w-16 h-16 text-red-500 mx-auto mb-4" />
+        <h2 className="text-2xl font-bold text-gray-800 mb-2">Find Food Near You</h2>
+        <p className="text-gray-600 mb-6">To see available restaurants and offers, please allow FoodieFind to access your location.</p>
         
-        <form onSubmit={handleManualSubmit}>
-          <div className="relative mb-4">
-              <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                  <LocationIcon className="h-5 w-5 text-gray-400" />
-              </div>
-              <input
-                type="text"
-                value={manualLocation}
-                onChange={(e) => setManualLocation(e.target.value)}
-                placeholder="Enter your city or address"
-                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-400"
-              />
-          </div>
-          <button 
-            type="submit"
-            className="w-full bg-red-500 text-white font-bold py-3 px-4 rounded-lg hover:bg-red-600 transition duration-300 disabled:bg-red-300"
-            disabled={!manualLocation.trim()}
-          >
-            Find Food
-          </button>
-        </form>
-
-        <div className="relative flex py-5 items-center">
-            <div className="flex-grow border-t border-gray-300"></div>
-            <span className="flex-shrink mx-4 text-gray-500">OR</span>
-            <div className="flex-grow border-t border-gray-300"></div>
-        </div>
-
         <button 
           onClick={handleDetectLocation} 
           disabled={isDetecting}
-          className="w-full flex items-center justify-center bg-gray-100 text-gray-700 font-bold py-3 px-4 rounded-lg hover:bg-gray-200 transition duration-300 disabled:opacity-50"
+          className="w-full flex items-center justify-center bg-red-500 text-white font-bold py-3 px-4 rounded-lg hover:bg-red-600 transition duration-300 disabled:opacity-50"
         >
           <LocationIcon className="mr-2"/>
-          {isDetecting ? 'Identifying location...' : 'Use current location'}
+          {isDetecting ? 'Finding your location...' : 'Use My Current Location'}
         </button>
 
         {error && (
-          <div className="mt-4 p-4 bg-yellow-50 border-l-4 border-yellow-400 text-yellow-800 rounded-r-lg" role="alert">
+          <div className="mt-4 p-4 bg-yellow-50 border-l-4 border-yellow-400 text-yellow-800 rounded-r-lg text-left" role="alert">
               <div className="flex">
                   <div className="py-1">
                       <svg className="fill-current h-6 w-6 text-yellow-500 mr-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M2.93 17.07A10 10 0 1 1 17.07 2.93 10 10 0 0 1 2.93 17.07zM9 5v6h2V5H9zm0 8v2h2v-2H9z"/></svg>
@@ -146,7 +111,7 @@ const LocationModal: React.FC<LocationModalProps> = ({ onLocationSet }) => {
                         <p className="text-sm mt-1">Please check your connection and try again.</p>
                       )}
                        {error.type === 'generic' && (
-                        <p className="text-sm mt-1">Please ensure location services are enabled or try entering your location manually.</p>
+                        <p className="text-sm mt-1">Please ensure location services are enabled on your device.</p>
                       )}
                   </div>
               </div>
