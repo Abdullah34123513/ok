@@ -3,7 +3,30 @@ import * as api from '@shared/api';
 import { useAuth } from '../contexts/AuthContext';
 import type { Order } from '@shared/types';
 
-type OrderTab = 'New' | 'Preparing' | 'On its way' | 'Delivered' | 'Cancelled';
+const OrderStatusBadge: React.FC<{ status: Order['status'] }> = ({ status }) => {
+    const statusStyles: Record<Order['status'], string> = {
+        'Placed': 'bg-blue-100 text-blue-800',
+        'Preparing': 'bg-yellow-100 text-yellow-800',
+        'On its way': 'bg-purple-100 text-purple-800',
+        'Delivered': 'bg-green-100 text-green-800',
+        'Cancelled': 'bg-red-100 text-red-800',
+        'Pending': 'bg-gray-100 text-gray-800',
+    };
+    const textMap: Record<Order['status'], string> = {
+        'Placed': 'New Order',
+        'Preparing': 'Preparing',
+        'On its way': 'Ready for Pickup',
+        'Delivered': 'Delivered',
+        'Cancelled': 'Cancelled',
+        'Pending': 'Pending',
+    };
+    return (
+        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${statusStyles[status]}`}>
+            {textMap[status]}
+        </span>
+    );
+};
+
 
 const OrderStatusButton: React.FC<{ order: Order, onUpdate: (orderId: string, status: Order['status']) => void, className?: string }> = ({ order, onUpdate, className }) => {
     const [loadingAction, setLoadingAction] = useState<Order['status'] | null>(null);
@@ -11,7 +34,7 @@ const OrderStatusButton: React.FC<{ order: Order, onUpdate: (orderId: string, st
     const handleClick = async (newStatus: Order['status']) => {
         setLoadingAction(newStatus);
         await onUpdate(order.id, newStatus);
-        // No need to reset loading state as component will re-render
+        // No need to reset loading state as component will re-render or disappear
     };
 
     const baseClasses = "px-3 py-1 text-sm font-semibold rounded-md transition-colors disabled:opacity-50";
@@ -30,93 +53,75 @@ const OrderStatusButton: React.FC<{ order: Order, onUpdate: (orderId: string, st
                     <button 
                         onClick={() => handleClick('Preparing')} 
                         disabled={!!loadingAction} 
-                        className={`${baseClasses} bg-blue-500 text-white hover:bg-blue-600 disabled:bg-blue-300`}
+                        className={`${baseClasses} bg-green-500 text-white hover:bg-green-600 disabled:bg-green-300`}
                     >
-                        {loadingAction === 'Preparing' ? '...' : 'Accept Order'}
+                        {loadingAction === 'Preparing' ? '...' : 'Accept'}
                     </button>
                 </div>
             );
         case 'Preparing':
-            return <button onClick={() => handleClick('On its way')} disabled={!!loadingAction} className={`${baseClasses} bg-yellow-500 text-white hover:bg-yellow-600 disabled:bg-yellow-300 ${className}`}>
+            return <button onClick={() => handleClick('On its way')} disabled={!!loadingAction} className={`${baseClasses} bg-blue-500 text-white hover:bg-blue-600 disabled:bg-blue-300 ${className}`}>
                 {loadingAction === 'On its way' ? '...' : 'Mark as Ready'}
             </button>;
         case 'On its way':
-             return <button onClick={() => handleClick('Delivered')} disabled={!!loadingAction} className={`${baseClasses} bg-green-500 text-white hover:bg-green-600 disabled:bg-green-300 ${className}`}>
-                {loadingAction === 'Delivered' ? '...' : 'Mark Delivered'}
-             </button>;
+            return null; // Vendor's job is done for this view
         default:
-            return <span className={`px-3 py-1 text-sm text-gray-500 ${className}`}>{order.status}</span>;
+            return null; // Hide button for other statuses like Cancelled/Delivered
     }
 };
 
 
 const DashboardPage: React.FC = () => {
     const { currentVendor } = useAuth();
-    const [activeTab, setActiveTab] = useState<OrderTab>('New');
     const [orders, setOrders] = useState<Order[]>([]);
-    const [orderCounts, setOrderCounts] = useState<Record<string, number> | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState('');
 
     const fetchOrders = useCallback(async () => {
         if (!currentVendor) return;
-        setIsLoading(true);
+        // Don't show loading indicator on background refreshes
+        if (orders.length === 0) {
+            setIsLoading(true);
+        }
         setError('');
         try {
-            const statusToFetch = activeTab === 'New' ? 'Placed' : activeTab;
-            const data = await api.getVendorOrders(currentVendor.id, statusToFetch);
+            const statusesToFetch: Array<Order['status'] | 'New'> = ['New', 'Preparing', 'On its way'];
+            const data = await api.getVendorOrders(currentVendor.id, statusesToFetch);
+            
+            // Sort orders: New orders first, then by date
+            data.sort((a, b) => {
+                if (a.status === 'Placed' && b.status !== 'Placed') return -1;
+                if (a.status !== 'Placed' && b.status === 'Placed') return 1;
+                return new Date(b.date).getTime() - new Date(a.date).getTime();
+            });
             setOrders(data);
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Failed to load orders.');
         } finally {
             setIsLoading(false);
         }
-    }, [currentVendor, activeTab]);
-
-    const fetchCounts = useCallback(async () => {
-        if (!currentVendor) return;
-        try {
-            const counts = await api.getVendorOrderCounts(currentVendor.id);
-            setOrderCounts(counts);
-        } catch (err) {
-            console.error("Could not fetch order counts", err);
-        }
-    }, [currentVendor]);
-
+    }, [currentVendor, orders.length]);
 
     useEffect(() => {
-        fetchOrders();
+        fetchOrders(); // Initial fetch
+        const intervalId = setInterval(fetchOrders, 30000); // Poll for new orders every 30 seconds
+        return () => clearInterval(intervalId); // Cleanup on unmount
     }, [fetchOrders]);
-
-    useEffect(() => {
-        fetchCounts();
-    }, [fetchCounts]);
     
     const handleUpdateStatus = async (orderId: string, newStatus: Order['status']) => {
         await api.updateOrderStatus(orderId, newStatus);
-        // Refetch orders for the current tab to see the change
-        fetchOrders();
-        fetchCounts();
-    };
-
-    const tabs: OrderTab[] = ['New', 'Preparing', 'On its way', 'Delivered', 'Cancelled'];
-    const tabColors: Record<OrderTab, string> = {
-        'New': 'bg-blue-500',
-        'Preparing': 'bg-yellow-500',
-        'On its way': 'bg-purple-500',
-        'Delivered': 'bg-green-500',
-        'Cancelled': 'bg-gray-400',
+        fetchOrders(); // Refetch orders immediately to reflect the change
     };
 
     const renderContent = () => {
         if (isLoading) {
-            return <div className="p-6 text-center">Loading orders...</div>;
+            return <div className="p-6 text-center text-gray-500">Loading active orders...</div>;
         }
         if (error) {
             return <div className="p-6 text-center text-red-500">{error}</div>;
         }
         if (orders.length === 0) {
-            return <div className="p-6 text-center text-gray-500">No orders in this category.</div>;
+            return <div className="p-6 text-center text-gray-500">No active orders right now.</div>;
         }
         return (
             <>
@@ -125,15 +130,19 @@ const DashboardPage: React.FC = () => {
                     <table className="w-full text-left">
                          <thead>
                             <tr className="bg-gray-50">
+                                <th className="p-4 font-semibold">Status</th>
                                 <th className="p-4 font-semibold">Order Details</th>
                                 <th className="p-4 font-semibold">Customer</th>
                                 <th className="p-4 font-semibold">Total</th>
-                                <th className="p-4 font-semibold">Status Action</th>
+                                <th className="p-4 font-semibold text-right">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
                             {orders.map(order => (
-                                <tr key={order.id} className="border-b last:border-0 hover:bg-gray-50">
+                                <tr key={order.id} className="border-b last:border-0 hover:bg-gray-50 animate-fade-in-up">
+                                     <td className="p-4 align-top">
+                                        <OrderStatusBadge status={order.status} />
+                                    </td>
                                     <td className="p-4 align-top">
                                         <div className="font-mono text-sm text-blue-600 font-semibold">{order.id.split('-')[1]}</div>
                                         <div className="text-xs text-gray-500">{order.date}</div>
@@ -148,7 +157,7 @@ const DashboardPage: React.FC = () => {
                                         <div className="text-sm text-gray-600">{order.address.details}</div>
                                     </td>
                                     <td className="p-4 align-top font-semibold text-lg">${order.total.toFixed(2)}</td>
-                                    <td className="p-4 align-top">
+                                    <td className="p-4 align-top text-right">
                                         <OrderStatusButton order={order} onUpdate={handleUpdateStatus} />
                                     </td>
                                 </tr>
@@ -160,22 +169,22 @@ const DashboardPage: React.FC = () => {
                 {/* Mobile Cards */}
                 <div className="space-y-4 md:hidden p-4">
                     {orders.map(order => (
-                        <div key={order.id} className="border rounded-lg p-4 bg-white shadow">
+                        <div key={order.id} className="border rounded-lg p-4 bg-white shadow animate-fade-in-up">
                             <div className="flex justify-between items-start">
                                 <div>
-                                    <div className="font-semibold">{order.customerName}</div>
+                                    <OrderStatusBadge status={order.status} />
+                                    <div className="font-semibold mt-2">{order.customerName}</div>
                                     <div className="font-mono text-sm text-blue-600">{order.id.split('-')[1]}</div>
                                     <div className="text-xs text-gray-500">{order.date}</div>
                                 </div>
                                 <div className="font-semibold text-lg">${order.total.toFixed(2)}</div>
                             </div>
-                            <div className="mt-2 text-sm text-gray-600">{order.address.details}</div>
                             <ul className="text-sm mt-2 space-y-1 border-t pt-2">
                                 {order.items.map(item => (
                                     <li key={item.cartItemId}>{item.quantity} x {item.baseItem.name}</li>
                                 ))}
                             </ul>
-                            <div className="mt-4 text-right">
+                            <div className="mt-4 pt-2 border-t text-right">
                                 <OrderStatusButton order={order} onUpdate={handleUpdateStatus} />
                             </div>
                         </div>
@@ -187,31 +196,7 @@ const DashboardPage: React.FC = () => {
 
     return (
         <div className="p-6 space-y-6">
-            <h1 className="text-2xl font-bold text-gray-800">Dashboard & Orders</h1>
-
-            <div className="border-b border-gray-200">
-                <nav className="-mb-px flex space-x-2 sm:space-x-6 overflow-x-auto">
-                    {tabs.map(tab => (
-                        <button
-                            key={tab}
-                            onClick={() => setActiveTab(tab)}
-                            className={`flex items-center space-x-2 whitespace-nowrap pb-3 px-1 border-b-2 font-medium text-sm transition-colors ${
-                                activeTab === tab
-                                    ? 'border-blue-500 text-blue-600'
-                                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                            }`}
-                        >
-                             <span className={`w-2 h-2 rounded-full ${tabColors[tab]}`}></span>
-                             <span>{tab}</span>
-                             {orderCounts && (
-                                <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${activeTab === tab ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-600'}`}>
-                                    {orderCounts[tab]}
-                                </span>
-                            )}
-                        </button>
-                    ))}
-                </nav>
-            </div>
+            <h1 className="text-2xl font-bold text-gray-800">Active Orders</h1>
             
             <div className="bg-white rounded-lg shadow-md">
                 {renderContent()}

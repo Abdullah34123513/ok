@@ -932,12 +932,12 @@ export const getVendorOrderCounts = async (vendorId: string): Promise<Record<str
 };
 
 
-export const getVendorOrders = async (vendorId: string, status: Order['status'] | 'New'): Promise<Order[]> => {
+export const getVendorOrders = async (vendorId: string, statuses: Array<Order['status'] | 'New'>): Promise<Order[]> => {
     await simulateDelay(700);
     const vendor = mockVendors.find(v => v.id === vendorId);
     if (!vendor) throw new Error("Vendor not found");
 
-    const statusesToFetch = status === 'New' ? ['Placed'] : [status];
+    const statusesToFetch = statuses.map(s => s === 'New' ? 'Placed' : s);
 
     return mockOrders.filter(o => 
         statusesToFetch.includes(o.status) &&
@@ -966,35 +966,40 @@ export const updateRestaurantDetails = async (restaurantId: string, details: Par
 
 export const getVendorCategories = async (): Promise<string[]> => {
     await simulateDelay(200);
-    return ['Appetizers', 'Main Courses', 'Desserts', 'Beverages', 'Salads', 'Soups'];
+    // In a real app, this would be a separate table. Here, we derive from existing items.
+    const categories = new Set(allMockFoods.map(f => f.category).filter(Boolean) as string[]);
+    return ['Main Course', 'Appetizers', 'Desserts', 'Beverages', ...categories];
 };
 
 export const uploadImage = async (file: File): Promise<string> => {
-    await simulateDelay(1000);
-    return `https://picsum.photos/seed/${file.name.replace(/\s/g, '')}/400/300`;
+    await simulateDelay(1500);
+    // In a real app, this would upload to a cloud storage service and return the URL.
+    // For this mock, we'll use a FileReader to return a data URL as a placeholder.
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            if (typeof reader.result === 'string') {
+                resolve(reader.result);
+            } else {
+                reject(new Error("Failed to read file."));
+            }
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+    });
 };
 
-interface NewMenuItemPayload {
-    name: string;
-    description: string;
-    category: string;
-    imageUrl: string;
-    status: 'active' | 'inactive';
-    price?: number;
-    sizes?: { name: string; price: number }[];
-    toppings?: { name: string; price: number }[];
-    availability: ItemAvailability;
-}
-
-export const addMenuItem = async (vendorId: string, itemData: NewMenuItemPayload): Promise<MenuItem> => {
-    await simulateDelay(500);
+export const addMenuItem = async (vendorId: string, itemData: any): Promise<MenuItem> => {
+    await simulateDelay(800);
     const vendor = mockVendors.find(v => v.id === vendorId);
     if (!vendor) throw new Error("Vendor not found");
 
     const customizationOptions: CustomizationOption[] = [];
     let basePrice = 0;
 
+    // Handle sizes
     if (itemData.sizes && itemData.sizes.length > 0) {
+        // Find the lowest price to use as the base price
         const sortedSizes = [...itemData.sizes].sort((a, b) => a.price - b.price);
         basePrice = sortedSizes[0].price;
         customizationOptions.push({
@@ -1004,84 +1009,91 @@ export const addMenuItem = async (vendorId: string, itemData: NewMenuItemPayload
             required: true,
             choices: sortedSizes.map(s => ({
                 name: s.name,
-                price: s.price - basePrice,
-            })),
+                price: s.price - basePrice // Price diff from base
+            }))
         });
     } else {
-        basePrice = itemData.price || 0;
+        basePrice = itemData.price;
     }
 
+    // Handle toppings
     if (itemData.toppings && itemData.toppings.length > 0) {
         customizationOptions.push({
             id: 'toppings',
             name: 'Toppings',
             type: 'MULTIPLE',
             required: false,
-            choices: itemData.toppings.map(t => ({
-                name: t.name,
-                price: t.price,
-            })),
+            choices: itemData.toppings
         });
     }
 
     const newMenuItem: MenuItem = {
         id: `food-${Date.now()}`,
-        restaurantId: vendor.restaurantId,
-        restaurantName: allMockRestaurants.find(r => r.id === vendor.restaurantId)?.name || 'N/A',
         name: itemData.name,
         description: itemData.description,
         price: basePrice,
         imageUrl: itemData.imageUrl,
-        customizationOptions: customizationOptions.length > 0 ? customizationOptions : undefined,
+        restaurantId: vendor.restaurantId,
+        restaurantName: vendor.name,
         category: itemData.category,
+        customizationOptions: customizationOptions.length > 0 ? customizationOptions : undefined,
         availability: itemData.availability,
     };
-
-    allMockFoods.push({
-        id: newMenuItem.id,
-        name: newMenuItem.name,
-        description: newMenuItem.description,
-        price: newMenuItem.price,
-        imageUrl: newMenuItem.imageUrl,
-        restaurantId: newMenuItem.restaurantId,
-        rating: 4.0, // Default rating
-        vendor: { name: newMenuItem.restaurantName },
-        customizationOptions: newMenuItem.customizationOptions,
-        category: newMenuItem.category,
-        availability: newMenuItem.availability,
-    });
     
+    // Convert back to a Food item to add to our mock DB
+    const newFood: Food = {
+        ...newMenuItem,
+        rating: 0, // New items have no rating
+        vendor: { name: vendor.name }
+    }
+
+    allMockFoods.unshift(newFood);
     return newMenuItem;
 };
 
-
-export const updateMenuItem = async (vendorId: string, item: MenuItem): Promise<MenuItem> => {
+export const updateMenuItem = async (vendorId: string, updatedItem: MenuItem): Promise<MenuItem> => {
     await simulateDelay(500);
     const vendor = mockVendors.find(v => v.id === vendorId);
-    if (!vendor) throw new Error("Vendor not found");
+    if (!vendor || updatedItem.restaurantId !== vendor.restaurantId) {
+        throw new Error("Authorization error: Cannot edit this item.");
+    }
+    
+    const itemIndex = allMockFoods.findIndex(f => f.id === updatedItem.id);
+    if (itemIndex === -1) {
+        throw new Error("Menu item not found.");
+    }
 
-    const foodIndex = allMockFoods.findIndex(f => f.id === item.id && f.restaurantId === vendor.restaurantId);
-    if (foodIndex === -1) throw new Error("Menu item not found");
-
-    const updatedFood = {
-        ...allMockFoods[foodIndex],
-        name: item.name,
-        description: item.description,
-        price: item.price,
-        imageUrl: item.imageUrl,
-        customizationOptions: item.customizationOptions,
-        category: item.category,
-        availability: item.availability,
+    // Convert MenuItem back to Food for storage, preserving existing rating
+    const updatedFood: Food = {
+        ...allMockFoods[itemIndex],
+        ...updatedItem,
+        vendor: { name: vendor.name },
     };
-    allMockFoods[foodIndex] = updatedFood;
 
-    return item;
+    allMockFoods[itemIndex] = updatedFood;
+    return updatedItem;
 };
 
 export const deleteMenuItem = async (vendorId: string, itemId: string): Promise<void> => {
-    await simulateDelay(500);
+    await simulateDelay(300);
     const vendor = mockVendors.find(v => v.id === vendorId);
-    if (!vendor) throw new Error("Vendor not found");
+    const itemIndex = allMockFoods.findIndex(f => f.id === itemId);
 
-    allMockFoods = allMockFoods.filter(f => !(f.id === itemId && f.restaurantId === vendor.restaurantId));
+    if (itemIndex === -1) throw new Error("Item not found");
+
+    if (!vendor || allMockFoods[itemIndex].restaurantId !== vendor.restaurantId) {
+        throw new Error("Authorization error: Cannot delete this item.");
+    }
+
+    allMockFoods.splice(itemIndex, 1);
+};
+
+
+export const getVendorConversations = async (vendorId: string): Promise<ConversationSummary[]> => {
+    await simulateDelay(500);
+    // This is a mock. In a real app, you'd query your chat database.
+    return [
+        { customerId: 'alex.doe@example.com', customerName: 'Alex Doe', lastMessage: 'Is my order on the way?', timestamp: new Date(Date.now() - 5 * 60000).toISOString(), hasUnread: true },
+        { customerId: 'jane.smith@example.com', customerName: 'Jane Smith', lastMessage: 'Thank you!', timestamp: new Date(Date.now() - 2 * 3600 * 1000).toISOString(), hasUnread: false },
+    ];
 };
