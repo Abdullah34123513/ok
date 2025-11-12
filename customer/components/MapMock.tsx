@@ -5,7 +5,7 @@ import { HomeIcon, MotorcycleIcon, RestaurantIcon } from '@components/Icons';
 interface MapMockProps {
   restaurantLocation?: LocationPoint;
   deliveryLocation?: LocationPoint;
-  riderLocation?: LocationPoint;
+  riderLocation?: LocationPoint | null;
 }
 
 // Define the bounding box of our mock city to map lat/lng to percentages
@@ -18,7 +18,7 @@ const MAP_BOUNDS = {
 
 const MapMock: React.FC<MapMockProps> = ({ restaurantLocation, deliveryLocation, riderLocation }) => {
     
-  const getPositionStyle = (location?: LocationPoint): React.CSSProperties => {
+  const getPositionStyle = (location?: LocationPoint | null): React.CSSProperties => {
     if (!location) return { display: 'none' };
 
     const latPercent = ((location.lat - MAP_BOUNDS.minLat) / (MAP_BOUNDS.maxLat - MAP_BOUNDS.minLat)) * 100;

@@ -90,7 +90,7 @@ const FoodDetailPage: React.FC<FoodDetailPageProps> = ({ foodId, location }) => 
             try {
                 const foodDetails = await api.getFoodDetails(foodId);
                 setFood(foodDetails || null);
-                resetCustomizations(foodDetails);
+                resetCustomizations(foodDetails || null);
 
                 if (foodDetails) {
                      tracking.trackEvent('view_food_detail', { 
