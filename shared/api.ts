@@ -266,7 +266,7 @@ export const getFoodsForOffer = async (offerId: string, location: string): Promi
     if (offer.applicableTo === 'ALL') {
         return getFoods(location, 1).then(p => p.foods.slice(0, 8));
     }
-    // FIX: Add a type guard to ensure `offer.applicableTo` is an object before accessing its `id` property.
+    // Fix: Add a type guard to ensure `offer.applicableTo` is an object before accessing its `id` property.
     // This prevents a TypeScript error because `applicableTo` could also be the string 'ALL'.
     if (offer.applicableTo && typeof offer.applicableTo === 'object') {
         return allMockFoods.filter(f => f.restaurantId === offer.applicableTo.id).slice(0, 8);
