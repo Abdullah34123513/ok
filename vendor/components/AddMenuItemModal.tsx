@@ -149,6 +149,37 @@ const AddMenuItemModal: React.FC<AddMenuItemModalProps> = ({ isOpen, onClose, on
         }
     };
 
+    useEffect(() => {
+        if (isWebcamOpen && videoRef.current) {
+            const startWebcam = async () => {
+                try {
+                    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                        streamRef.current = stream;
+                        if (videoRef.current) {
+                            videoRef.current.srcObject = stream;
+                        }
+                    } else {
+                        setError('Camera not supported on this browser.');
+                        setIsWebcamOpen(false);
+                    }
+                } catch (err) {
+                    console.error('Error accessing webcam:', err);
+                    setError('Could not access camera. Please ensure permissions are granted in your browser settings.');
+                    setIsWebcamOpen(false);
+                }
+            };
+            startWebcam();
+        }
+        
+        return () => {
+            if (streamRef.current) {
+                streamRef.current.getTracks().forEach(track => track.stop());
+                streamRef.current = null;
+            }
+        };
+    }, [isWebcamOpen]);
+
     const handleTakePhoto = async () => {
         setError('');
         if (Capacitor.isNativePlatform()) {
@@ -179,22 +210,7 @@ const AddMenuItemModal: React.FC<AddMenuItemModalProps> = ({ isOpen, onClose, on
                 setError('Could not access camera. Please ensure permissions are granted in your device settings.');
             }
         } else {
-             // Web fallback using getUserMedia
-            try {
-                if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-                    const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-                    streamRef.current = stream;
-                    if (videoRef.current) {
-                        videoRef.current.srcObject = stream;
-                    }
-                    setIsWebcamOpen(true);
-                } else {
-                    setError('Camera not supported on this browser.');
-                }
-            } catch (err) {
-                console.error('Error accessing webcam:', err);
-                setError('Could not access camera. Please ensure permissions are granted in your browser settings.');
-            }
+            setIsWebcamOpen(true);
         }
     };
 
