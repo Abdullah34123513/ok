@@ -41,6 +41,11 @@ const AddMenuItemModal: React.FC<AddMenuItemModalProps> = ({ isOpen, onClose, on
     const [isSaving, setIsSaving] = useState(false);
     const [error, setError] = useState('');
 
+    // Webcam state
+    const [isWebcamOpen, setIsWebcamOpen] = useState(false);
+    const videoRef = useRef<HTMLVideoElement>(null);
+    const streamRef = useRef<MediaStream | null>(null);
+
     const resetState = () => {
         setName('');
         setDescription('');
@@ -107,32 +112,89 @@ const AddMenuItemModal: React.FC<AddMenuItemModalProps> = ({ isOpen, onClose, on
         }
     };
 
-    const handleTakePhoto = async () => {
-        if (!Capacitor.isPluginAvailable('Camera')) {
-            alert('Camera is not available on this device.');
-            return;
+    const stopWebcam = () => {
+        if (streamRef.current) {
+            streamRef.current.getTracks().forEach(track => track.stop());
+            streamRef.current = null;
         }
-        try {
-            const { Camera, CameraResultType, CameraSource } = await import('@capacitor/camera');
-            const image = await Camera.getPhoto({
-                quality: 90,
-                allowEditing: true,
-                resultType: CameraResultType.DataUrl,
-                source: CameraSource.Camera,
-            });
+        setIsWebcamOpen(false);
+    };
 
-            if (image.dataUrl) {
-                setImagePreview(image.dataUrl);
+    const handleClose = () => {
+        stopWebcam();
+        onClose();
+    };
+
+    const handleWebcamCapture = () => {
+        if (videoRef.current) {
+            const canvas = document.createElement('canvas');
+            canvas.width = videoRef.current.videoWidth;
+            canvas.height = videoRef.current.videoHeight;
+            const context = canvas.getContext('2d');
+            if (context) {
+                context.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
+                const dataUrl = canvas.toDataURL('image/jpeg');
+                setImagePreview(dataUrl);
+
                 // Convert dataURL to a File object for the upload API
-                const response = await fetch(image.dataUrl);
-                const blob = await response.blob();
-                const filename = `photo_${Date.now()}.${image.format}`;
-                const file = new File([blob], filename, { type: blob.type });
-                setImageFile(file);
+                fetch(dataUrl)
+                    .then(res => res.blob())
+                    .then(blob => {
+                        const filename = `photo_${Date.now()}.jpg`;
+                        const file = new File([blob], filename, { type: 'image/jpeg' });
+                        setImageFile(file);
+                    });
             }
-        } catch (error) {
-            console.error('Error taking photo:', error);
-            setError('Could not access camera. Please ensure permissions are granted.');
+            stopWebcam();
+        }
+    };
+
+    const handleTakePhoto = async () => {
+        setError('');
+        if (Capacitor.isNativePlatform()) {
+            if (!Capacitor.isPluginAvailable('Camera')) {
+                setError('Camera plugin is not available.');
+                return;
+            }
+            try {
+                const { Camera, CameraResultType, CameraSource } = await import('@capacitor/camera');
+                const image = await Camera.getPhoto({
+                    quality: 90,
+                    allowEditing: true,
+                    resultType: CameraResultType.DataUrl,
+                    source: CameraSource.Camera,
+                });
+
+                if (image.dataUrl) {
+                    setImagePreview(image.dataUrl);
+                    // Convert dataURL to a File object for the upload API
+                    const response = await fetch(image.dataUrl);
+                    const blob = await response.blob();
+                    const filename = `photo_${Date.now()}.${image.format}`;
+                    const file = new File([blob], filename, { type: blob.type });
+                    setImageFile(file);
+                }
+            } catch (error) {
+                console.error('Error taking photo with Capacitor:', error);
+                setError('Could not access camera. Please ensure permissions are granted in your device settings.');
+            }
+        } else {
+             // Web fallback using getUserMedia
+            try {
+                if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                    const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                    streamRef.current = stream;
+                    if (videoRef.current) {
+                        videoRef.current.srcObject = stream;
+                    }
+                    setIsWebcamOpen(true);
+                } else {
+                    setError('Camera not supported on this browser.');
+                }
+            } catch (err) {
+                console.error('Error accessing webcam:', err);
+                setError('Could not access camera. Please ensure permissions are granted in your browser settings.');
+            }
         }
     };
 
@@ -252,10 +314,10 @@ const AddMenuItemModal: React.FC<AddMenuItemModalProps> = ({ isOpen, onClose, on
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
-            <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-2xl w-full max-w-lg md:max-w-2xl lg:max-w-3xl animate-fade-in-up flex flex-col max-h-[90vh]">
+            <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-2xl w-full max-w-lg md:max-w-2xl lg:max-w-3xl animate-fade-in-up flex flex-col max-h-[90vh] relative">
                  <header className="p-4 border-b flex justify-between items-center flex-shrink-0">
                     <h2 className="text-2xl font-bold text-gray-800">{isEditMode ? 'Edit Menu Item' : 'Add New Item'}</h2>
-                    <button type="button" onClick={onClose} className="p-1 rounded-full hover:bg-gray-100 transition-colors">
+                    <button type="button" onClick={handleClose} className="p-1 rounded-full hover:bg-gray-100 transition-colors">
                         <CloseIcon className="w-6 h-6 text-gray-500" />
                     </button>
                 </header>
@@ -379,13 +441,23 @@ const AddMenuItemModal: React.FC<AddMenuItemModalProps> = ({ isOpen, onClose, on
                 </main>
 
                 <footer className="p-4 border-t bg-gray-50 rounded-b-lg flex justify-end space-x-3 flex-shrink-0">
-                    <button type="button" onClick={onClose} className="px-4 py-2 bg-gray-200 font-semibold rounded-lg hover:bg-gray-300 transition">
+                    <button type="button" onClick={handleClose} className="px-4 py-2 bg-gray-200 font-semibold rounded-lg hover:bg-gray-300 transition">
                         Cancel
                     </button>
                     <button type="submit" disabled={isSaving} className="px-6 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition disabled:bg-blue-300">
                         {isSaving ? 'Saving...' : (isEditMode ? 'Save Changes' : 'Save Item')}
                     </button>
                 </footer>
+
+                {isWebcamOpen && (
+                    <div className="absolute inset-0 bg-black bg-opacity-80 flex flex-col items-center justify-center z-10 p-4">
+                        <video ref={videoRef} autoPlay playsInline className="w-full max-w-lg h-auto rounded-lg shadow-lg"></video>
+                        <div className="mt-4 flex space-x-4">
+                            <button type="button" onClick={handleWebcamCapture} className="px-6 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition">Capture</button>
+                            <button type="button" onClick={stopWebcam} className="px-6 py-2 bg-gray-300 font-semibold rounded-lg hover:bg-gray-400 transition">Cancel</button>
+                        </div>
+                    </div>
+                )}
             </form>
         </div>
     );
