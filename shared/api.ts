@@ -387,6 +387,62 @@ let mockOrders: Order[] = [
     }
 ]; 
 
+const riderOngoingOrder1: Order = {
+    id: 'ORDER-1007',
+    status: 'Preparing', // Rider accepted, needs to go to pickup
+    date: new Date(Date.now() - 15 * 60 * 1000).toLocaleString('en-US'),
+    restaurantName: 'Restaurant Hub 2',
+    items: [ { cartItemId: 'ci-8', baseItem: foodToMenuItem(restaurant2Foods[2]), quantity: 2, selectedCustomizations: [], totalPrice: restaurant2Foods[2].price * 2 } ],
+    subtotal: restaurant2Foods[2].price * 2,
+    deliveryFee: 2.80,
+    total: restaurant2Foods[2].price * 2 + 2.80,
+    discount: 0,
+    address: { id: 'addr-6', label: 'Work', details: '99 Business Rd, Corp Park' },
+    paymentMethod: 'cod',
+    deliveryOption: 'home',
+    customerName: 'Peter Jones',
+    riderId: 'rider-1',
+};
+mockOrders.unshift(riderOngoingOrder1);
+
+const riderOngoingOrder2: Order = {
+    id: 'ORDER-1008',
+    status: 'On its way', // Rider has picked up, is delivering
+    date: new Date(Date.now() - 10 * 60 * 1000).toLocaleString('en-US'),
+    restaurantName: '24/7 Diner',
+    items: [ { cartItemId: 'ci-9', baseItem: foodToMenuItem(allMockFoods.find(f => f.restaurantId === 'restaurant-5')!), quantity: 1, selectedCustomizations: [], totalPrice: allMockFoods.find(f => f.restaurantId === 'restaurant-5')!.price } ],
+    subtotal: allMockFoods.find(f => f.restaurantId === 'restaurant-5')!.price,
+    deliveryFee: 1.50,
+    total: allMockFoods.find(f => f.restaurantId === 'restaurant-5')!.price + 1.50,
+    discount: 0,
+    address: { id: 'addr-7', label: 'Home', details: '321 Residential St, Anytown' },
+    paymentMethod: 'online',
+    deliveryOption: 'home',
+    customerName: 'Susan Miller',
+    riderId: 'rider-1',
+};
+mockOrders.unshift(riderOngoingOrder2);
+
+const riderDeliveredOrder: Order = {
+    id: 'ORDER-1006',
+    status: 'Delivered',
+    date: new Date(Date.now() - 2 * 60 * 60 * 1000).toLocaleString('en-US'), // 2 hours ago
+    restaurantName: 'Restaurant Hub 1',
+    items: [ { cartItemId: 'ci-7', baseItem: foodToMenuItem(restaurant1Foods[1]), quantity: 1, selectedCustomizations: [], totalPrice: restaurant1Foods[1].price } ],
+    subtotal: restaurant1Foods[1].price,
+    deliveryFee: 2.50,
+    total: restaurant1Foods[1].price + 2.50,
+    discount: 0,
+    address: { id: 'addr-5', label: 'Home', details: '101 New St, Anytown' },
+    paymentMethod: 'online',
+    deliveryOption: 'home',
+    customerName: 'Ken Adams',
+    riderId: 'rider-1',
+    isReviewed: false,
+};
+mockOrders.push(riderDeliveredOrder);
+
+
 const allMockReviews: Review[] = Array.from({ length: 15 }, (_, i) => ({
     id: `review-${i+1}`,
     author: `Customer ${i+1}`,
@@ -1005,10 +1061,18 @@ export const getVendorOrders = async (vendorId: string, statuses: Array<Order['s
 
 export const updateOrderStatus = async (orderId: string, newStatus: Order['status']): Promise<Order> => {
     await simulateDelay(400);
-    const order = mockOrders.find(o => o.id === orderId);
-    if (!order) throw new Error("Order not found");
+    const orderIndex = mockOrders.findIndex(o => o.id === orderId);
+    if (orderIndex === -1) {
+      throw new Error("Order not found");
+    }
+    const order = mockOrders[orderIndex];
     order.status = newStatus;
-    return order;
+
+    if (newStatus === 'Delivered') {
+        order.date = new Date().toLocaleString('en-US'); // Update timestamp on delivery
+    }
+    
+    return { ...order };
 };
 
 export const updateRestaurantDetails = async (restaurantId: string, details: Partial<Restaurant>): Promise<Restaurant> => {
@@ -1119,68 +1183,75 @@ export const updateMenuItem = async (vendorId: string, updatedItem: MenuItem): P
     if (itemIndex === -1) {
         throw new Error("Menu item not found.");
     }
-
-    // Convert MenuItem back to Food for storage, preserving existing rating
-    const updatedFood: Food = {
-        ...allMockFoods[itemIndex],
+    
+    // Update logic needs to be careful here to merge correctly
+    const originalFood = allMockFoods[itemIndex];
+    allMockFoods[itemIndex] = {
+        ...originalFood, // keep rating, etc.
         ...updatedItem,
-        vendor: { name: vendor.name },
+        vendor: { name: updatedItem.restaurantName }
     };
 
-    allMockFoods[itemIndex] = updatedFood;
     return updatedItem;
 };
 
 export const deleteMenuItem = async (vendorId: string, itemId: string): Promise<void> => {
-    await simulateDelay(300);
-    const vendor = mockVendors.find(v => v.id === vendorId);
-    const itemIndex = allMockFoods.findIndex(f => f.id === itemId);
-
-    if (itemIndex === -1) throw new Error("Item not found");
-
-    if (!vendor || allMockFoods[itemIndex].restaurantId !== vendor.restaurantId) {
-        throw new Error("Authorization error: Cannot delete this item.");
-    }
-
-    allMockFoods.splice(itemIndex, 1);
-};
-
-
-export const getVendorConversations = async (_vendorId: string): Promise<ConversationSummary[]> => {
     await simulateDelay(500);
-    // This is a mock. In a real app, you'd query your chat database.
-    return [
-        { customerId: 'alex.doe@example.com', customerName: 'Alex Doe', lastMessage: 'Is my order on the way?', timestamp: new Date(Date.now() - 5 * 60000).toISOString(), hasUnread: true },
-        { customerId: 'jane.smith@example.com', customerName: 'Jane Smith', lastMessage: 'Thank you!', timestamp: new Date(Date.now() - 2 * 3600 * 1000).toISOString(), hasUnread: false },
-    ];
+    const vendor = mockVendors.find(v => v.id === vendorId);
+    if (!vendor) throw new Error("Authorization error.");
+
+    const itemIndex = allMockFoods.findIndex(f => f.id === itemId);
+    if (itemIndex > -1 && allMockFoods[itemIndex].restaurantId === vendor.restaurantId) {
+        allMockFoods.splice(itemIndex, 1);
+    } else {
+        throw new Error("Item not found or permission denied.");
+    }
 };
+
 
 // --- RIDER-SPECIFIC APIS ---
 
 export const loginRider = async (phone: string): Promise<Rider | undefined> => {
     await simulateDelay(500);
-    // In a real app, this would verify the phone number and send an OTP.
-    // For the mock, we just find the rider by their phone number.
     return mockRiders.find(r => r.phone === phone);
 };
 
 export const getRiderNewOrders = async (): Promise<Order[]> => {
-    await simulateDelay(800);
-    // Find orders that are ready for pickup ('On its way') but don't have a rider assigned yet.
+    await simulateDelay(700);
+    // Find orders that are 'On its way' but have no rider assigned yet.
+    // In our mock data, this status means "Ready for Pickup" from the vendor side.
     return mockOrders.filter(o => o.status === 'On its way' && !o.riderId);
 };
 
 export const acceptRiderOrder = async (orderId: string, riderId: string): Promise<Order> => {
-    await simulateDelay(500);
+    await simulateDelay(400);
     const orderIndex = mockOrders.findIndex(o => o.id === orderId);
-    if (orderIndex === -1) {
-        throw new Error("Order not found.");
-    }
+    if (orderIndex === -1) throw new Error("Order not found");
+    
+    const order = mockOrders[orderIndex];
+    if (order.riderId) throw new Error("Order already taken");
+
     const rider = mockRiders.find(r => r.id === riderId);
-    if (!rider) {
-        throw new Error("Rider not found");
-    }
-    mockOrders[orderIndex].riderId = riderId;
-    mockOrders[orderIndex].rider = rider; // Assign full rider details for tracking page
-    return mockOrders[orderIndex];
+    if (!rider) throw new Error("Rider not found");
+
+    order.riderId = riderId;
+    order.status = 'Preparing'; // Status changes to 'Preparing' from rider's perspective (means "Go to Pickup")
+    order.rider = rider;
+
+    return { ...order };
+};
+
+export const getRiderOngoingOrders = async (riderId: string): Promise<Order[]> => {
+    await simulateDelay(600);
+    const ongoingStatuses: Order['status'][] = ['Preparing', 'On its way'];
+    return mockOrders
+        .filter(o => o.riderId === riderId && ongoingStatuses.includes(o.status))
+        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+};
+
+export const getRiderDeliveredOrders = async (riderId: string): Promise<Order[]> => {
+    await simulateDelay(600);
+    return mockOrders
+        .filter(o => o.riderId === riderId && o.status === 'Delivered')
+        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 };

@@ -4,7 +4,7 @@ import type { Order } from '@shared/types';
 import { useAuth } from '../contexts/AuthContext';
 import { StorefrontIcon, HomeIcon, MapPinIcon, MoneyIcon, PackageIcon, ClockIcon, LogoutIcon } from '../components/Icons';
 
-const OrderCard: React.FC<{ 
+const NewOrderCard: React.FC<{ 
     order: Order, 
     onAccept: (orderId: string) => void,
     onReject: (orderId: string) => void,
@@ -23,7 +23,6 @@ const OrderCard: React.FC<{
                         <span>PICKUP FROM</span>
                     </div>
                     <p className="font-bold text-lg text-gray-800">{order.restaurantName}</p>
-                    {/* FIX: The find operation failed because 'r.name' did not exist. Added 'name' to the mock data array. */}
                     <p className="text-sm text-gray-600">{allMockRestaurants.find(r => r.name === order.restaurantName)?.address}</p>
                 </div>
 
@@ -67,17 +66,100 @@ const OrderCard: React.FC<{
     );
 };
 
-// This is a hack because the API file doesn't export the mock data directly
+const OngoingOrderCard: React.FC<{
+    order: Order,
+    onMarkAsPickedUp: (orderId: string) => void,
+    onMarkAsDelivered: (orderId: string) => void,
+    isUpdating: boolean
+}> = ({ order, onMarkAsPickedUp, onMarkAsDelivered, isUpdating }) => {
+    const itemsCount = order.items.reduce((acc, item) => acc + item.quantity, 0);
+
+    return (
+        <div className="bg-gray-50 rounded-lg p-4 shadow-sm border border-gray-200 animate-fade-in-up">
+            <div className="flex justify-between items-start">
+                <p className="font-mono text-blue-600 font-semibold text-sm">Order #{order.id.split('-')[1]}</p>
+                <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${order.status === 'Preparing' ? 'bg-yellow-100 text-yellow-800' : 'bg-purple-100 text-purple-800'}`}>
+                    {order.status === 'Preparing' ? 'Go to Pickup' : 'Out for Delivery'}
+                </span>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
+                <div>
+                    <div className="flex items-center text-sm font-semibold text-gray-500 mb-2"><StorefrontIcon className="w-5 h-5 mr-2" />PICKUP</div>
+                    <p className="font-bold text-gray-800">{order.restaurantName}</p>
+                    <p className="text-sm text-gray-600">{allMockRestaurants.find(r => r.name === order.restaurantName)?.address}</p>
+                </div>
+                <div>
+                    <div className="flex items-center text-sm font-semibold text-gray-500 mb-2"><HomeIcon className="w-5 h-5 mr-2" />DELIVER</div>
+                    <p className="font-bold text-gray-800">{order.customerName}</p>
+                    <p className="text-sm text-gray-600">{order.address.details}</p>
+                </div>
+            </div>
+            <div className="mt-4 pt-3 border-t border-dashed flex items-center justify-between text-sm">
+                 <div className="flex items-center text-gray-700"><MoneyIcon className="w-4 h-4 mr-1.5"/>Fee: <span className="font-bold ml-1">৳{order.deliveryFee.toFixed(2)}</span></div>
+                <div className="flex items-center text-gray-700"><PackageIcon className="w-4 h-4 mr-1.5"/>Items: <span className="font-bold ml-1">{itemsCount}</span></div>
+            </div>
+            <div className="mt-4 pt-3 border-t flex justify-end space-x-3">
+                {order.status === 'Preparing' ? (
+                    <>
+                        <button className="px-4 py-2 text-sm font-semibold text-gray-700 bg-white border rounded-full hover:bg-gray-100">Navigate</button>
+                        <button onClick={() => onMarkAsPickedUp(order.id)} disabled={isUpdating} className="px-6 py-2 text-sm font-semibold text-white bg-blue-500 rounded-full hover:bg-blue-600">
+                            {isUpdating ? '...' : 'Mark as Picked Up'}
+                        </button>
+                    </>
+                ) : (
+                     <>
+                        <button className="px-4 py-2 text-sm font-semibold text-gray-700 bg-white border rounded-full hover:bg-gray-100">Navigate</button>
+                        <button onClick={() => onMarkAsDelivered(order.id)} disabled={isUpdating} className="px-6 py-2 text-sm font-semibold text-white bg-green-500 rounded-full hover:bg-green-600">
+                            {isUpdating ? '...' : 'Mark as Delivered'}
+                        </button>
+                    </>
+                )}
+            </div>
+        </div>
+    );
+};
+
+const DeliveredOrderCard: React.FC<{ order: Order }> = ({ order }) => {
+    return (
+        <div className="bg-gray-50 rounded-lg p-4 shadow-sm border border-gray-200">
+            <div className="flex justify-between items-start">
+                <div>
+                    <p className="font-mono text-blue-600 font-semibold text-sm">Order #{order.id.split('-')[1]}</p>
+                    <p className="text-xs text-gray-500">Delivered on: {order.date}</p>
+                </div>
+                 <div className="text-right">
+                    <p className="text-sm text-gray-600">Delivery Fee Earned</p>
+                    <p className="font-bold text-lg text-green-600">৳{order.deliveryFee.toFixed(2)}</p>
+                </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2 pt-2 border-t">
+                 <div>
+                    <p className="text-xs font-semibold text-gray-500">PICKED UP FROM</p>
+                    <p className="font-semibold text-gray-800">{order.restaurantName}</p>
+                </div>
+                 <div>
+                    <p className="text-xs font-semibold text-gray-500">DELIVERED TO</p>
+                    <p className="font-semibold text-gray-800">{order.customerName}</p>
+                </div>
+            </div>
+        </div>
+    );
+}
+
 const allMockRestaurants = [
     { id: 'restaurant-1', name: 'Restaurant Hub 1', address: '121 Flavor St, Food City' },
     { id: 'restaurant-2', name: 'Restaurant Hub 2', address: '122 Flavor St, Food City' },
     { id: 'restaurant-5', name: '24/7 Diner', address: '125 Flavor St, Food City' },
 ];
 
+type Tab = 'new' | 'ongoing' | 'delivered';
 
 const DashboardPage: React.FC = () => {
     const { currentRider, logout } = useAuth();
-    const [orders, setOrders] = useState<Order[]>([]);
+    const [activeTab, setActiveTab] = useState<Tab>('new');
+    const [newOrders, setNewOrders] = useState<Order[]>([]);
+    const [ongoingOrders, setOngoingOrders] = useState<Order[]>([]);
+    const [deliveredOrders, setDeliveredOrders] = useState<Order[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState('');
     const [updatingOrderId, setUpdatingOrderId] = useState<string | null>(null);
@@ -87,77 +169,163 @@ const DashboardPage: React.FC = () => {
         setError('');
         try {
             const data = await api.getRiderNewOrders();
-            setOrders(data);
+            setNewOrders(data);
         } catch (err) {
-            setError(err instanceof Error ? err.message : 'Failed to load orders.');
+            setError(err instanceof Error ? err.message : 'Failed to load new orders.');
         } finally {
             setIsLoading(false);
         }
     }, []);
 
+    const fetchOngoingOrders = useCallback(async () => {
+        if (!currentRider) return;
+        setIsLoading(true);
+        setError('');
+        try {
+            const data = await api.getRiderOngoingOrders(currentRider.id);
+            setOngoingOrders(data);
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Failed to load ongoing orders.');
+        } finally {
+            setIsLoading(false);
+        }
+    }, [currentRider]);
+    
+    const fetchDeliveredOrders = useCallback(async () => {
+        if (!currentRider) return;
+        setIsLoading(true);
+        setError('');
+        try {
+            const data = await api.getRiderDeliveredOrders(currentRider.id);
+            setDeliveredOrders(data);
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Failed to load delivered orders.');
+        } finally {
+            setIsLoading(false);
+        }
+    }, [currentRider]);
+
+
     useEffect(() => {
-        fetchNewOrders();
-        const interval = setInterval(fetchNewOrders, 30000); // Refresh every 30 seconds
-        return () => clearInterval(interval);
-    }, [fetchNewOrders]);
+        switch (activeTab) {
+            case 'new':
+                fetchNewOrders();
+                break;
+            case 'ongoing':
+                fetchOngoingOrders();
+                break;
+            case 'delivered':
+                fetchDeliveredOrders();
+                break;
+        }
+    }, [activeTab, fetchNewOrders, fetchOngoingOrders, fetchDeliveredOrders]);
 
     const handleAccept = async (orderId: string) => {
         if (!currentRider) return;
         setUpdatingOrderId(orderId);
         try {
             await api.acceptRiderOrder(orderId, currentRider.id);
-            setOrders(prev => prev.filter(o => o.id !== orderId));
-            // In a real app, you might show a success notification
+            setNewOrders(prev => prev.filter(o => o.id !== orderId));
         } catch (err) {
             setError('Failed to accept order. It might have been taken by another rider.');
+            fetchNewOrders(); // Refresh to see if it's gone
         } finally {
             setUpdatingOrderId(null);
         }
     };
 
     const handleReject = (orderId: string) => {
-        // For this mock, we just remove it from the local list.
-        // A real app might call an API to say this rider rejected it.
-        setOrders(prev => prev.filter(o => o.id !== orderId));
+        setNewOrders(prev => prev.filter(o => o.id !== orderId));
+    };
+
+    const handleMarkAsPickedUp = async (orderId: string) => {
+        setUpdatingOrderId(orderId);
+        try {
+            await api.updateOrderStatus(orderId, 'On its way');
+            fetchOngoingOrders(); // Refetch to update status
+        } catch (err) {
+            setError('Failed to update order status.');
+        } finally {
+            setUpdatingOrderId(null);
+        }
+    };
+    
+    const handleMarkAsDelivered = async (orderId: string) => {
+        setUpdatingOrderId(orderId);
+        try {
+            await api.updateOrderStatus(orderId, 'Delivered');
+            // Optimistically remove from ongoing list for instant UI feedback
+            setOngoingOrders(prev => prev.filter(o => o.id !== orderId));
+        } catch (err) {
+            setError('Failed to mark order as delivered.');
+        } finally {
+            setUpdatingOrderId(null);
+        }
     };
     
     const renderContent = () => {
         if (isLoading) {
-            return <div className="text-center p-8 text-gray-500">Searching for new orders...</div>;
+            return <div className="text-center p-8 text-gray-500">Loading...</div>;
         }
         if (error) {
             return <div className="text-center p-8 text-red-500">{error}</div>;
         }
-        if (orders.length === 0) {
-            return <div className="text-center p-8 text-gray-500">No new orders available right now. We'll keep looking!</div>;
+
+        switch (activeTab) {
+            case 'new':
+                return newOrders.length === 0
+                    ? <div className="text-center p-8 text-gray-500">No new orders available right now. We'll keep looking!</div>
+                    : <div className="space-y-4">{newOrders.map(order => <NewOrderCard key={order.id} order={order} onAccept={handleAccept} onReject={handleReject} isUpdating={updatingOrderId === order.id} />)}</div>;
+            
+            case 'ongoing':
+                 return ongoingOrders.length === 0
+                    ? <div className="text-center p-8 text-gray-500">You have no ongoing orders.</div>
+                    : <div className="space-y-4">{ongoingOrders.map(order => <OngoingOrderCard key={order.id} order={order} onMarkAsPickedUp={handleMarkAsPickedUp} onMarkAsDelivered={handleMarkAsDelivered} isUpdating={updatingOrderId === order.id} />)}</div>;
+
+            case 'delivered':
+                return deliveredOrders.length === 0
+                    ? <div className="text-center p-8 text-gray-500">You haven't delivered any orders yet.</div>
+                    : <div className="space-y-4">{deliveredOrders.map(order => <DeliveredOrderCard key={order.id} order={order} />)}</div>;
+
+            default: return null;
         }
-        return (
-            <div className="space-y-4">
-                {orders.map(order => (
-                    <OrderCard 
-                        key={order.id} 
-                        order={order}
-                        onAccept={handleAccept}
-                        onReject={handleReject}
-                        isUpdating={updatingOrderId === order.id}
-                    />
-                ))}
-            </div>
-        );
     }
+    
+    const tabs: { id: Tab, label: string }[] = [
+        { id: 'new', label: 'New Orders' },
+        { id: 'ongoing', label: 'Ongoing Orders' },
+        { id: 'delivered', label: 'Delivered' },
+    ];
 
     return (
-        <div className="min-h-screen bg-white">
+        <div className="min-h-screen bg-white font-sans">
             <header className="bg-[#1E1E1E] text-white shadow-md sticky top-0 z-10">
-                <div className="container mx-auto px-4 py-3 flex justify-between items-center">
+                <div className="container mx-auto px-4 pt-3 flex justify-between items-center">
                     <div>
-                        <h1 className="text-xl font-bold">New Orders</h1>
+                        <h1 className="text-xl font-bold">Rider Dashboard</h1>
                         <p className="text-sm text-gray-300">Welcome, {currentRider?.name}</p>
                     </div>
                     <button onClick={logout} className="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-700 transition-colors">
                         <LogoutIcon className="w-5 h-5" />
-                        <span className="text-sm font-semibold">Logout</span>
+                        <span className="text-sm font-semibold hidden sm:block">Logout</span>
                     </button>
+                </div>
+                 <div className="container mx-auto px-4 mt-3">
+                    <div className="flex border-b border-gray-700">
+                        {tabs.map(tab => (
+                            <button
+                                key={tab.id}
+                                onClick={() => setActiveTab(tab.id)}
+                                className={`px-4 py-2 text-sm font-semibold transition-colors ${
+                                    activeTab === tab.id
+                                        ? 'border-b-2 border-orange-500 text-white'
+                                        : 'text-gray-400 hover:text-white'
+                                }`}
+                            >
+                                {tab.label}
+                            </button>
+                        ))}
+                    </div>
                 </div>
             </header>
 
