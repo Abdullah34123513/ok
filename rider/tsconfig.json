@@ -1,0 +1,13 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@shared/*": ["../shared/*"],
+      "@components/*": ["components/*"],
+      "@pages/*": ["pages/*"]
+    }
+  },
+  "include": ["**/*.ts", "**/*.tsx"],
+  "exclude": ["vite.config.ts"]
+}

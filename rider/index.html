@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>FoodieFind - Rider App</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      @keyframes fade-in-up {
+        0% {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        100% {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      .animate-fade-in-up {
+        animation: fade-in-up 0.5s ease-out forwards;
+      }
+    </style>
+</head>
+  <body class="bg-white">
+    <div id="root"></div>
+    <script type="module" src="/index.tsx"></script>
+  </body>
+</html>
