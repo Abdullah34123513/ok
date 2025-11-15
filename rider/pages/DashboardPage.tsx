@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
+
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import * as api from '@shared/api';
 import type { Order } from '@shared/types';
 import { useAuth } from '../contexts/AuthContext';
@@ -163,6 +164,7 @@ const DashboardPage: React.FC = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState('');
     const [updatingOrderId, setUpdatingOrderId] = useState<string | null>(null);
+    const trackingIntervalRef = useRef<number | null>(null);
 
     const fetchNewOrders = useCallback(async () => {
         setIsLoading(true);
@@ -219,6 +221,46 @@ const DashboardPage: React.FC = () => {
                 break;
         }
     }, [activeTab, fetchNewOrders, fetchOngoingOrders, fetchDeliveredOrders]);
+
+    const startLocationTracking = useCallback(() => {
+        if (trackingIntervalRef.current) {
+            clearInterval(trackingIntervalRef.current);
+        }
+        if (!currentRider) return;
+
+        trackingIntervalRef.current = window.setInterval(() => {
+            navigator.geolocation.getCurrentPosition(
+                async (position) => {
+                    const { latitude, longitude } = position.coords;
+                    await api.updateRiderLocation(currentRider.id, { lat: latitude, lng: longitude });
+                },
+                (error) => {
+                    console.error("Geolocation error:", error);
+                },
+                { enableHighAccuracy: true }
+            );
+        }, 10000); // Update every 10 seconds
+
+    }, [currentRider]);
+
+    const stopLocationTracking = useCallback(() => {
+        if (trackingIntervalRef.current) {
+            clearInterval(trackingIntervalRef.current);
+            trackingIntervalRef.current = null;
+        }
+    }, []);
+
+    useEffect(() => {
+        if (ongoingOrders.length > 0) {
+            startLocationTracking();
+        } else {
+            stopLocationTracking();
+        }
+
+        return () => {
+            stopLocationTracking();
+        };
+    }, [ongoingOrders, startLocationTracking, stopLocationTracking]);
 
     const handleAccept = async (orderId: string) => {
         if (!currentRider) return;

@@ -1,7 +1,10 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import * as api from '@shared/api';
 import { useAuth } from '../contexts/AuthContext';
 import type { Order } from '@shared/types';
+import RiderTrackingMap from '../components/RiderTrackingMap';
+import { MapPinIcon } from '../components/Icons';
 
 const OrderStatusBadge: React.FC<{ status: Order['status'] }> = ({ status }) => {
     const statusStyles: Record<Order['status'], string> = {
@@ -80,6 +83,11 @@ const DashboardPage: React.FC = () => {
     const [isInitialLoading, setIsInitialLoading] = useState(true);
     const [error, setError] = useState('');
     const [updatingOrderId, setUpdatingOrderId] = useState<string | null>(null);
+    const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null);
+
+    const toggleTrackingMap = (orderId: string) => {
+        setExpandedOrderId(prev => prev === orderId ? null : orderId);
+    };
 
     const fetchOrders = useCallback(async (isInitialLoad = false) => {
         if (!currentVendor) return;
@@ -152,37 +160,54 @@ const DashboardPage: React.FC = () => {
                         </thead>
                         <tbody>
                             {orders.map(order => (
-                                <tr key={order.id} className="border-b last:border-0 hover:bg-gray-50 animate-fade-in-up">
-                                     <td className="p-4 align-top">
-                                        <OrderStatusBadge status={order.status} />
-                                    </td>
-                                    <td className="p-4 align-top">
-                                        <div className="font-mono text-sm text-blue-600 font-semibold">{order.id.split('-')[1]}</div>
-                                        <div className="text-xs text-gray-500">{order.date}</div>
-                                        <ul className="text-sm mt-2 space-y-2">
-                                            {order.items.map(item => (
-                                                <li key={item.cartItemId} className="flex items-center space-x-2">
-                                                    <img src={item.baseItem.imageUrl} alt={item.baseItem.name} className="w-12 h-12 rounded object-cover" />
-                                                    <div>
-                                                        <span>{item.quantity} x {item.baseItem.name}</span>
-                                                    </div>
-                                                </li>
-                                            ))}
-                                        </ul>
-                                    </td>
-                                    <td className="p-4 align-top">
-                                        <div className="font-semibold">{order.customerName}</div>
-                                        <div className="text-sm text-gray-600">{order.address.details}</div>
-                                    </td>
-                                    <td className="p-4 align-top font-semibold text-lg">৳{order.total.toFixed(2)}</td>
-                                    <td className="p-4 align-top text-right">
-                                        <OrderStatusButton 
-                                            order={order} 
-                                            onUpdate={handleUpdateStatus} 
-                                            isUpdating={updatingOrderId === order.id}
-                                        />
-                                    </td>
-                                </tr>
+                                <React.Fragment key={order.id}>
+                                    <tr className="border-b last:border-0 hover:bg-gray-50 animate-fade-in-up">
+                                         <td className="p-4 align-top">
+                                            <OrderStatusBadge status={order.status} />
+                                        </td>
+                                        <td className="p-4 align-top">
+                                            <div className="font-mono text-sm text-blue-600 font-semibold">{order.id.split('-')[1]}</div>
+                                            <div className="text-xs text-gray-500">{order.date}</div>
+                                            <ul className="text-sm mt-2 space-y-2">
+                                                {order.items.map(item => (
+                                                    <li key={item.cartItemId} className="flex items-center space-x-2">
+                                                        <img src={item.baseItem.imageUrl} alt={item.baseItem.name} className="w-12 h-12 rounded object-cover" />
+                                                        <div>
+                                                            <span>{item.quantity} x {item.baseItem.name}</span>
+                                                        </div>
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        </td>
+                                        <td className="p-4 align-top">
+                                            <div className="font-semibold">{order.customerName}</div>
+                                            <div className="text-sm text-gray-600">{order.address.details}</div>
+                                        </td>
+                                        <td className="p-4 align-top font-semibold text-lg">৳{order.total.toFixed(2)}</td>
+                                        <td className="p-4 align-top text-right">
+                                            <div className="flex flex-col items-end space-y-2">
+                                                <OrderStatusButton 
+                                                    order={order} 
+                                                    onUpdate={handleUpdateStatus} 
+                                                    isUpdating={updatingOrderId === order.id}
+                                                />
+                                                 {order.status === 'On its way' && order.riderId && (
+                                                    <button onClick={() => toggleTrackingMap(order.id)} className="flex items-center space-x-2 px-3 py-1 text-sm font-semibold rounded-md transition-colors bg-purple-500 text-white hover:bg-purple-600">
+                                                        <MapPinIcon className="w-4 h-4" />
+                                                        <span>{expandedOrderId === order.id ? 'Hide Map' : 'Track Rider'}</span>
+                                                    </button>
+                                                )}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {expandedOrderId === order.id && (
+                                        <tr className="bg-gray-50">
+                                            <td colSpan={5} className="p-0 sm:p-4">
+                                                <RiderTrackingMap order={order} />
+                                            </td>
+                                        </tr>
+                                    )}
+                                </React.Fragment>
                             ))}
                         </tbody>
                     </table>
@@ -211,13 +236,24 @@ const DashboardPage: React.FC = () => {
                                     </li>
                                 ))}
                             </ul>
-                            <div className="mt-4 pt-2 border-t text-right">
+                             <div className="mt-4 pt-2 border-t flex flex-col items-end space-y-2">
                                 <OrderStatusButton 
                                     order={order} 
                                     onUpdate={handleUpdateStatus} 
                                     isUpdating={updatingOrderId === order.id}
                                 />
+                                {order.status === 'On its way' && order.riderId && (
+                                    <button onClick={() => toggleTrackingMap(order.id)} className="flex items-center space-x-2 px-3 py-1 text-sm font-semibold rounded-md transition-colors bg-purple-500 text-white hover:bg-purple-600">
+                                        <MapPinIcon className="w-4 h-4" />
+                                        <span>{expandedOrderId === order.id ? 'Hide Map' : 'Track Rider'}</span>
+                                    </button>
+                                )}
                             </div>
+                             {expandedOrderId === order.id && (
+                                <div className="mt-4">
+                                    <RiderTrackingMap order={order} />
+                                </div>
+                            )}
                         </div>
                     ))}
                 </div>

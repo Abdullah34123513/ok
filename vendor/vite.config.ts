@@ -10,7 +10,7 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      // FIX: __dirname is not available in ES modules. Using import.meta.url to resolve path.
+      '@shared/api': fileURLToPath(new URL('../shared/api/index.ts', import.meta.url)),
       '@shared': fileURLToPath(new URL('../shared', import.meta.url))
     }
   }

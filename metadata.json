@@ -1,6 +1,7 @@
 {
   "requestFramePermissions": [
-    "camera"
+    "camera",
+    "geolocation"
   ],
   "name": "FoodieFind - Nearby Restaurant & Food Delivery",
   "description": ""

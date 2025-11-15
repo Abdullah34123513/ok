@@ -10,6 +10,7 @@ export default defineConfig({
   },
   resolve: {
     alias: {
+      '@shared/api': fileURLToPath(new URL('../shared/api/index.ts', import.meta.url)),
       '@shared': fileURLToPath(new URL('../shared', import.meta.url)),
       '@components': fileURLToPath(new URL('./components', import.meta.url)),
       '@pages': fileURLToPath(new URL('./pages', import.meta.url)),

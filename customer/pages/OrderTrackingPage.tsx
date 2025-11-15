@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import * as api from '@shared/api';
 import type { Order, LocationPoint, CartItem } from '@shared/types';
@@ -8,7 +9,15 @@ interface OrderTrackingPageProps {
   orderId: string;
 }
 
-const ORDER_STATUSES: Order['status'][] = ['Pending', 'Placed', 'Preparing', 'On its way', 'Delivered'];
+const TRACKING_STATUSES: Order['status'][] = ['Placed', 'Preparing', 'On its way', 'Delivered'];
+const STATUS_LABELS: Record<Order['status'], string> = {
+    'Pending': 'Pending',
+    'Placed': 'Order Placed',
+    'Preparing': 'Rider heading to restaurant',
+    'On its way': 'Food is on its way!',
+    'Delivered': 'Delivered',
+    'Cancelled': 'Cancelled',
+};
 
 const OrderTrackingPageSkeleton = () => (
     <div className="container mx-auto px-4 py-6 animate-pulse">
@@ -81,7 +90,7 @@ const OrderTrackingPage: React.FC<OrderTrackingPageProps> = ({ orderId }) => {
   }, [orderId]);
 
   useEffect(() => {
-    if (!order || order.status !== 'On its way') return;
+    if (!order || order.status !== 'On its way' && order.status !== 'Preparing') return;
 
     const intervalId = setInterval(() => {
       api.getRiderLocation(orderId).then((location: LocationPoint | null) => {
@@ -102,25 +111,29 @@ const OrderTrackingPage: React.FC<OrderTrackingPageProps> = ({ orderId }) => {
     return <div className="text-center p-20">Order not found.</div>;
   }
   
-  const currentStatusIndex = ORDER_STATUSES.indexOf(order.status);
+  const currentStatusIndex = TRACKING_STATUSES.indexOf(order.status);
 
   return (
     <div className="container mx-auto px-4 py-6">
       <div className="bg-white p-6 rounded-lg shadow-lg">
+         <div className="mb-4">
+             <h1 className="text-2xl font-bold text-gray-800">Live Delivery Tracking</h1>
+             <p className="text-gray-500">Order ID: {orderId}</p>
+         </div>
         {/* Status Bar */}
         <div className="mb-8">
             <h2 className="font-bold text-xl mb-2">Order Status</h2>
             <div className="flex justify-between items-center relative">
-                {ORDER_STATUSES.map((status, index) => (
+                {TRACKING_STATUSES.map((status, index) => (
                     <div key={status} className="flex-1 text-center">
                         <div className={`w-8 h-8 mx-auto rounded-full flex items-center justify-center transition-colors ${index <= currentStatusIndex ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-500'}`}>
                             {index < currentStatusIndex ? '✓' : index + 1}
                         </div>
-                        <p className={`mt-2 text-xs sm:text-sm font-semibold ${index <= currentStatusIndex ? 'text-green-600' : 'text-gray-500'}`}>{status}</p>
+                        <p className={`mt-2 text-xs sm:text-sm font-semibold ${index <= currentStatusIndex ? 'text-green-600' : 'text-gray-500'}`}>{STATUS_LABELS[status]}</p>
                     </div>
                 ))}
                 <div className="absolute top-4 left-0 w-full h-1 bg-gray-200 -z-10">
-                    <div className="h-1 bg-green-500 transition-all duration-500" style={{ width: `${(currentStatusIndex / (ORDER_STATUSES.length - 1)) * 100}%` }}></div>
+                    <div className="h-1 bg-green-500 transition-all duration-500" style={{ width: `${(currentStatusIndex / (TRACKING_STATUSES.length - 1)) * 100}%` }}></div>
                 </div>
             </div>
         </div>
