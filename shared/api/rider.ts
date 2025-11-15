@@ -64,3 +64,15 @@ export const getRiderDeliveredOrders = async (riderId: string): Promise<Order[]>
         .filter(o => o.riderId === riderId && o.status === 'Delivered')
         .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 };
+
+export const getNewOrderOpportunities = async (riderId: string): Promise<Order[]> => {
+    await simulateDelay(800);
+    // In a real app, this would use the rider's current location and route
+    // to find convenient, stackable orders.
+    // For this mock, we'll just find the first available order.
+    const rider = mockRiders.find(r => r.id === riderId);
+    if (!rider) return [];
+
+    const availableOrder = mockOrders.find(o => o.status === 'On its way' && !o.riderId);
+    return availableOrder ? [availableOrder] : [];
+};

@@ -1,7 +1,4 @@
 
-
-
-
 import type { Offer, Restaurant, Food, MenuItem, Review, CartItem, Address, Order, User, Vendor, Rider, OperatingHours, CustomizationOption, ChatMessage } from '../types';
 
 // --- Mock Databases ---
@@ -174,7 +171,6 @@ const sizeOption: CustomizationOption = {
 
 export const allMockFoods: Food[] = allMockRestaurants.flatMap(r =>
   Array.from({ length: 5 }, (_, i) => {
-    // FIX: The left-hand side of an arithmetic operation must be of type 'any', 'number', 'bigint' or an enum type.
     const food = createMockFood(Number(r.id.split('-')[1]) * 10 + i, r);
     if (i === 0 && r.id === 'restaurant-1') {
         food.customizationOptions = [sizeOption, toppingsOption];
@@ -208,7 +204,6 @@ export const allMockReviews: Review[] = Array.from({ length: 50 }, (_, i) => ({
   avatarUrl: `https://i.pravatar.cc/48?u=person${i}`,
 }));
 
-// FIX: Helper function to correctly convert Food to MenuItem.
 const foodToMenuItem = (food: Food): MenuItem => ({
     id: food.id,
     name: food.name,
@@ -231,7 +226,6 @@ export let mockOrders: Order[] = [
     date: '2023-10-26, 1:30 PM',
     restaurantName: 'Restaurant Hub 1',
     items: [
-      // FIX: Conversion of type 'Food' to type 'MenuItem' may be a mistake because neither type sufficiently overlaps with the other.
       { cartItemId: 'ci-1', baseItem: foodToMenuItem(allMockFoods[0]), quantity: 2, selectedCustomizations: [], totalPrice: allMockFoods[0].price * 2 },
     ],
     subtotal: 25.98,
@@ -252,7 +246,6 @@ export let mockOrders: Order[] = [
     date: new Date().toLocaleString(),
     restaurantName: 'Restaurant Hub 1',
     items: [
-       // FIX: Conversion of type 'Food' to type 'MenuItem' may be a mistake because neither type sufficiently overlaps with the other.
        { cartItemId: 'ci-2', baseItem: foodToMenuItem(allMockFoods[1]), quantity: 1, selectedCustomizations: [], totalPrice: allMockFoods[1].price },
     ],
     subtotal: 12.50,
@@ -273,9 +266,7 @@ export let mockOrders: Order[] = [
     date: new Date().toLocaleString(),
     restaurantName: 'Restaurant Hub 2',
     items: [
-       // FIX: Conversion of type 'Food' to type 'MenuItem' may be a mistake because neither type sufficiently overlaps with the other.
        { cartItemId: 'ci-3', baseItem: foodToMenuItem(allMockFoods[10]), quantity: 1, selectedCustomizations: [], totalPrice: allMockFoods[10].price },
-       // FIX: Conversion of type 'Food' to type 'MenuItem' may be a mistake because neither type sufficiently overlaps with the other.
        { cartItemId: 'ci-4', baseItem: foodToMenuItem(allMockFoods[11]), quantity: 1, selectedCustomizations: [], totalPrice: allMockFoods[11].price },
     ],
     subtotal: 20.00,
@@ -298,7 +289,6 @@ export let mockOrders: Order[] = [
     date: new Date().toLocaleString(),
     restaurantName: 'Restaurant Hub 1',
     items: [
-       // FIX: Conversion of type 'Food' to type 'MenuItem' may be a mistake because neither type sufficiently overlaps with the other.
        { cartItemId: 'ci-5', baseItem: foodToMenuItem(allMockFoods[2]), quantity: 1, selectedCustomizations: [], totalPrice: allMockFoods[2].price },
     ],
     subtotal: 8.00,
@@ -320,7 +310,6 @@ export let mockOrders: Order[] = [
     date: new Date().toLocaleString(),
     restaurantName: 'Restaurant Hub 1',
     items: [
-       // FIX: Conversion of type 'Food' to type 'MenuItem' may be a mistake because neither type sufficiently overlaps with the other.
        { cartItemId: 'ci-6', baseItem: foodToMenuItem(allMockFoods[3]), quantity: 2, selectedCustomizations: [], totalPrice: allMockFoods[3].price * 2 },
     ],
     subtotal: 15.00,
@@ -331,6 +320,27 @@ export let mockOrders: Order[] = [
     paymentMethod: 'Cash on Delivery',
     deliveryOption: 'home',
     customerName: 'Valued Customer',
+  },
+  {
+    id: 'ORDER-6',
+    status: 'On its way', // Ready for pickup
+    date: new Date().toLocaleString(),
+    restaurantName: 'Restaurant Hub 2',
+    items: [
+       { cartItemId: 'ci-7', baseItem: foodToMenuItem(allMockFoods[12]), quantity: 1, selectedCustomizations: [], totalPrice: allMockFoods[12].price },
+    ],
+    subtotal: 9.50,
+    deliveryFee: 4.00,
+    total: 13.50,
+    discount: 0,
+    address: mockAddresses[1],
+    paymentMethod: 'Online',
+    deliveryOption: 'home',
+    customerName: 'Sam Jones',
+    distance: 1.8,
+    estimatedDeliveryTime: "15-20 min",
+    restaurantLocation: { lat: 34.055, lng: -118.25 },
+    deliveryLocation: { lat: 34.065, lng: -118.26 },
   }
 ];
 
