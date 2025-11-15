@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect } from 'react';
 import { useLocalStorage } from '@hooks/useLocalStorage';
 import Header from '@components/Header';
@@ -97,7 +98,7 @@ const AppContent: React.FC = () => {
 
 
     const renderHeader = () => {
-        const { view, id } = route;
+        const { view } = route;
         switch (view) {
             case 'restaurants':
                 return <Header title={`Restaurants in ${location}`} />;

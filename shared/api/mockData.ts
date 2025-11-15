@@ -1,6 +1,8 @@
 
 
-import type { Offer, Restaurant, Food, MenuItem, Review, CartItem, Address, Order, User, Vendor, Rider, OperatingHours, CustomizationOption, LocationPoint, ChatMessage } from '../types';
+
+
+import type { Offer, Restaurant, Food, MenuItem, Review, CartItem, Address, Order, User, Vendor, Rider, OperatingHours, CustomizationOption, ChatMessage } from '../types';
 
 // --- Mock Databases ---
 export let mockUsers: User[] = [
