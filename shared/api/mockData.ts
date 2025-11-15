@@ -1,4 +1,6 @@
-import type { Offer, Restaurant, Food, MenuItem, Review, CartItem, Address, Order, User, Vendor, Rider, OperatingHours, CustomizationOption } from '../types';
+
+
+import type { Offer, Restaurant, Food, MenuItem, Review, CartItem, Address, Order, User, Vendor, Rider, OperatingHours, CustomizationOption, LocationPoint, ChatMessage } from '../types';
 
 // --- Mock Databases ---
 export let mockUsers: User[] = [
@@ -73,142 +75,138 @@ export const mockOffers: Offer[] = [
     discountValue: 50,
     applicableTo: 'ALL',
     couponCode: 'WEEKEND50',
-    minOrderValue: 20,
-    expiry: createExpiryDate(2),
+    expiry: createExpiryDate(3)
   },
   {
     id: 'offer-2',
     imageUrl: 'https://picsum.photos/seed/banner2/1200/400',
-    title: 'Free Delivery Today Only',
-    description: 'Enjoy free delivery on any orders above $20. A perfect day to order in.',
-    discountType: 'FIXED',
-    discountValue: 5.99,
-    minOrderValue: 20,
+    title: 'Free Delivery on Orders Over ৳50',
+    description: 'Enjoy free delivery from your favorite restaurants when you spend ৳50 or more.',
+    minOrderValue: 50,
     applicableTo: 'ALL',
-    expiry: createExpiryDate(1),
+    couponCode: 'FREEDEL',
   },
   {
-    id: 'offer-r1-10off',
-    imageUrl: 'https://picsum.photos/seed/offerR1/600/300',
-    title: '10% Off Restaurant Hub 1',
-    description: 'Enjoy 10% off on all items from Restaurant Hub 1.',
+    id: 'offer-3',
+    imageUrl: 'https://picsum.photos/seed/banner3/1200/400',
+    title: '20% Off at Restaurant Hub 1',
+    description: 'A special treat for our loyal customers at Restaurant Hub 1. Get 20% off your next order.',
     discountType: 'PERCENTAGE',
-    discountValue: 10,
+    discountValue: 20,
     applicableTo: { type: 'RESTAURANT', id: 'restaurant-1' },
-    couponCode: 'HUB10',
-    expiry: createExpiryDate(5),
+  },
+  {
+    id: 'offer-4',
+    imageUrl: 'https://picsum.photos/seed/banner4/1200/400',
+    title: '৳10 Off Your Next Order',
+    description: 'Get a flat ৳10 discount on any order over ৳30. Use code TAKE10.',
+    discountType: 'FIXED',
+    discountValue: 10,
+    minOrderValue: 30,
+    applicableTo: 'ALL',
+    couponCode: 'TAKE10'
+  },
+  {
+    id: 'offer-5',
+    imageUrl: 'https://picsum.photos/seed/banner5/1200/400',
+    title: 'Combo Meal Deal',
+    description: 'Get a special price on our new combo meal, including a burger, fries, and a drink!',
+    applicableFoods: ['food-1', 'food-2'] // Assuming these IDs exist
+  },
+  {
+    id: 'offer-6',
+    imageUrl: 'https://picsum.photos/seed/banner6/1200/400',
+    title: 'Expired Deal',
+    description: 'This deal was great, but it has expired.',
+    expiry: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
   },
 ];
 
-export let allMockRestaurants: Restaurant[] = Array.from({ length: 20 }, (_, i) => createMockRestaurant(i + 1));
-export let allMockFoods: Food[] = Array.from({ length: 40 }, (_, i) => createMockFood(i + 1, allMockRestaurants[(i % 10)]));
-
-
-// --- Add More Customizable Items ---
-const pizzaCustomizations: CustomizationOption[] = [
-    {
-        id: 'size',
-        name: 'Size',
-        type: 'SINGLE',
-        required: true,
-        choices: [
-            { name: 'Medium (12")', price: 0 },
-            { name: 'Large (14")', price: 3.50 },
-            { name: 'Extra Large (16")', price: 6.00 },
-        ]
-    },
-    {
-        id: 'toppings',
-        name: 'Toppings',
-        type: 'MULTIPLE',
-        required: false,
-        choices: [
-            { name: 'Extra Cheese', price: 1.50 },
-            { name: 'Pepperoni', price: 1.00 },
-            { name: 'Mushrooms', price: 0.75 },
-        ]
-    }
-];
-
-const burgerCustomizations: CustomizationOption[] = [
-    {
-        id: 'addons',
-        name: 'Add-ons',
-        type: 'MULTIPLE',
-        required: false,
-        choices: [
-            { name: 'Extra Patty', price: 3.00 },
-            { name: 'Bacon', price: 1.50 },
-            { name: 'Avocado', price: 1.25 },
-        ]
-    },
-    {
-        id: 'side',
-        name: 'Choose a Side',
-        type: 'SINGLE',
-        required: true,
-        choices: [
-            { name: 'French Fries', price: 0 },
-            { name: 'Onion Rings', price: 1.00 },
-        ]
-    }
-];
-
-
-allMockFoods.unshift({
-  id: 'food-pizza-1',
-  imageUrl: 'https://picsum.photos/seed/pizza1/400/300',
-  name: 'Margherita Pizza',
-  price: 12.99,
+export const allMockRestaurants: Restaurant[] = Array.from({ length: 25 }, (_, i) => createMockRestaurant(i + 1));
+allMockRestaurants.push({
+  id: `restaurant-26`,
+  logoUrl: `https://picsum.photos/seed/logo26/100/100`,
+  coverImageUrl: `https://picsum.photos/seed/cover26/1200/400`,
+  name: `24/7 Diner`,
   rating: 4.8,
-  restaurantId: allMockRestaurants[0].id,
-  description: 'Classic delight with 100% real mozzarella cheese. Customize it to your liking!',
-  vendor: { name: allMockRestaurants[0].name },
-  customizationOptions: pizzaCustomizations,
-  availability: { type: 'CUSTOM_TIME', startTime: '17:00', endTime: '22:00'}
+  cuisine: 'American',
+  deliveryFee: 3.50,
+  deliveryTime: '15-25 min',
+  address: `125 Flavor St, Food City`,
+  operatingHours: twentyFourSevenHours
 });
 
-// Add a customizable burger
-const burgerRestaurant = allMockRestaurants.find(r => r.cuisine === 'American') || allMockRestaurants[5];
-allMockFoods.push({
-    id: `food-burger-1`,
-    imageUrl: `https://picsum.photos/seed/burger1/400/300`,
-    name: `The Classic Burger`,
-    price: 9.99,
-    rating: 4.6,
-    restaurantId: burgerRestaurant.id,
-    description: 'A juicy, all-beef patty with your choice of sides and add-ons!',
-    vendor: { name: burgerRestaurant.name },
-    customizationOptions: burgerCustomizations,
-    availability: { type: 'ALL_DAY' }
-});
-
-// Update some restaurants to be 24/7
-const diner = allMockRestaurants.find(r => r.id === 'restaurant-5');
-if (diner) {
-    diner.name = "24/7 Diner";
-    diner.operatingHours = twentyFourSevenHours;
-    diner.deliveryTime = "15-25 min";
-}
-const munchies = allMockRestaurants.find(r => r.id === 'restaurant-15');
-if (munchies) {
-    munchies.name = "Midnight Munchies";
-    munchies.operatingHours = twentyFourSevenHours;
-    munchies.deliveryTime = "20-30 min";
-}
-
+export const mockVendors: Vendor[] = [
+    { id: 'vendor-1', restaurantId: 'restaurant-1', name: 'Vendor One', email: 'vendor1@example.com' },
+];
 
 export let mockCart: CartItem[] = [];
-
 export let mockAddresses: Address[] = [
-    { id: 'addr-1', label: 'Home', details: '123 Main St, Anytown, USA 12345' },
-    { id: 'addr-2', label: 'Work', details: '456 Business Ave, Corp City, USA 54321' },
+    { id: 'addr-1', label: 'Home', details: '123 Main St, Apt 4B, Anytown, 12345' },
+    { id: 'addr-2', label: 'Work', details: '456 Business Blvd, Suite 500, Workville, 67890' },
 ];
 
-const restaurant1Foods = allMockFoods.filter(f => f.restaurantId === 'restaurant-1');
-const restaurant2Foods = allMockFoods.filter(f => f.restaurantId === 'restaurant-2');
+const toppingsOption: CustomizationOption = {
+  id: 'toppings',
+  name: 'Add Toppings',
+  type: 'MULTIPLE',
+  required: false,
+  choices: [
+    { name: 'Extra Cheese', price: 1.50 },
+    { name: 'Mushrooms', price: 0.75 },
+    { name: 'Pepperoni', price: 1.25 },
+  ],
+};
 
-// Helper to convert Food to MenuItem
+const sizeOption: CustomizationOption = {
+  id: 'size',
+  name: 'Size',
+  type: 'SINGLE',
+  required: true,
+  choices: [
+    { name: 'Regular', price: 0.00 },
+    { name: 'Large', price: 3.00 },
+    { name: 'Extra Large', price: 5.00 },
+  ],
+};
+
+export const allMockFoods: Food[] = allMockRestaurants.flatMap(r =>
+  Array.from({ length: 5 }, (_, i) => {
+    // FIX: The left-hand side of an arithmetic operation must be of type 'any', 'number', 'bigint' or an enum type.
+    const food = createMockFood(Number(r.id.split('-')[1]) * 10 + i, r);
+    if (i === 0 && r.id === 'restaurant-1') {
+        food.customizationOptions = [sizeOption, toppingsOption];
+        food.name = 'Customizable Pizza';
+        food.category = 'Main Course';
+    }
+    if (i === 1) {
+        food.isPackage = true;
+        food.name = "Lunch Special Package";
+        food.category = 'Deals';
+    }
+    if (i === 2) {
+        food.category = 'Appetizers';
+    }
+    if (i === 3) {
+        food.category = 'Desserts';
+    }
+    if(i === 4 && r.name === '24/7 Diner') {
+        food.name = 'Late Night Tacos';
+        food.availability = { type: 'CUSTOM_TIME', startTime: '22:00', endTime: '06:00' };
+    }
+    return food;
+  })
+);
+
+export const allMockReviews: Review[] = Array.from({ length: 50 }, (_, i) => ({
+  id: `review-${i}`,
+  author: ['Alex', 'Jamie', 'Sam', 'Taylor', 'Chris', 'Jordan'][i % 6],
+  rating: parseFloat((Math.random() * 2 + 3).toFixed(1)),
+  text: 'This was an amazing experience, the food was delicious and the service was top-notch. Highly recommended!',
+  avatarUrl: `https://i.pravatar.cc/48?u=person${i}`,
+}));
+
+// FIX: Helper function to correctly convert Food to MenuItem.
 const foodToMenuItem = (food: Food): MenuItem => ({
     id: food.id,
     name: food.name,
@@ -225,204 +223,117 @@ const foodToMenuItem = (food: Food): MenuItem => ({
 
 
 export let mockOrders: Order[] = [
-    {
-        id: 'ORDER-1001',
-        status: 'Placed',
-        date: new Date(Date.now() - 10 * 60 * 1000).toLocaleString('en-US'),
-        restaurantName: 'Restaurant Hub 1',
-        items: [
-            {
-                cartItemId: 'ci-1',
-                baseItem: foodToMenuItem(restaurant1Foods[0]),
-                quantity: 2,
-                selectedCustomizations: [],
-                totalPrice: restaurant1Foods[0].price * 2,
-            },
-            {
-                cartItemId: 'ci-2',
-                baseItem: foodToMenuItem(restaurant1Foods[1]),
-                quantity: 1,
-                selectedCustomizations: [],
-                totalPrice: restaurant1Foods[1].price,
-            }
-        ],
-        subtotal: restaurant1Foods[0].price * 2 + restaurant1Foods[1].price,
-        deliveryFee: 3.99,
-        total: restaurant1Foods[0].price * 2 + restaurant1Foods[1].price + 3.99,
-        discount: 0,
-        address: mockAddresses[0],
-        paymentMethod: 'cod',
-        deliveryOption: 'home',
-        customerName: 'Alex Doe',
-    },
-    {
-        id: 'ORDER-1002',
-        status: 'Preparing',
-        date: new Date(Date.now() - 30 * 60 * 1000).toLocaleString('en-US'),
-        restaurantName: 'Restaurant Hub 1',
-        items: [
-            {
-                cartItemId: 'ci-3',
-                baseItem: foodToMenuItem(restaurant1Foods[2]),
-                quantity: 1,
-                selectedCustomizations: [],
-                totalPrice: restaurant1Foods[2].price,
-            }
-        ],
-        subtotal: restaurant1Foods[2].price,
-        deliveryFee: 3.99,
-        total: restaurant1Foods[2].price + 3.99,
-        discount: 0,
-        address: mockAddresses[1],
-        paymentMethod: 'online',
-        deliveryOption: 'home',
-        customerName: 'Jane Smith',
-    },
-    {
-        id: 'ORDER-1003',
-        status: 'Placed',
-        date: new Date(Date.now() - 5 * 60 * 1000).toLocaleString('en-US'),
-        restaurantName: 'Restaurant Hub 1',
-        items: [
-            {
-                cartItemId: 'ci-4',
-                baseItem: foodToMenuItem(restaurant1Foods[3]),
-                quantity: 1,
-                selectedCustomizations: [],
-                totalPrice: restaurant1Foods[3].price,
-            }
-        ],
-        subtotal: restaurant1Foods[3].price,
-        deliveryFee: 3.99,
-        total: restaurant1Foods[3].price + 3.99,
-        discount: 0,
-        address: { id: 'addr-3', label: 'Friend\'s House', details: '789 Other St, Anytown' },
-        paymentMethod: 'cod',
-        deliveryOption: 'home',
-        customerName: 'Sam Wilson',
-    },
-    {
-        id: 'ORDER-1004',
-        status: 'On its way',
-        date: new Date(Date.now() - 2 * 60 * 1000).toLocaleString('en-US'),
-        restaurantName: 'Restaurant Hub 2',
-        distance: 4.2,
-        estimatedDeliveryTime: '25 min',
-        items: [
-            {
-                cartItemId: 'ci-5',
-                baseItem: foodToMenuItem(restaurant2Foods[0]),
-                quantity: 1,
-                selectedCustomizations: [],
-                totalPrice: restaurant2Foods[0].price,
-            }
-        ],
-        subtotal: restaurant2Foods[0].price,
-        deliveryFee: 2.50,
-        total: restaurant2Foods[0].price + 2.50,
-        discount: 0,
-        address: { id: 'addr-4', label: 'Office', details: '555 Work Rd, Business Park' },
-        paymentMethod: 'online',
-        deliveryOption: 'home',
-        customerName: 'Maria Garcia',
-    },
-    {
-        id: 'ORDER-1005',
-        status: 'On its way',
-        date: new Date(Date.now() - 5 * 60 * 1000).toLocaleString('en-US'),
-        restaurantName: '24/7 Diner',
-        distance: 1.8,
-        estimatedDeliveryTime: '15 min',
-        items: [
-            {
-                cartItemId: 'ci-6',
-                baseItem: foodToMenuItem(allMockFoods.find(f => f.restaurantId === 'restaurant-5')!),
-                quantity: 2,
-                selectedCustomizations: [],
-                totalPrice: allMockFoods.find(f => f.restaurantId === 'restaurant-5')!.price * 2,
-            }
-        ],
-        subtotal: allMockFoods.find(f => f.restaurantId === 'restaurant-5')!.price * 2,
-        deliveryFee: 1.99,
-        total: allMockFoods.find(f => f.restaurantId === 'restaurant-5')!.price * 2 + 1.99,
-        discount: 0,
-        address: { id: 'addr-1', label: 'Home', details: '123 Main St, Anytown' },
-        paymentMethod: 'cod',
-        deliveryOption: 'home',
-        customerName: 'Alex Doe',
-    }
-]; 
-
-const riderOngoingOrder1: Order = {
-    id: 'ORDER-1007',
-    status: 'Preparing', // Rider accepted, needs to go to pickup
-    date: new Date(Date.now() - 15 * 60 * 1000).toLocaleString('en-US'),
-    restaurantName: 'Restaurant Hub 2',
-    items: [ { cartItemId: 'ci-8', baseItem: foodToMenuItem(restaurant2Foods[2]), quantity: 2, selectedCustomizations: [], totalPrice: restaurant2Foods[2].price * 2 } ],
-    subtotal: restaurant2Foods[2].price * 2,
-    deliveryFee: 2.80,
-    total: restaurant2Foods[2].price * 2 + 2.80,
-    discount: 0,
-    address: { id: 'addr-6', label: 'Work', details: '99 Business Rd, Corp Park' },
-    paymentMethod: 'cod',
-    deliveryOption: 'home',
-    customerName: 'Peter Jones',
-    riderId: 'rider-1',
-};
-mockOrders.unshift(riderOngoingOrder1);
-
-const riderOngoingOrder2: Order = {
-    id: 'ORDER-1008',
-    status: 'On its way', // Rider has picked up, is delivering
-    date: new Date(Date.now() - 10 * 60 * 1000).toLocaleString('en-US'),
-    restaurantName: '24/7 Diner',
-    items: [ { cartItemId: 'ci-9', baseItem: foodToMenuItem(allMockFoods.find(f => f.restaurantId === 'restaurant-5')!), quantity: 1, selectedCustomizations: [], totalPrice: allMockFoods.find(f => f.restaurantId === 'restaurant-5')!.price } ],
-    subtotal: allMockFoods.find(f => f.restaurantId === 'restaurant-5')!.price,
-    deliveryFee: 1.50,
-    total: allMockFoods.find(f => f.restaurantId === 'restaurant-5')!.price + 1.50,
-    discount: 0,
-    address: { id: 'addr-7', label: 'Home', details: '321 Residential St, Anytown' },
-    paymentMethod: 'online',
-    deliveryOption: 'home',
-    customerName: 'Susan Miller',
-    riderId: 'rider-1',
-};
-mockOrders.unshift(riderOngoingOrder2);
-
-const riderDeliveredOrder: Order = {
-    id: 'ORDER-1006',
+  {
+    id: 'ORDER-1',
     status: 'Delivered',
-    date: new Date(Date.now() - 2 * 60 * 60 * 1000).toLocaleString('en-US'), // 2 hours ago
+    date: '2023-10-26, 1:30 PM',
     restaurantName: 'Restaurant Hub 1',
-    items: [ { cartItemId: 'ci-7', baseItem: foodToMenuItem(restaurant1Foods[1]), quantity: 1, selectedCustomizations: [], totalPrice: restaurant1Foods[1].price } ],
-    subtotal: restaurant1Foods[1].price,
-    deliveryFee: 2.50,
-    total: restaurant1Foods[1].price + 2.50,
+    items: [
+      // FIX: Conversion of type 'Food' to type 'MenuItem' may be a mistake because neither type sufficiently overlaps with the other.
+      { cartItemId: 'ci-1', baseItem: foodToMenuItem(allMockFoods[0]), quantity: 2, selectedCustomizations: [], totalPrice: allMockFoods[0].price * 2 },
+    ],
+    subtotal: 25.98,
+    deliveryFee: 5.99,
+    total: 31.97,
     discount: 0,
-    address: { id: 'addr-5', label: 'Home', details: '101 New St, Anytown' },
-    paymentMethod: 'online',
+    address: mockAddresses[0],
+    paymentMethod: 'Credit Card',
     deliveryOption: 'home',
-    customerName: 'Ken Adams',
+    customerName: 'Alex Doe',
     riderId: 'rider-1',
-    isReviewed: false,
-};
-mockOrders.push(riderDeliveredOrder);
-
-
-export const allMockReviews: Review[] = Array.from({ length: 15 }, (_, i) => ({
-    id: `review-${i+1}`,
-    author: `Customer ${i+1}`,
-    rating: parseFloat((Math.random() * 1.5 + 3.5).toFixed(1)),
-    text: 'This was an amazing experience! The food was delicious and the service was top-notch. Highly recommended.',
-    avatarUrl: `https://i.pravatar.cc/48?u=customer${i+1}`
-}));
-
-export const mockChatHistory = new Map<string, any[]>();
-
-export const mockVendors: Vendor[] = [
-    { id: 'vendor-1', restaurantId: 'restaurant-1', name: 'Vendor One', email: 'vendor1@example.com' }
+    restaurantLocation: { lat: 34.0522, lng: -118.2437 },
+    deliveryLocation: { lat: 34.0622, lng: -118.2537 },
+  },
+  {
+    id: 'ORDER-2',
+    status: 'On its way',
+    date: new Date().toLocaleString(),
+    restaurantName: 'Restaurant Hub 1',
+    items: [
+       // FIX: Conversion of type 'Food' to type 'MenuItem' may be a mistake because neither type sufficiently overlaps with the other.
+       { cartItemId: 'ci-2', baseItem: foodToMenuItem(allMockFoods[1]), quantity: 1, selectedCustomizations: [], totalPrice: allMockFoods[1].price },
+    ],
+    subtotal: 12.50,
+    deliveryFee: 5.99,
+    total: 18.49,
+    discount: 0,
+    address: mockAddresses[1],
+    paymentMethod: 'Cash on Delivery',
+    deliveryOption: 'home',
+    customerName: 'Alex Doe',
+    riderId: 'rider-1',
+    restaurantLocation: { lat: 34.0522, lng: -118.2437 },
+    deliveryLocation: { lat: 34.0622, lng: -118.2537 },
+  },
+   {
+    id: 'ORDER-3',
+    status: 'Preparing', // Rider is going to pickup
+    date: new Date().toLocaleString(),
+    restaurantName: 'Restaurant Hub 2',
+    items: [
+       // FIX: Conversion of type 'Food' to type 'MenuItem' may be a mistake because neither type sufficiently overlaps with the other.
+       { cartItemId: 'ci-3', baseItem: foodToMenuItem(allMockFoods[10]), quantity: 1, selectedCustomizations: [], totalPrice: allMockFoods[10].price },
+       // FIX: Conversion of type 'Food' to type 'MenuItem' may be a mistake because neither type sufficiently overlaps with the other.
+       { cartItemId: 'ci-4', baseItem: foodToMenuItem(allMockFoods[11]), quantity: 1, selectedCustomizations: [], totalPrice: allMockFoods[11].price },
+    ],
+    subtotal: 20.00,
+    deliveryFee: 4.50,
+    total: 24.50,
+    discount: 0,
+    address: mockAddresses[0],
+    paymentMethod: 'Online',
+    deliveryOption: 'home',
+    customerName: 'Alex Doe',
+    riderId: 'rider-1',
+    restaurantLocation: { lat: 34.055, lng: -118.25 },
+    deliveryLocation: { lat: 34.045, lng: -118.23 },
+    distance: 3.2,
+    estimatedDeliveryTime: "25-30 min"
+  },
+  {
+    id: 'ORDER-4',
+    status: 'On its way', // Ready for pickup by a rider
+    date: new Date().toLocaleString(),
+    restaurantName: 'Restaurant Hub 1',
+    items: [
+       // FIX: Conversion of type 'Food' to type 'MenuItem' may be a mistake because neither type sufficiently overlaps with the other.
+       { cartItemId: 'ci-5', baseItem: foodToMenuItem(allMockFoods[2]), quantity: 1, selectedCustomizations: [], totalPrice: allMockFoods[2].price },
+    ],
+    subtotal: 8.00,
+    deliveryFee: 3.00,
+    total: 11.00,
+    discount: 0,
+    address: mockAddresses[1],
+    paymentMethod: 'Online',
+    deliveryOption: 'home',
+    customerName: 'Alex Doe',
+    distance: 2.5,
+    estimatedDeliveryTime: "20-25 min",
+    restaurantLocation: { lat: 34.0522, lng: -118.2437 },
+    deliveryLocation: { lat: 34.0622, lng: -118.2537 },
+  },
+  {
+    id: 'ORDER-5',
+    status: 'Placed', // New order for vendor
+    date: new Date().toLocaleString(),
+    restaurantName: 'Restaurant Hub 1',
+    items: [
+       // FIX: Conversion of type 'Food' to type 'MenuItem' may be a mistake because neither type sufficiently overlaps with the other.
+       { cartItemId: 'ci-6', baseItem: foodToMenuItem(allMockFoods[3]), quantity: 2, selectedCustomizations: [], totalPrice: allMockFoods[3].price * 2 },
+    ],
+    subtotal: 15.00,
+    deliveryFee: 3.00,
+    total: 18.00,
+    discount: 0,
+    address: mockAddresses[0],
+    paymentMethod: 'Cash on Delivery',
+    deliveryOption: 'home',
+    customerName: 'Valued Customer',
+  }
 ];
 
 export const mockRiders: Rider[] = [
-    { id: 'rider-1', name: 'John Rider', phone: '1700000000', vehicle: 'Motorcycle', rating: 4.8, location: { lat: 34.0522, lng: -118.2437 } }
+    { id: 'rider-1', name: 'John Rider', phone: '1700000000', vehicle: 'Honda Activa', rating: 4.8, location: { lat: 34.045, lng: -118.24 } },
 ];
+
+export const mockChatHistory = new Map<string, ChatMessage[]>();

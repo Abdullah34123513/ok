@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import * as api from '@shared/api';
-import type { Order } from '@shared/types';
+import type { Order, LocationPoint } from '@shared/types';
 import { useAuth } from '../contexts/AuthContext';
 import { StorefrontIcon, HomeIcon, MapPinIcon, MoneyIcon, PackageIcon, ClockIcon, LogoutIcon } from '../components/Icons';
 
@@ -67,53 +67,73 @@ const NewOrderCard: React.FC<{
     );
 };
 
-const OngoingOrderCard: React.FC<{
+const ActiveOrderJourney: React.FC<{
     order: Order,
     onMarkAsPickedUp: (orderId: string) => void,
     onMarkAsDelivered: (orderId: string) => void,
     isUpdating: boolean
 }> = ({ order, onMarkAsPickedUp, onMarkAsDelivered, isUpdating }) => {
-    const itemsCount = order.items.reduce((acc, item) => acc + item.quantity, 0);
+    
+    const handleNavigation = (location?: LocationPoint) => {
+        if (location) {
+            // Opens Google Maps in a new tab on web, or the maps app on mobile.
+            window.open(`https://www.google.com/maps/dir/?api=1&destination=${location.lat},${location.lng}`, '_blank');
+        }
+    };
+
+    const isPickupStage = order.status === 'Preparing';
+    const destinationLocation = isPickupStage ? order.restaurantLocation : order.deliveryLocation;
 
     return (
-        <div className="bg-gray-50 rounded-lg p-4 shadow-sm border border-gray-200 animate-fade-in-up">
-            <div className="flex justify-between items-start">
-                <p className="font-mono text-blue-600 font-semibold text-sm">Order #{order.id.split('-')[1]}</p>
-                <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${order.status === 'Preparing' ? 'bg-yellow-100 text-yellow-800' : 'bg-purple-100 text-purple-800'}`}>
-                    {order.status === 'Preparing' ? 'Go to Pickup' : 'Out for Delivery'}
+        <div className="bg-white rounded-lg p-4 shadow-md border border-gray-200 animate-fade-in-up">
+            <div className="flex justify-between items-center pb-3 border-b">
+                <h3 className="font-bold text-lg">Order #{order.id.split('-')[1]}</h3>
+                <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${isPickupStage ? 'bg-yellow-100 text-yellow-800' : 'bg-purple-100 text-purple-800'}`}>
+                    {isPickupStage ? 'Going to Pickup' : 'Out for Delivery'}
                 </span>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
-                <div>
-                    <div className="flex items-center text-sm font-semibold text-gray-500 mb-2"><StorefrontIcon className="w-5 h-5 mr-2" />PICKUP</div>
-                    <p className="font-bold text-gray-800">{order.restaurantName}</p>
-                    <p className="text-sm text-gray-600">{allMockRestaurants.find(r => r.name === order.restaurantName)?.address}</p>
-                </div>
-                <div>
-                    <div className="flex items-center text-sm font-semibold text-gray-500 mb-2"><HomeIcon className="w-5 h-5 mr-2" />DELIVER</div>
-                    <p className="font-bold text-gray-800">{order.customerName}</p>
-                    <p className="text-sm text-gray-600">{order.address.details}</p>
-                </div>
-            </div>
-            <div className="mt-4 pt-3 border-t border-dashed flex items-center justify-between text-sm">
-                 <div className="flex items-center text-gray-700"><MoneyIcon className="w-4 h-4 mr-1.5"/>Fee: <span className="font-bold ml-1">৳{order.deliveryFee.toFixed(2)}</span></div>
-                <div className="flex items-center text-gray-700"><PackageIcon className="w-4 h-4 mr-1.5"/>Items: <span className="font-bold ml-1">{itemsCount}</span></div>
-            </div>
-            <div className="mt-4 pt-3 border-t flex justify-end space-x-3">
-                {order.status === 'Preparing' ? (
-                    <>
-                        <button className="px-4 py-2 text-sm font-semibold text-gray-700 bg-white border rounded-full hover:bg-gray-100">Navigate</button>
-                        <button onClick={() => onMarkAsPickedUp(order.id)} disabled={isUpdating} className="px-6 py-2 text-sm font-semibold text-white bg-blue-500 rounded-full hover:bg-blue-600">
-                            {isUpdating ? '...' : 'Mark as Picked Up'}
-                        </button>
-                    </>
+            
+            <div className="py-4">
+                {isPickupStage ? (
+                    // Pickup Stage
+                    <div>
+                        <div className="flex items-center text-sm font-semibold text-gray-500 mb-2">
+                            <StorefrontIcon className="w-5 h-5 mr-2 text-blue-500" />
+                            <span>PICKUP FROM</span>
+                        </div>
+                        <p className="font-bold text-lg text-gray-800">{order.restaurantName}</p>
+                        <p className="text-sm text-gray-600">{allMockRestaurants.find(r => r.name === order.restaurantName)?.address}</p>
+                        {order.distance && <p className="text-sm text-gray-500 mt-1">{order.distance} km away</p>}
+                    </div>
                 ) : (
-                     <>
-                        <button className="px-4 py-2 text-sm font-semibold text-gray-700 bg-white border rounded-full hover:bg-gray-100">Navigate</button>
-                        <button onClick={() => onMarkAsDelivered(order.id)} disabled={isUpdating} className="px-6 py-2 text-sm font-semibold text-white bg-green-500 rounded-full hover:bg-green-600">
-                            {isUpdating ? '...' : 'Mark as Delivered'}
-                        </button>
-                    </>
+                    // Delivery Stage
+                    <div>
+                        <div className="flex items-center text-sm font-semibold text-gray-500 mb-2">
+                            <HomeIcon className="w-5 h-5 mr-2 text-green-500" />
+                            <span>DELIVER TO</span>
+                        </div>
+                        <p className="font-bold text-lg text-gray-800">{order.customerName}</p>
+                        <p className="text-sm text-gray-600">{order.address.details}</p>
+                        {order.distance && <p className="text-sm text-gray-500 mt-1">{order.distance} km away</p>}
+                    </div>
+                )}
+            </div>
+
+            <div className="mt-4 pt-4 border-t flex flex-col sm:flex-row items-center justify-between gap-4">
+                 <button 
+                    onClick={() => handleNavigation(destinationLocation)}
+                    className="w-full sm:w-auto px-6 py-3 text-base font-semibold text-white bg-[#FF6B00] rounded-full hover:bg-orange-600 transition-colors"
+                >
+                    Start Navigation
+                </button>
+                {isPickupStage ? (
+                     <button onClick={() => onMarkAsPickedUp(order.id)} disabled={isUpdating} className="w-full sm:w-auto px-6 py-3 text-base font-semibold text-white bg-blue-500 rounded-full hover:bg-blue-600 disabled:opacity-50">
+                        {isUpdating ? '...' : 'Mark as Picked Up'}
+                    </button>
+                ) : (
+                    <button onClick={() => onMarkAsDelivered(order.id)} disabled={isUpdating} className="w-full sm:w-auto px-6 py-3 text-base font-semibold text-white bg-green-500 rounded-full hover:bg-green-600 disabled:opacity-50">
+                        {isUpdating ? '...' : 'Mark as Delivered'}
+                    </button>
                 )}
             </div>
         </div>
@@ -322,7 +342,7 @@ const DashboardPage: React.FC = () => {
             case 'ongoing':
                  return ongoingOrders.length === 0
                     ? <div className="text-center p-8 text-gray-500">You have no ongoing orders.</div>
-                    : <div className="space-y-4">{ongoingOrders.map(order => <OngoingOrderCard key={order.id} order={order} onMarkAsPickedUp={handleMarkAsPickedUp} onMarkAsDelivered={handleMarkAsDelivered} isUpdating={updatingOrderId === order.id} />)}</div>;
+                    : <div className="space-y-4">{ongoingOrders.map(order => <ActiveOrderJourney key={order.id} order={order} onMarkAsPickedUp={handleMarkAsPickedUp} onMarkAsDelivered={handleMarkAsDelivered} isUpdating={updatingOrderId === order.id} />)}</div>;
 
             case 'delivered':
                 return deliveredOrders.length === 0
