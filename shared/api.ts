@@ -1,4 +1,4 @@
-import type { Offer, Restaurant, Food, PaginatedFoods, SearchResult, PaginatedRestaurants, MenuCategory, Review, CartItem, MenuItem, Address, Order, AddressSuggestion, AddressDetails, User, LoginCredentials, SignupData, AuthResponse, LocationPoint, SupportInfo, ChatMessage, OrderReview, SelectedCustomization, CustomizationOption, Vendor, VendorDashboardSummary, ConversationSummary, OperatingHours } from './types';
+import type { Offer, Restaurant, Food, PaginatedFoods, SearchResult, PaginatedRestaurants, MenuCategory, Review, CartItem, MenuItem, Address, Order, AddressSuggestion, AddressDetails, User, LoginCredentials, SignupData, AuthResponse, LocationPoint, SupportInfo, ChatMessage, OrderReview, SelectedCustomization, CustomizationOption, Vendor, VendorDashboardSummary, ConversationSummary, OperatingHours, Rider } from './types';
 
 // --- Location-based data simulation helpers ---
 
@@ -240,6 +240,7 @@ let mockAddresses: Address[] = [
 ];
 
 const restaurant1Foods = allMockFoods.filter(f => f.restaurantId === 'restaurant-1');
+const restaurant2Foods = allMockFoods.filter(f => f.restaurantId === 'restaurant-2');
 
 // Helper to convert Food to MenuItem
 const foodToMenuItem = (food: Food): MenuItem => ({
@@ -333,8 +334,58 @@ let mockOrders: Order[] = [
         paymentMethod: 'cod',
         deliveryOption: 'home',
         customerName: 'Sam Wilson',
+    },
+    {
+        id: 'ORDER-1004',
+        status: 'On its way',
+        date: new Date(Date.now() - 2 * 60 * 1000).toLocaleString('en-US'),
+        restaurantName: 'Restaurant Hub 2',
+        distance: 4.2,
+        estimatedDeliveryTime: '25 min',
+        items: [
+            {
+                cartItemId: 'ci-5',
+                baseItem: foodToMenuItem(restaurant2Foods[0]),
+                quantity: 1,
+                selectedCustomizations: [],
+                totalPrice: restaurant2Foods[0].price,
+            }
+        ],
+        subtotal: restaurant2Foods[0].price,
+        deliveryFee: 2.50,
+        total: restaurant2Foods[0].price + 2.50,
+        discount: 0,
+        address: { id: 'addr-4', label: 'Office', details: '555 Work Rd, Business Park' },
+        paymentMethod: 'online',
+        deliveryOption: 'home',
+        customerName: 'Maria Garcia',
+    },
+    {
+        id: 'ORDER-1005',
+        status: 'On its way',
+        date: new Date(Date.now() - 5 * 60 * 1000).toLocaleString('en-US'),
+        restaurantName: '24/7 Diner',
+        distance: 1.8,
+        estimatedDeliveryTime: '15 min',
+        items: [
+            {
+                cartItemId: 'ci-6',
+                baseItem: foodToMenuItem(allMockFoods.find(f => f.restaurantId === 'restaurant-5')!),
+                quantity: 2,
+                selectedCustomizations: [],
+                totalPrice: allMockFoods.find(f => f.restaurantId === 'restaurant-5')!.price * 2,
+            }
+        ],
+        subtotal: allMockFoods.find(f => f.restaurantId === 'restaurant-5')!.price * 2,
+        deliveryFee: 1.99,
+        total: allMockFoods.find(f => f.restaurantId === 'restaurant-5')!.price * 2 + 1.99,
+        discount: 0,
+        address: { id: 'addr-1', label: 'Home', details: '123 Main St, Anytown' },
+        paymentMethod: 'cod',
+        deliveryOption: 'home',
+        customerName: 'Alex Doe',
     }
-]; // This will be populated as orders are created
+]; 
 
 const allMockReviews: Review[] = Array.from({ length: 15 }, (_, i) => ({
     id: `review-${i+1}`,
@@ -349,6 +400,12 @@ const mockChatHistory = new Map<string, ChatMessage[]>();
 const mockVendors: Vendor[] = [
     { id: 'vendor-1', restaurantId: 'restaurant-1', name: 'Vendor One', email: 'vendor1@example.com' }
 ];
+
+const mockRiders: Rider[] = [
+    // FIX: Added location to mock rider to satisfy the Rider interface and fix type error in acceptRiderOrder.
+    { id: 'rider-1', name: 'John Rider', phone: '1700000000', vehicle: 'Motorcycle', rating: 4.8, location: { lat: 34.0522, lng: -118.2437 } }
+];
+
 
 // --- API Simulation ---
 
@@ -1096,4 +1153,34 @@ export const getVendorConversations = async (_vendorId: string): Promise<Convers
         { customerId: 'alex.doe@example.com', customerName: 'Alex Doe', lastMessage: 'Is my order on the way?', timestamp: new Date(Date.now() - 5 * 60000).toISOString(), hasUnread: true },
         { customerId: 'jane.smith@example.com', customerName: 'Jane Smith', lastMessage: 'Thank you!', timestamp: new Date(Date.now() - 2 * 3600 * 1000).toISOString(), hasUnread: false },
     ];
+};
+
+// --- RIDER-SPECIFIC APIS ---
+
+export const loginRider = async (phone: string): Promise<Rider | undefined> => {
+    await simulateDelay(500);
+    // In a real app, this would verify the phone number and send an OTP.
+    // For the mock, we just find the rider by their phone number.
+    return mockRiders.find(r => r.phone === phone);
+};
+
+export const getRiderNewOrders = async (): Promise<Order[]> => {
+    await simulateDelay(800);
+    // Find orders that are ready for pickup ('On its way') but don't have a rider assigned yet.
+    return mockOrders.filter(o => o.status === 'On its way' && !o.riderId);
+};
+
+export const acceptRiderOrder = async (orderId: string, riderId: string): Promise<Order> => {
+    await simulateDelay(500);
+    const orderIndex = mockOrders.findIndex(o => o.id === orderId);
+    if (orderIndex === -1) {
+        throw new Error("Order not found.");
+    }
+    const rider = mockRiders.find(r => r.id === riderId);
+    if (!rider) {
+        throw new Error("Rider not found");
+    }
+    mockOrders[orderIndex].riderId = riderId;
+    mockOrders[orderIndex].rider = rider; // Assign full rider details for tracking page
+    return mockOrders[orderIndex];
 };

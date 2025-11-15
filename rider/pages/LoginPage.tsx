@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { LogoIcon, PhoneIcon } from '../components/Icons';
+import * as api from '@shared/api';
 
 const LoginPage: React.FC = () => {
     const [phone, setPhone] = useState('');
     const [error, setError] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
 
     const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const value = e.target.value.replace(/\D/g, ''); // Remove non-digit characters
@@ -15,14 +17,28 @@ const LoginPage: React.FC = () => {
 
     const isValid = phone.length === 10;
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!isValid) {
             setError('Please enter a valid 10-digit phone number.');
             return;
         }
-        // Navigate to OTP screen
-        window.location.hash = `#/otp/${phone}`;
+        setIsLoading(true);
+        setError('');
+        try {
+            // Check if rider exists before proceeding to OTP
+            const rider = await api.loginRider(phone);
+            if (rider) {
+                // Navigate to OTP screen
+                window.location.hash = `#/otp/${phone}`;
+            } else {
+                setError('No rider found with this phone number.');
+            }
+        } catch (err) {
+            setError('An error occurred. Please try again.');
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     return (
@@ -65,10 +81,10 @@ const LoginPage: React.FC = () => {
 
                     <button
                         type="submit"
-                        disabled={!isValid}
+                        disabled={!isValid || isLoading}
                         className="w-full flex justify-center py-3 px-4 border border-transparent rounded-full shadow-sm text-lg font-medium text-white bg-[#FF6B00] hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 disabled:bg-orange-300 disabled:cursor-not-allowed transition-colors"
                     >
-                        Continue
+                        {isLoading ? 'Checking...' : 'Continue'}
                     </button>
                 </form>
 

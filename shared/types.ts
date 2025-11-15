@@ -193,6 +193,8 @@ export interface Order {
   };
   isReviewed?: boolean;
   customerName?: string;
+  distance?: number;
+  riderId?: string;
 }
 
 export interface OrderReview {
@@ -257,7 +259,7 @@ export interface ChatMessage {
   timestamp: string;
 }
 
-// --- Vendor ---
+// --- Vendor & Rider ---
 
 export interface ConversationSummary {
   customerId: string; // user email
@@ -272,6 +274,17 @@ export interface Vendor {
   name: string;
   email: string;
 }
+
+export interface Rider {
+  id: string;
+  name: string;
+  phone: string;
+  vehicle: string;
+  rating: number;
+  // FIX: Add 'location' to align with the Order.rider property and resolve type errors.
+  location: LocationPoint;
+}
+
 
 export interface VendorDashboardSummary {
   totalRevenue: number;

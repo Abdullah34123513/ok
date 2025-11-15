@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 import LoginPage from './pages/LoginPage';
 import OtpPage from './pages/OtpPage';
+import DashboardPage from './pages/DashboardPage';
 
-export type View = 'login' | 'otp';
+export type View = 'login' | 'otp' | 'dashboard';
 
 interface Route {
     view: View;
@@ -17,13 +19,15 @@ const parseHash = (): Route => {
 
     switch (view) {
         case 'otp': return { view: 'otp', param };
+        case 'dashboard': return { view: 'dashboard' };
         case 'login':
         default:
             return { view: 'login' };
     }
 };
 
-const App: React.FC = () => {
+const AppContent: React.FC = () => {
+    const { currentRider, isLoading } = useAuth();
     const [route, setRoute] = useState<Route>(parseHash());
     
     useEffect(() => {
@@ -34,21 +38,26 @@ const App: React.FC = () => {
         window.addEventListener('hashchange', handleHashChange);
         return () => window.removeEventListener('hashchange', handleHashChange);
     }, []);
-    
-    const renderView = () => {
-        switch (route.view) {
-            case 'otp':
-                return <OtpPage phone={route.param} />;
-            case 'login':
-            default:
-                return <LoginPage />;
-        }
-    };
 
+    if (isLoading) {
+        return <div className="flex h-screen items-center justify-center">Loading...</div>;
+    }
+
+    if (!currentRider) {
+        if (route.view === 'otp') {
+            return <OtpPage phone={route.param} />;
+        }
+        return <LoginPage />;
+    }
+    
+    return <DashboardPage />;
+};
+
+const App: React.FC = () => {
     return (
-        <div>
-            {renderView()}
-        </div>
+        <AuthProvider>
+            <AppContent />
+        </AuthProvider>
     );
 };
 

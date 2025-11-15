@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { LogoIcon } from '../components/Icons';
+import { useAuth } from '../contexts/AuthContext';
 
 interface OtpPageProps {
     phone?: string;
@@ -7,23 +8,40 @@ interface OtpPageProps {
 
 const OtpPage: React.FC<OtpPageProps> = ({ phone }) => {
     const [otp, setOtp] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState('');
+    const { login } = useAuth();
+
 
     const handleOtpChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const value = e.target.value.replace(/\D/g, '');
         if (value.length <= 6) {
             setOtp(value);
+            if (error) setError('');
         }
     };
     
     const isValid = otp.length === 6;
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (isValid) {
-            // Placeholder for OTP verification logic
-            alert(`Verifying OTP: ${otp} for number: +880${phone}`);
-            // On success, you would navigate to the rider's dashboard
-            // window.location.hash = '#/dashboard';
+        if (!isValid || !phone) return;
+        
+        setIsLoading(true);
+        setError('');
+        try {
+            // In a real app, you'd verify the OTP with a backend service.
+            // Here, we simulate success if the OTP is '123456' and log the user in.
+            if (otp === '123456') {
+                await login(phone);
+                // Navigation is handled by the AuthContext and App router
+            } else {
+                setError('Invalid verification code.');
+            }
+        } catch(err) {
+            setError('Login failed. Please try again.');
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -40,6 +58,7 @@ const OtpPage: React.FC<OtpPageProps> = ({ phone }) => {
                     <p className="text-sm text-gray-500">
                         We've sent a 6-digit code to <br />
                         <span className="font-semibold" style={{ color: '#1E1E1E' }}>+880 {phone}</span>
+                         <br/>(Hint: use 123456)
                     </p>
                 </div>
 
@@ -54,14 +73,19 @@ const OtpPage: React.FC<OtpPageProps> = ({ phone }) => {
                             placeholder="_ _ _ _ _ _"
                             maxLength={6}
                         />
+                         {error && (
+                            <p className="mt-2 text-sm text-red-600" id="otp-error">
+                                {error}
+                            </p>
+                        )}
                     </div>
 
                     <button
                         type="submit"
-                        disabled={!isValid}
+                        disabled={!isValid || isLoading}
                         className="w-full flex justify-center py-3 px-4 border border-transparent rounded-full shadow-sm text-lg font-medium text-white bg-[#FF6B00] hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 disabled:bg-orange-300 disabled:cursor-not-allowed transition-colors"
                     >
-                        Verify & Continue
+                        {isLoading ? 'Verifying...' : 'Verify & Continue'}
                     </button>
                 </form>
 
