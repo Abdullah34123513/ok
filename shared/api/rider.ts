@@ -1,5 +1,4 @@
-
-import type { Order, Rider, LocationPoint } from '../types';
+import type { Order, Rider, LocationPoint, RiderStats } from '../types';
 import { simulateDelay } from './utils';
 import { mockOrders, mockRiders } from './mockData';
 
@@ -8,6 +7,19 @@ import { mockOrders, mockRiders } from './mockData';
 export const loginRider = async (phone: string): Promise<Rider | undefined> => {
     await simulateDelay(500);
     return mockRiders.find(r => r.phone === phone);
+};
+
+export const getRiderStats = async (riderId: string): Promise<RiderStats> => {
+    await simulateDelay(500);
+    const deliveredOrders = mockOrders.filter(o => o.riderId === riderId && o.status === 'Delivered');
+    const todayEarnings = deliveredOrders.reduce((sum, order) => sum + order.deliveryFee, 0);
+    const rider = mockRiders.find(r => r.id === riderId);
+
+    return {
+        todayEarnings,
+        completedTrips: deliveredOrders.length,
+        rating: rider?.rating || 4.5,
+    };
 };
 
 export const updateRiderLocation = async (riderId: string, location: LocationPoint): Promise<void> => {
@@ -34,17 +46,24 @@ export const getRiderNewOrders = async (): Promise<Order[]> => {
 
 export const acceptRiderOrder = async (orderId: string, riderId: string): Promise<Order> => {
     await simulateDelay(400);
+    const rider = mockRiders.find(r => r.id === riderId);
+    if (!rider) throw new Error("Rider not found");
+
+    const activeOrders = mockOrders.filter(o => o.riderId === riderId && ['Preparing', 'On its way'].includes(o.status));
+    if (activeOrders.length >= 2) {
+        throw new Error("You have reached your maximum order limit of 2.");
+    }
+
     const orderIndex = mockOrders.findIndex(o => o.id === orderId);
     if (orderIndex === -1) throw new Error("Order not found");
     
     const order = mockOrders[orderIndex];
     if (order.riderId) throw new Error("Order already taken");
 
-    const rider = mockRiders.find(r => r.id === riderId);
-    if (!rider) throw new Error("Rider not found");
-
     order.riderId = riderId;
-    order.status = 'Preparing'; // Status changes to 'Preparing' from rider's perspective (means "Go to Pickup")
+    // The status for the vendor becomes 'On its way', but for the rider, it means they need to go pick it up.
+    // Let's use 'Preparing' to signify the rider is en route to the restaurant.
+    order.status = 'Preparing'; 
     order.rider = rider;
 
     return { ...order };
@@ -65,6 +84,13 @@ export const getRiderDeliveredOrders = async (riderId: string): Promise<Order[]>
         .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 };
 
+export const getRiderCancelledOrders = async (riderId: string): Promise<Order[]> => {
+    await simulateDelay(600);
+    return mockOrders
+        .filter(o => o.riderId === riderId && o.status === 'Cancelled')
+        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+};
+
 export const getNewOrderOpportunities = async (riderId: string): Promise<Order[]> => {
     await simulateDelay(800);
     // In a real app, this would use the rider's current location and route
@@ -72,6 +98,11 @@ export const getNewOrderOpportunities = async (riderId: string): Promise<Order[]
     // For this mock, we'll just find the first available order.
     const rider = mockRiders.find(r => r.id === riderId);
     if (!rider) return [];
+
+    const activeOrders = mockOrders.filter(o => o.riderId === riderId && ['Preparing', 'On its way'].includes(o.status));
+    if (activeOrders.length >= 2) {
+        return []; // Rider has reached their limit
+    }
 
     const availableOrder = mockOrders.find(o => o.status === 'On its way' && !o.riderId);
     return availableOrder ? [availableOrder] : [];

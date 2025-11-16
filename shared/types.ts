@@ -285,6 +285,11 @@ export interface Rider {
   location: LocationPoint;
 }
 
+export interface RiderStats {
+    todayEarnings: number;
+    completedTrips: number;
+    rating: number;
+}
 
 export interface VendorDashboardSummary {
   totalRevenue: number;

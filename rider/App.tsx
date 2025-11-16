@@ -4,6 +4,7 @@ import LoginPage from './pages/LoginPage';
 import OtpPage from './pages/OtpPage';
 import DashboardPage from './pages/DashboardPage';
 
+// Keep the router to handle the multi-step login
 export type View = 'login' | 'otp' | 'dashboard';
 
 interface Route {
@@ -43,14 +44,16 @@ const AppContent: React.FC = () => {
         return <div className="flex h-screen items-center justify-center">Loading...</div>;
     }
 
-    if (!currentRider) {
-        if (route.view === 'otp') {
-            return <OtpPage phone={route.param} />;
-        }
-        return <LoginPage />;
+    // If logged in, always show dashboard.
+    if (currentRider) {
+        return <DashboardPage />;
     }
-    
-    return <DashboardPage />;
+
+    // If not logged in, show login or OTP page.
+    if (route.view === 'otp') {
+        return <OtpPage phone={route.param} />;
+    }
+    return <LoginPage />;
 };
 
 const App: React.FC = () => {
