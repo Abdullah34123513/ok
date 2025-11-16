@@ -1,149 +1,159 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import * as api from '@shared/api';
 import type { Order, LocationPoint, Restaurant } from '@shared/types';
 import { useAuth } from '../contexts/AuthContext';
-import { StorefrontIcon, HomeIcon, MapPinIcon, PhoneIcon, LogoutIcon, PowerIcon, CheckCircleIcon, XCircleIcon } from '../components/Icons';
+import { StorefrontIcon, HomeIcon, MapPinIcon, PhoneIcon, LogoutIcon, CheckCircleIcon, ClockIcon } from '../components/Icons';
 
-// --- TYPES & HELPERS ---
-type JourneyStop = {
-    type: 'pickup' | 'delivery';
-    orderId: string;
-    stopId: string; // e.g. "pickup-ORDER-3"
-    restaurantName?: string;
-    customerName?: string;
-    address: string;
-    location?: LocationPoint;
-    paymentMethod?: string;
-    total?: number;
-    phone?: string;
-};
-
-// Dummy restaurant data for addresses, since it's not on the main Order object
+// --- DUMMY DATA (for UI, as API doesn't provide it on order) ---
 const allMockRestaurants: Pick<Restaurant, 'id' | 'name' | 'address'>[] = [
     { id: 'restaurant-1', name: 'Restaurant Hub 1', address: '121 Flavor St, Food City' },
     { id: 'restaurant-2', name: 'Restaurant Hub 2', address: '122 Flavor St, Food City' },
-    { id: 'restaurant-5', name: '24/7 Diner', address: '125 Flavor St, Food City' },
+    { id: 'restaurant-26', name: '24/7 Diner', address: '125 Flavor St, Food City' },
 ];
-
-const createJourney = (orders: Order[]): JourneyStop[] => {
-    const pickups: JourneyStop[] = orders
-        .filter(o => o.status === 'Preparing')
-        .map(o => ({
-            type: 'pickup',
-            orderId: o.id,
-            stopId: `pickup-${o.id}`,
-            restaurantName: o.restaurantName,
-            address: allMockRestaurants.find(r => r.name === o.restaurantName)?.address || 'Unknown Address',
-            location: o.restaurantLocation,
-        }));
-    
-    const deliveries: JourneyStop[] = orders
-        .filter(o => o.status === 'On its way')
-        .map(o => ({
-            type: 'delivery',
-            orderId: o.id,
-            stopId: `delivery-${o.id}`,
-            customerName: o.customerName,
-            address: o.address.details,
-            location: o.deliveryLocation,
-            paymentMethod: o.paymentMethod,
-            total: o.total,
-            phone: '555-0100', // Mock customer phone
-        }));
-        
-    return [...pickups, ...deliveries];
-};
-
 
 // --- SUB-COMPONENTS ---
 
-const ActiveJourneyView: React.FC<{
-    orders: Order[];
+const Timer: React.FC<{ acceptedAt: string }> = ({ acceptedAt }) => {
+    const [timeLeft, setTimeLeft] = useState(30 * 60);
+
+    useEffect(() => {
+        if (!acceptedAt) return;
+        const deadline = new Date(acceptedAt).getTime() + 30 * 60 * 1000;
+
+        const updateTimer = () => {
+            const remaining = Math.round((deadline - Date.now()) / 1000);
+            setTimeLeft(remaining > 0 ? remaining : 0);
+        };
+
+        updateTimer();
+        const interval = setInterval(updateTimer, 1000);
+        return () => clearInterval(interval);
+    }, [acceptedAt]);
+
+    const minutes = Math.floor(timeLeft / 60);
+    const seconds = timeLeft % 60;
+
+    const colorClass = minutes < 10 ? 'text-red-500' : minutes < 20 ? 'text-yellow-500' : 'text-green-500';
+
+    if (timeLeft <= 0) {
+        return (
+            <div className="text-center">
+                <span className="font-bold text-red-500 text-lg">LATE</span>
+                <p className="text-xs text-red-500">Please deliver ASAP.</p>
+            </div>
+        );
+    }
+
+    return (
+        <div className="flex items-center space-x-1">
+            <ClockIcon className={`w-5 h-5 ${colorClass}`} />
+            <span className={`font-bold text-lg ${colorClass}`}>
+                {String(minutes).padStart(2, '0')}:{String(seconds).padStart(2, '0')}
+            </span>
+        </div>
+    );
+};
+
+const OrderCard: React.FC<{
+    order: Order;
     onUpdateStatus: (orderId: string, status: Order['status']) => void;
     isUpdating: (orderId: string) => boolean;
-}> = ({ orders, onUpdateStatus, isUpdating }) => {
+}> = ({ order, onUpdateStatus, isUpdating }) => {
     
-    const journey = createJourney(orders);
+    const isPickupStage = order.status === 'Preparing';
+    const currentStageLocation = isPickupStage ? order.restaurantLocation : order.deliveryLocation;
 
-    if (journey.length === 0) {
-        return <div className="p-8 text-center text-gray-500">Finishing up...</div>;
-    }
-    
-    const currentStop = journey[0];
-    const upcomingStops = journey.slice(1);
-    
     const handleNavigation = (location?: LocationPoint) => {
         if (location) {
             window.open(`https://www.google.com/maps/dir/?api=1&destination=${location.lat},${location.lng}`, '_blank');
         }
     };
-
-    const isPickupStage = currentStop.type === 'pickup';
-    const actionButton = isPickupStage ? (
-        <button onClick={() => onUpdateStatus(currentStop.orderId, 'On its way')} disabled={isUpdating(currentStop.orderId)} className="w-full px-6 py-4 text-lg font-bold text-white bg-blue-500 rounded-xl hover:bg-blue-600 disabled:opacity-50 transition-colors">
-            {isUpdating(currentStop.orderId) ? '...' : 'Confirm Pickup'}
-        </button>
-    ) : (
-        <button onClick={() => onUpdateStatus(currentStop.orderId, 'Delivered')} disabled={isUpdating(currentStop.orderId)} className="w-full px-6 py-4 text-lg font-bold text-white bg-green-500 rounded-xl hover:bg-green-600 disabled:opacity-50 transition-colors">
-            {isUpdating(currentStop.orderId) ? '...' : 'Confirm Delivery'}
-        </button>
-    );
-
+    
     return (
-        <div className="p-4 space-y-4 animate-fade-in-up">
-            <div className="bg-white rounded-xl p-5 shadow-md border">
-                <div className="flex items-center space-x-3 pb-3 border-b">
-                    {isPickupStage ? <StorefrontIcon className="w-6 h-6 text-blue-500" /> : <HomeIcon className="w-6 h-6 text-green-500" />}
+        <div className="bg-white rounded-xl p-4 shadow-md border animate-fade-in-up space-y-4">
+            {/* Header */}
+            <div className="flex justify-between items-center pb-3 border-b">
+                <div>
+                    <p className="text-xs text-gray-500">Order ID</p>
+                    <p className="font-mono font-semibold text-blue-600">{order.id.split('-')[1]}</p>
+                </div>
+                {order.acceptedAt && <Timer acceptedAt={order.acceptedAt} />}
+            </div>
+            
+            {/* Journey Steps */}
+            <div className="space-y-3">
+                {/* Pickup Step */}
+                <div className={`flex items-start space-x-3 p-3 rounded-lg ${isPickupStage ? 'bg-blue-50 border-l-4 border-blue-500' : ''}`}>
+                    <StorefrontIcon className={`w-6 h-6 mt-1 flex-shrink-0 ${isPickupStage ? 'text-blue-600' : 'text-gray-400'}`} />
                     <div>
-                        <p className="font-bold text-xl text-gray-800">{isPickupStage ? 'PICKUP' : 'DELIVERY'}</p>
-                        <p className="text-sm text-gray-500">Order #{currentStop.orderId.split('-')[1]}</p>
+                        <p className={`font-semibold ${isPickupStage ? 'text-blue-700' : 'text-gray-600'}`}>Pickup</p>
+                        <p className="text-sm font-bold text-gray-800">{order.restaurantName}</p>
+                        <p className="text-xs text-gray-500">{allMockRestaurants.find(r => r.name === order.restaurantName)?.address}</p>
                     </div>
                 </div>
-                <div className="py-4">
-                    <p className="font-bold text-2xl text-gray-900">{isPickupStage ? currentStop.restaurantName : currentStop.customerName}</p>
-                    <p className="text-gray-600 mt-1">{currentStop.address}</p>
-                </div>
-                <button onClick={() => handleNavigation(currentStop.location)} className="w-full flex items-center justify-center space-x-3 px-6 py-4 text-lg font-bold text-white bg-[#FF6B00] rounded-xl hover:bg-orange-600 transition-colors shadow-lg">
-                    <MapPinIcon className="w-6 h-6"/>
-                    <span>Navigate</span>
-                </button>
-                 {currentStop.type === 'delivery' && (
-                    <div className="mt-4 space-y-3 pt-3 border-t">
-                        <div className="flex items-center justify-between">
-                             <span className="text-gray-600">Payment</span>
-                             <span className={`font-bold text-base px-2 py-0.5 rounded-md ${currentStop.paymentMethod === 'Cash on Delivery' ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
-                                 {currentStop.paymentMethod === 'Cash on Delivery' ? `Collect Cash: ৳${currentStop.total?.toFixed(2)}` : 'Pre-paid'}
-                             </span>
-                         </div>
-                        <a href={`tel:${currentStop.phone}`} className="w-full mt-2 flex items-center justify-center space-x-2 px-4 py-2 text-sm font-semibold border rounded-lg hover:bg-gray-100 transition-colors">
-                            <PhoneIcon className="w-4 h-4 text-gray-600" />
-                            <span>Call Customer</span>
-                        </a>
+
+                {/* Delivery Step */}
+                 <div className={`flex items-start space-x-3 p-3 rounded-lg ${!isPickupStage ? 'bg-green-50 border-l-4 border-green-500' : ''}`}>
+                    <HomeIcon className={`w-6 h-6 mt-1 flex-shrink-0 ${!isPickupStage ? 'text-green-600' : 'text-gray-400'}`} />
+                    <div>
+                        <p className={`font-semibold ${!isPickupStage ? 'text-green-700' : 'text-gray-600'}`}>Delivery</p>
+                        <p className="text-sm font-bold text-gray-800">{order.customerName}</p>
+                        <p className="text-xs text-gray-500">{order.address.details}</p>
                     </div>
-                 )}
+                </div>
             </div>
 
-            <div className="pt-2">{actionButton}</div>
-
-            {upcomingStops.length > 0 && (
-                <div className="bg-white rounded-xl p-5 shadow-md border">
-                    <h3 className="font-bold text-lg mb-2">Next up:</h3>
-                    <ul className="space-y-3">
-                        {upcomingStops.map(stop => (
-                            <li key={stop.stopId} className="flex items-center space-x-3 p-2 bg-gray-50 rounded-md">
-                                {stop.type === 'pickup' ? <StorefrontIcon className="w-5 h-5 text-blue-500 flex-shrink-0" /> : <HomeIcon className="w-5 h-5 text-green-500 flex-shrink-0" />}
-                                <div>
-                                    <p className="font-semibold text-sm">{stop.type === 'pickup' ? stop.restaurantName : stop.customerName}</p>
-                                    <p className="text-xs text-gray-500">{stop.address}</p>
-                                </div>
-                            </li>
-                        ))}
-                    </ul>
+            {/* Payment Info for Delivery */}
+            {!isPickupStage && (
+                <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50">
+                    <span className="text-gray-600 font-medium">Payment</span>
+                    <span className={`font-bold text-base px-2 py-0.5 rounded-md ${order.paymentMethod === 'Cash on Delivery' ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
+                        {order.paymentMethod === 'Cash on Delivery' ? `Collect: ৳${order.total?.toFixed(2)}` : 'Pre-paid'}
+                    </span>
                 </div>
             )}
+            
+            {/* Actions */}
+            <div className="grid grid-cols-2 gap-3 pt-3 border-t">
+                <button onClick={() => handleNavigation(currentStageLocation)} className="flex items-center justify-center space-x-2 px-4 py-3 font-semibold text-gray-700 bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors">
+                    <MapPinIcon className="w-5 h-5"/>
+                    <span>Navigate</span>
+                </button>
+                {isPickupStage ? (
+                     <button onClick={() => onUpdateStatus(order.id, 'On its way')} disabled={isUpdating(order.id)} className="flex items-center justify-center space-x-2 px-4 py-3 font-bold text-white bg-blue-500 rounded-xl hover:bg-blue-600 disabled:opacity-50 transition-colors">
+                        <CheckCircleIcon className="w-5 h-5"/>
+                        <span>Confirm Pickup</span>
+                    </button>
+                ) : (
+                    <button onClick={() => onUpdateStatus(order.id, 'Delivered')} disabled={isUpdating(order.id)} className="flex items-center justify-center space-x-2 px-4 py-3 font-bold text-white bg-green-500 rounded-xl hover:bg-green-600 disabled:opacity-50 transition-colors">
+                        <CheckCircleIcon className="w-5 h-5"/>
+                        <span>Confirm Delivery</span>
+                    </button>
+                )}
+            </div>
         </div>
     );
 };
+
+const ActiveOrdersDashboard: React.FC<{
+    orders: Order[];
+    onUpdateStatus: (orderId: string, status: Order['status']) => void;
+    isUpdating: (orderId: string) => boolean;
+}> = ({ orders, onUpdateStatus, isUpdating }) => {
+    return (
+        <div className="p-4 space-y-4">
+             <h2 className="text-xl font-bold text-gray-800">
+                Active Orders: <span className="text-[#FF6B00]">{orders.length}/2</span>
+            </h2>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                {orders.map(order => (
+                    <OrderCard key={order.id} order={order} onUpdateStatus={onUpdateStatus} isUpdating={isUpdating} />
+                ))}
+            </div>
+        </div>
+    );
+};
+
 
 const NewOrderCard: React.FC<{ order: Order, onAccept: (orderId: string) => void, isUpdating: boolean }> = ({ order, onAccept, isUpdating }) => (
     <div className="bg-white rounded-xl p-4 shadow-md border animate-fade-in-up">
@@ -163,7 +173,7 @@ const NewOrderCard: React.FC<{ order: Order, onAccept: (orderId: string) => void
         </div>
         <div className="mt-4">
             <button onClick={() => onAccept(order.id)} disabled={isUpdating} className="w-full px-8 py-3 text-lg font-bold text-white bg-[#FF6B00] rounded-full hover:bg-orange-600 transition-colors disabled:opacity-50 shadow-lg">
-                {isUpdating ? '...' : 'Accept Job'}
+                {isUpdating ? 'Accepting...' : 'Accept Job'}
             </button>
         </div>
     </div>
@@ -253,6 +263,8 @@ const TasksPage: React.FC = () => {
         finally { setUpdatingOrderId(null); }
     };
 
+    const hasActiveOrders = activeOrders.length > 0;
+
     return (
         <div>
             <header className="bg-white text-gray-800 shadow-sm sticky top-0 z-10">
@@ -277,8 +289,8 @@ const TasksPage: React.FC = () => {
                 {isLoading ? ( <div className="text-center p-8 text-gray-500">Loading...</div> )
                  : error ? ( <div className="text-center p-8 text-red-500">{error}</div> )
                  : !isOnline ? (<div className="text-center p-8 text-gray-500">You are offline. Go online to see tasks.</div>)
-                 : activeOrders.length > 0 ? (
-                    <ActiveJourneyView 
+                 : hasActiveOrders ? (
+                    <ActiveOrdersDashboard 
                         orders={activeOrders} 
                         onUpdateStatus={updateOrderStatus}
                         isUpdating={orderId => updatingOrderId === orderId}

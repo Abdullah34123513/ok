@@ -1,4 +1,5 @@
 
+
 import type { Offer, Restaurant, Food, MenuItem, Review, CartItem, Address, Order, User, Vendor, Rider, OperatingHours, CustomizationOption, ChatMessage } from '../types';
 
 // --- Mock Databases ---
@@ -259,6 +260,7 @@ export let mockOrders: Order[] = [
     riderId: 'rider-1',
     restaurantLocation: { lat: 34.0522, lng: -118.2437 },
     deliveryLocation: { lat: 34.0622, lng: -118.2537 },
+    acceptedAt: new Date(Date.now() - 12 * 60 * 1000).toISOString(), // 12 mins ago
   },
    {
     id: 'ORDER-3',
@@ -281,7 +283,8 @@ export let mockOrders: Order[] = [
     restaurantLocation: { lat: 34.055, lng: -118.25 },
     deliveryLocation: { lat: 34.045, lng: -118.23 },
     distance: 3.2,
-    estimatedDeliveryTime: "25-30 min"
+    estimatedDeliveryTime: "25-30 min",
+    acceptedAt: new Date(Date.now() - 2 * 60 * 1000).toISOString(), // 2 mins ago
   },
   {
     id: 'ORDER-4',
@@ -303,6 +306,7 @@ export let mockOrders: Order[] = [
     estimatedDeliveryTime: "20-25 min",
     restaurantLocation: { lat: 34.0522, lng: -118.2437 },
     deliveryLocation: { lat: 34.0622, lng: -118.2537 },
+    acceptedAt: new Date(Date.now() - 25 * 60 * 1000).toISOString(), // 25 mins ago
   },
   {
     id: 'ORDER-5',
@@ -341,6 +345,7 @@ export let mockOrders: Order[] = [
     estimatedDeliveryTime: "15-20 min",
     restaurantLocation: { lat: 34.055, lng: -118.25 },
     deliveryLocation: { lat: 34.065, lng: -118.26 },
+    acceptedAt: new Date(Date.now() - 8 * 60 * 1000).toISOString(), // 8 mins ago
   }
 ];
 

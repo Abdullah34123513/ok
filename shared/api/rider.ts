@@ -65,6 +65,7 @@ export const acceptRiderOrder = async (orderId: string, riderId: string): Promis
     // Let's use 'Preparing' to signify the rider is en route to the restaurant.
     order.status = 'Preparing'; 
     order.rider = rider;
+    order.acceptedAt = new Date().toISOString();
 
     return { ...order };
 };
