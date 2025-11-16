@@ -1,33 +1,51 @@
-import React, { useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import LoginPage from './pages/LoginPage';
 import OtpPage from './pages/OtpPage';
 import DashboardPage from './pages/DashboardPage';
 
+export type View = 'login' | 'otp' | 'dashboard';
+
+interface Route {
+    view: View;
+    param?: string;
+}
+
+const parseHash = (): Route => {
+    const hash = window.location.hash.substring(2) || 'login'; // remove '#/'
+    const parts = hash.split('/');
+    const view = parts[0] as View;
+    const param = parts[1];
+
+    switch (view) {
+        case 'otp': return { view: 'otp', param };
+        case 'dashboard': return { view: 'dashboard' };
+        case 'login':
+        default:
+            return { view: 'login' };
+    }
+};
+
 const AppContent: React.FC = () => {
     const { currentRider, isLoading } = useAuth();
+    const [route, setRoute] = useState<Route>(parseHash());
     
-    // Simple hash change listener to re-render on nav actions
-    // that don't change the main component (e.g. login -> otp)
-    const [, setHash] = React.useState(window.location.hash);
     useEffect(() => {
-        const handleHashChange = () => setHash(window.location.hash);
+        const handleHashChange = () => {
+            setRoute(parseHash());
+            window.scrollTo(0, 0);
+        };
         window.addEventListener('hashchange', handleHashChange);
         return () => window.removeEventListener('hashchange', handleHashChange);
     }, []);
-
 
     if (isLoading) {
         return <div className="flex h-screen items-center justify-center">Loading...</div>;
     }
 
     if (!currentRider) {
-        const hash = window.location.hash.substring(2) || 'login';
-        const parts = hash.split('/');
-        const view = parts[0];
-
-        if (view === 'otp' && parts[1]) {
-            return <OtpPage phone={parts[1]} />;
+        if (route.view === 'otp') {
+            return <OtpPage phone={route.param} />;
         }
         return <LoginPage />;
     }
