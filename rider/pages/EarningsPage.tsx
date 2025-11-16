@@ -6,7 +6,6 @@ import { MoneyIcon, PackageIcon, StarIcon } from '../components/Icons';
 
 const StatCard: React.FC<{ title: string; value: string | number; icon: React.ComponentType<{ className?: string }>; color: string; }> = ({ title, value, icon: Icon, color }) => (
     <div className="bg-white p-5 rounded-xl shadow-md flex items-center" style={{ borderLeft: `5px solid ${color}` }}>
-        {/* FIX: Moved color style to the parent div to be inherited by the icon's `currentColor` property, resolving the type error. */}
         <div className={`p-3 rounded-full mr-4`} style={{ backgroundColor: `${color}20`, color: color }}>
             <Icon className="w-7 h-7" />
         </div>
