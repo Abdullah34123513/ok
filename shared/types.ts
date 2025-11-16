@@ -292,3 +292,10 @@ export interface VendorDashboardSummary {
   activeOrders: number;
   averageItemRating: number;
 }
+
+export interface RiderStats {
+    todayEarnings: number;
+    completedTrips: number;
+    rating: number;
+    onlineHours: number;
+}
