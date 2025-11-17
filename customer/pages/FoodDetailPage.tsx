@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import * as api from '@shared/api';
 import * as tracking from '@shared/tracking';
-import type { Food, Restaurant, Review, MenuItem, SelectedCustomization, CustomizationOption, CustomizationChoice } from '@shared/types';
+import type { Food, Restaurant, Review, MenuItem, SelectedCustomization, CustomizationOption, CustomizationChoice, Area } from '@shared/types';
 import { StarIcon } from '@components/Icons';
 import { useCart } from '@contexts/CartContext';
 import RelatedFoods from '@components/RelatedFoods';
@@ -10,7 +10,7 @@ import { checkAvailability } from '@shared/availability';
 
 interface FoodDetailPageProps {
     foodId: string;
-    location: string;
+    area: Area;
 }
 
 const FoodDetailSkeleton = () => (
@@ -56,7 +56,7 @@ const FoodDetailSkeleton = () => (
     </div>
 );
 
-const FoodDetailPage: React.FC<FoodDetailPageProps> = ({ foodId, location }) => {
+const FoodDetailPage: React.FC<FoodDetailPageProps> = ({ foodId, area }) => {
     const [food, setFood] = useState<Food | null>(null);
     const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
     const [reviews, setReviews] = useState<Review[]>([]);
@@ -106,7 +106,7 @@ const FoodDetailPage: React.FC<FoodDetailPageProps> = ({ foodId, location }) => 
                     const [restaurantData, reviewsData, relatedData] = await Promise.all([
                         api.getRestaurantDetails(foodDetails.restaurantId),
                         api.getFoodReviews(foodId),
-                        api.getRelatedFoods(foodId, location)
+                        api.getRelatedFoods(foodId, area.id)
                     ]);
                     setRestaurant(restaurantData || null);
                     setReviews(reviewsData);
@@ -123,7 +123,7 @@ const FoodDetailPage: React.FC<FoodDetailPageProps> = ({ foodId, location }) => 
         };
 
         fetchData();
-    }, [foodId, location, resetCustomizations]);
+    }, [foodId, area.id, resetCustomizations]);
 
     const handleCustomizationChange = (option: CustomizationOption, choice: CustomizationChoice) => {
         setSelectedCustomizations(prev => {

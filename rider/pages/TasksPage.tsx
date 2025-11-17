@@ -217,7 +217,7 @@ const TasksPage: React.FC = () => {
             setActiveOrders(ongoing);
             
             if (ongoing.length < 2) {
-                const newJobs = await api.getRiderNewOrders();
+                const newJobs = await api.getRiderNewOrders(currentRider.id);
                 setAvailableJobs(newJobs);
             } else {
                 setAvailableJobs([]); // Don't fetch new jobs if at capacity

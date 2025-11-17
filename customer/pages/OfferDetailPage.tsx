@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import * as api from '@shared/api';
-import type { Offer, Food } from '@shared/types';
+import type { Offer, Food, Area } from '@shared/types';
 import FoodCard from '@components/FoodCard';
 
 interface OfferDetailPageProps {
     offerId: string;
-    location: string;
+    area: Area;
 }
 
 const OfferDetailSkeleton = () => (
@@ -37,7 +37,7 @@ const OfferDetailSkeleton = () => (
 );
 
 
-const OfferDetailPage: React.FC<OfferDetailPageProps> = ({ offerId, location }) => {
+const OfferDetailPage: React.FC<OfferDetailPageProps> = ({ offerId, area }) => {
     const [offer, setOffer] = useState<Offer | null>(null);
     const [foods, setFoods] = useState<Food[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -48,7 +48,7 @@ const OfferDetailPage: React.FC<OfferDetailPageProps> = ({ offerId, location }) 
             try {
                 const [offerDetails, offerFoods] = await Promise.all([
                     api.getOfferDetails(offerId),
-                    api.getFoodsForOffer(offerId, location)
+                    api.getFoodsForOffer(offerId, area.id)
                 ]);
                 setOffer(offerDetails || null);
                 setFoods(offerFoods);
@@ -60,7 +60,7 @@ const OfferDetailPage: React.FC<OfferDetailPageProps> = ({ offerId, location }) 
         };
 
         fetchData();
-    }, [offerId, location]);
+    }, [offerId, area.id]);
 
     const onFoodClick = (id: string) => {
         window.location.hash = `#/food/${id}`;

@@ -1,18 +1,26 @@
 
-import type { Offer, Restaurant, Food, PaginatedFoods, SearchResult, PaginatedRestaurants, MenuCategory, Review, CartItem, MenuItem, Address, Order, AddressSuggestion, AddressDetails, User, LocationPoint, SupportInfo, ChatMessage, OrderReview, SelectedCustomization } from '../types';
+import type { Offer, Restaurant, Food, PaginatedFoods, SearchResult, PaginatedRestaurants, MenuCategory, Review, CartItem, MenuItem, Address, Order, AddressSuggestion, AddressDetails, User, LocationPoint, SupportInfo, ChatMessage, OrderReview, SelectedCustomization, Area } from '../types';
 import { simulateDelay, shuffleArray } from './utils';
-import { mockOffers, allMockRestaurants, allMockFoods, mockCart, mockAddresses, mockOrders, allMockReviews, mockChatHistory, mockUsers, mockRiders } from './mockData';
+import { mockOffers, allMockRestaurants, allMockFoods, mockCart, mockAddresses, mockOrders, allMockReviews, mockChatHistory, mockUsers, mockRiders, mockAreas } from './mockData';
 
+export const getAreaForLocation = async (lat: number, lng: number): Promise<Area> => {
+    await simulateDelay(300);
+    // Simple mock logic: Downtown for higher latitude, Suburbia otherwise.
+    if (lat > 34.055) {
+        return mockAreas.find(a => a.name === 'Downtown') || mockAreas[0];
+    }
+    return mockAreas.find(a => a.name === 'Suburbia') || mockAreas[1];
+};
 
-export const getOffers = async (location: string): Promise<Offer[]> => {
+export const getOffers = async (areaId: string): Promise<Offer[]> => {
   await simulateDelay(500);
-  const seed = locationHash(location);
+  const seed = locationHash(areaId);
   return shuffleArray(mockOffers, seed).slice(0, 5);
 };
 
-export const getActiveOffers = async (location: string): Promise<Offer[]> => {
+export const getActiveOffers = async (areaId: string): Promise<Offer[]> => {
     await simulateDelay(500);
-    const seed = locationHash(location);
+    const seed = locationHash(areaId);
     const now = new Date();
     const active = mockOffers.filter(o => o.expiry && new Date(o.expiry) > now);
     return shuffleArray(active, seed);
@@ -44,7 +52,7 @@ export const getOffersForRestaurant = async (restaurantId: string): Promise<Offe
     });
 };
 
-export const getFoodsForOffer = async (offerId: string, location: string): Promise<Food[]> => {
+export const getFoodsForOffer = async (offerId: string, areaId: string): Promise<Food[]> => {
     await simulateDelay(600);
     const offer = mockOffers.find(o => o.id === offerId);
     if (!offer) return [];
@@ -52,7 +60,7 @@ export const getFoodsForOffer = async (offerId: string, location: string): Promi
     const applicableTo = offer.applicableTo;
 
     if (applicableTo === 'ALL') {
-        return getFoods(location, 1).then(p => p.foods.slice(0, 8));
+        return getFoods(areaId, 1).then(p => p.foods.slice(0, 8));
     }
     if (applicableTo && typeof applicableTo === 'object') {
         return allMockFoods.filter(f => f.restaurantId === applicableTo.id).slice(0, 8);
@@ -63,16 +71,18 @@ export const getFoodsForOffer = async (offerId: string, location: string): Promi
     return [];
 };
 
-export const getTopRestaurants = async (location: string): Promise<Restaurant[]> => {
+export const getTopRestaurants = async (areaId: string): Promise<Restaurant[]> => {
   await simulateDelay(600);
-  const seed = locationHash(location);
-  return shuffleArray(allMockRestaurants, seed).slice(0, 10);
+  const seed = locationHash(areaId);
+  const areaRestaurants = allMockRestaurants.filter(r => r.areaId === areaId);
+  return shuffleArray(areaRestaurants, seed).slice(0, 10);
 };
 
-export const getRestaurants = async (location: string, page: number, limit = 12): Promise<PaginatedRestaurants> => {
+export const getRestaurants = async (areaId: string, page: number, limit = 12): Promise<PaginatedRestaurants> => {
     await simulateDelay(800);
-    const seed = locationHash(location);
-    const shuffled = shuffleArray(allMockRestaurants, seed);
+    const seed = locationHash(areaId);
+    const areaRestaurants = allMockRestaurants.filter(r => r.areaId === areaId);
+    const shuffled = shuffleArray(areaRestaurants, seed);
     const start = (page - 1) * limit;
     const end = start + limit;
     const restaurants = shuffled.slice(start, end);
@@ -83,10 +93,12 @@ export const getRestaurants = async (location: string, page: number, limit = 12)
     };
 };
 
-export const getFoods = async (location: string, page: number, limit = 12): Promise<PaginatedFoods> => {
+export const getFoods = async (areaId: string, page: number, limit = 12): Promise<PaginatedFoods> => {
   await simulateDelay(1000);
-  const seed = locationHash(location);
-  const shuffled = shuffleArray(allMockFoods, seed);
+  const seed = locationHash(areaId);
+  const restaurantsInArea = new Set(allMockRestaurants.filter(r => r.areaId === areaId).map(r => r.id));
+  const areaFoods = allMockFoods.filter(f => restaurantsInArea.has(f.restaurantId));
+  const shuffled = shuffleArray(areaFoods, seed);
   const start = (page - 1) * limit;
   const end = start + limit;
   const foods = shuffled.slice(start, end);
@@ -97,19 +109,20 @@ export const getFoods = async (location: string, page: number, limit = 12): Prom
   };
 };
 
-export const search = async (query: string, location: string): Promise<SearchResult> => {
+export const search = async (query: string, areaId: string): Promise<SearchResult> => {
     await simulateDelay(500);
     const lowerQuery = query.toLowerCase();
-    const seed = locationHash(location);
-    const shuffledRestaurants = shuffleArray(allMockRestaurants, seed);
-    const shuffledFoods = shuffleArray(allMockFoods, seed);
+    
+    const restaurantsInArea = allMockRestaurants.filter(r => r.areaId === areaId);
+    const restaurantsInAreaIds = new Set(restaurantsInArea.map(r => r.id));
+    const foodsInArea = allMockFoods.filter(f => restaurantsInAreaIds.has(f.restaurantId));
 
-    const restaurants = shuffledRestaurants.filter(r =>
+    const restaurants = restaurantsInArea.filter(r =>
         r.name.toLowerCase().includes(lowerQuery) ||
         r.cuisine.toLowerCase().includes(lowerQuery)
     ).slice(0, 6);
 
-    const foods = shuffledFoods.filter(f =>
+    const foods = foodsInArea.filter(f =>
         f.name.toLowerCase().includes(lowerQuery) ||
         f.vendor.name.toLowerCase().includes(lowerQuery)
     ).slice(0, 8);
@@ -186,13 +199,15 @@ export const getFoodReviews = async (foodId: string): Promise<Review[]> => {
     return shuffleArray(allMockReviews, seed).slice(0, 3);
 };
 
-export const getRelatedFoods = async (foodId: string, location: string): Promise<Food[]> => {
+export const getRelatedFoods = async (foodId: string, areaId: string): Promise<Food[]> => {
     await simulateDelay(700);
     const food = allMockFoods.find(f => f.id === foodId);
     if (!food) return [];
     
-    const seed = locationHash(location);
-    const shuffled = shuffleArray(allMockFoods, seed);
+    const seed = locationHash(areaId);
+    const restaurantsInArea = new Set(allMockRestaurants.filter(r => r.areaId === areaId).map(r => r.id));
+    const areaFoods = allMockFoods.filter(f => restaurantsInArea.has(f.restaurantId));
+    const shuffled = shuffleArray(areaFoods, seed);
 
     return shuffled.filter(
         f => f.id !== foodId && (f.restaurantId === food.restaurantId)

@@ -1,4 +1,4 @@
-import type { Offer, Restaurant, Food, MenuItem, Review, CartItem, Address, Order, User, Vendor, Rider, OperatingHours, CustomizationOption, ChatMessage, Moderator, SupportTicket } from '../types';
+import type { Offer, Restaurant, Food, MenuItem, Review, CartItem, Address, Order, User, Vendor, Rider, OperatingHours, CustomizationOption, ChatMessage, Moderator, SupportTicket, Area } from '../types';
 
 // --- UTILITY FUNCTIONS ---
 const createExpiryDate = (days: number): string => new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString();
@@ -24,6 +24,12 @@ const sizeOption: CustomizationOption = {
 
 // --- SINGLE SOURCE OF TRUTH FOR RESTAURANT & VENDOR DATA ---
 
+export const mockAreas: Area[] = [
+    { id: 'area-1', name: 'Downtown' },
+    { id: 'area-2', name: 'Suburbia' },
+    { id: 'area-3', name: 'Market District' },
+];
+
 const generatedData = (() => {
   const restaurants: Restaurant[] = [];
   const vendors: Vendor[] = [];
@@ -35,6 +41,8 @@ const generatedData = (() => {
   const cuisines = ['Italian', 'Mexican', 'Indian', 'Thai', 'Japanese', 'American', 'Chinese', 'French'];
 
   for (let i = 1; i <= restaurantCount; i++) {
+    const area = mockAreas[(i - 1) % mockAreas.length];
+
     // 1. Create Restaurant
     const restaurant: Restaurant = {
         id: `restaurant-${i}`,
@@ -45,7 +53,8 @@ const generatedData = (() => {
         cuisine: cuisines[i % cuisines.length],
         deliveryFee: parseFloat((Math.random() * 5).toFixed(2)),
         deliveryTime: `${Math.floor(Math.random() * 20) + 20}-${Math.floor(Math.random() * 20) + 40} min`,
-        address: `${120 + i} Flavor St, Food City`,
+        address: `${120 + i} Flavor St, ${area.name}`,
+        areaId: area.id,
         operatingHours: {
             monday: { isOpen: true, slots: [{ open: '09:00', close: '21:00' }] },
             tuesday: { isOpen: true, slots: [{ open: '09:00', close: '21:00' }] },
@@ -65,7 +74,8 @@ const generatedData = (() => {
         restaurantId: restaurant.id,
         name: `Vendor ${i}`,
         email: `vendor${i}@example.com`,
-        status: statuses[(i - 1) % 3]
+        status: statuses[(i - 1) % 3],
+        areaId: area.id,
     };
     vendors.push(vendor);
 
@@ -111,11 +121,12 @@ const generatedData = (() => {
       cuisine: 'American',
       deliveryFee: 3.50,
       deliveryTime: '15-25 min',
-      address: `125 Flavor St, Food City`,
+      address: `125 Flavor St, Downtown`,
+      areaId: 'area-1',
       operatingHours: twentyFourSevenHours
    };
    restaurants.push(diner);
-   const dinerVendor: Vendor = { id: 'vendor-26', restaurantId: diner.id, name: 'Diner Manager', email: 'vendor26@example.com', status: 'active' };
+   const dinerVendor: Vendor = { id: 'vendor-26', restaurantId: diner.id, name: 'Diner Manager', email: 'vendor26@example.com', status: 'active', areaId: 'area-1' };
    vendors.push(dinerVendor);
    const dinerUser: User = { name: dinerVendor.name, email: dinerVendor.email, phone: '555-0126' };
    vendorUsers.push(dinerUser);
@@ -200,10 +211,10 @@ export let mockOrders: Order[] = [
 ];
 
 export const mockRiders: Rider[] = [
-    { id: 'rider-1', name: 'John Rider', phone: '1700000000', vehicle: 'Honda Activa', rating: 4.8, location: { lat: 34.045, lng: -118.24 }, isOnline: true },
-    { id: 'rider-2', name: 'Jane Driver', phone: '1800000000', vehicle: 'Suzuki Gixxer', rating: 4.9, location: { lat: 34.06, lng: -118.25 }, isOnline: true },
-    { id: 'rider-3', name: 'Mike Bike', phone: '1900000000', vehicle: 'Yamaha FZ', rating: 4.6, location: { lat: 34.05, lng: -118.23 }, isOnline: false },
-    { id: 'rider-4', name: 'Sara Speed', phone: '1600000000', vehicle: 'TVS Apache', rating: 4.7, location: { lat: 34.055, lng: -118.245 }, isOnline: true },
+    { id: 'rider-1', name: 'John Rider', phone: '1700000000', vehicle: 'Honda Activa', rating: 4.8, location: { lat: 34.045, lng: -118.24 }, isOnline: true, areaId: 'area-1' },
+    { id: 'rider-2', name: 'Jane Driver', phone: '1800000000', vehicle: 'Suzuki Gixxer', rating: 4.9, location: { lat: 34.06, lng: -118.25 }, isOnline: true, areaId: 'area-2' },
+    { id: 'rider-3', name: 'Mike Bike', phone: '1900000000', vehicle: 'Yamaha FZ', rating: 4.6, location: { lat: 34.05, lng: -118.23 }, isOnline: false, areaId: 'area-1' },
+    { id: 'rider-4', name: 'Sara Speed', phone: '1600000000', vehicle: 'TVS Apache', rating: 4.7, location: { lat: 34.055, lng: -118.245 }, isOnline: true, areaId: 'area-3' },
 ];
 
 export const mockChatHistory = new Map<string, ChatMessage[]>();

@@ -1,5 +1,6 @@
 
 
+
 import React, { useState, useEffect } from 'react';
 import { useLocalStorage } from '@hooks/useLocalStorage';
 import Header from '@components/Header';
@@ -22,6 +23,7 @@ import { CartProvider } from '@contexts/CartContext';
 import { NotificationProvider } from '@contexts/NotificationContext';
 import { AuthProvider, useAuth } from '@contexts/AuthContext';
 import Notification from '@components/Notification';
+import type { Area } from '@shared/types';
 
 
 export type View = 'home' | 'restaurants' | 'restaurantDetail' | 'foodDetail' | 'cart' | 'checkout' | 'profile' | 'login' | 'signup' | 'orderTracking' | 'orderConfirmation' | 'offers' | 'offerDetail';
@@ -58,7 +60,7 @@ const parseHash = (): Route => {
 
 const AppContent: React.FC = () => {
     const { currentUser } = useAuth();
-    const [location, setLocation] = useLocalStorage<string | null>('user-location', null);
+    const [area, setArea] = useLocalStorage<Area | null>('user-area', null);
     const [route, setRoute] = useState<Route>(parseHash());
     
     useEffect(() => {
@@ -70,9 +72,9 @@ const AppContent: React.FC = () => {
         return () => window.removeEventListener('hashchange', handleHashChange);
     }, []);
 
-    // Primary gate: Location. If no location, nothing else matters.
-    if (!location) {
-        return <LocationModal onLocationSet={setLocation} />;
+    // Primary gate: Area. If no area, nothing else matters.
+    if (!area) {
+        return <LocationModal onLocationSet={setArea} />;
     }
 
     const protectedViews: View[] = ['profile', 'checkout', 'orderTracking', 'orderConfirmation'];
@@ -101,7 +103,7 @@ const AppContent: React.FC = () => {
         const { view } = route;
         switch (view) {
             case 'restaurants':
-                return <Header title={`Restaurants in ${location}`} />;
+                return <Header title={`Restaurants in ${area.name}`} />;
             case 'restaurantDetail':
                 return <Header title="Restaurant Details" />;
             case 'foodDetail':
@@ -135,19 +137,19 @@ const AppContent: React.FC = () => {
 
         switch (view) {
             case 'restaurants':
-                return <RestaurantListPage location={location} />;
+                return <RestaurantListPage area={area} />;
             case 'restaurantDetail':
                 if (!id) { window.location.hash = '#/restaurants'; return null; }
                 return <RestaurantDetailPage restaurantId={id} />;
             case 'foodDetail':
                  if (!id) { window.location.hash = '#/home'; return null; }
-                return <FoodDetailPage foodId={id} location={location} />;
+                return <FoodDetailPage foodId={id} area={area} />;
             case 'cart':
                 return <CartPage />;
             case 'checkout':
                 return <CheckoutPage />;
              case 'profile':
-                return <ProfilePage onChangeLocation={() => setLocation(null)} />;
+                return <ProfilePage onChangeLocation={() => setArea(null)} />;
             case 'orderTracking':
                 if (!id) { window.location.hash = '#/home'; return null; }
                 return <OrderTrackingPage orderId={id} />;
@@ -155,13 +157,13 @@ const AppContent: React.FC = () => {
                 if (!id) { window.location.hash = '#/home'; return null; }
                 return <OrderConfirmationPage orderId={id} />;
             case 'offers':
-                return <OffersPage location={location} />;
+                return <OffersPage area={area} />;
             case 'offerDetail':
                 if (!id) { window.location.hash = '#/offers'; return null; }
-                return <OfferDetailPage offerId={id} location={location} />;
+                return <OfferDetailPage offerId={id} area={area} />;
             case 'home':
             default:
-                return <HomePage location={location} />;
+                return <HomePage area={area} />;
         }
     };
 

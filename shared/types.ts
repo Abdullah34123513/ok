@@ -50,6 +50,11 @@ export interface OperatingHours {
   sunday: OperatingHoursForDay;
 }
 
+export interface Area {
+  id: string;
+  name: string;
+}
+
 
 export interface Restaurant {
   id: string;
@@ -63,6 +68,7 @@ export interface Restaurant {
   address: string;
   isFavorite?: boolean;
   operatingHours?: OperatingHours;
+  areaId?: string;
 }
 
 export interface ItemAvailability {
@@ -278,6 +284,7 @@ export interface Vendor {
   name: string;
   email: string;
   status?: 'active' | 'disabled' | 'pending';
+  areaId?: string;
 }
 
 export interface Moderator {
@@ -295,6 +302,7 @@ export interface Rider {
   rating: number;
   location: LocationPoint;
   isOnline?: boolean;
+  areaId?: string;
 }
 
 export interface RiderStats {

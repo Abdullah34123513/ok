@@ -1,6 +1,6 @@
 import { simulateDelay } from './utils';
-import { mockRiders, mockOrders, allMockRestaurants, mockSupportTickets, mockUsers, mockVendors, mockModerators } from './mockData';
-import type { ModeratorDashboardSummary, Restaurant, SupportTicket, Rider, User, Vendor, Order } from '../types';
+import { mockRiders, mockOrders, allMockRestaurants, mockSupportTickets, mockUsers, mockVendors, mockModerators, mockAreas } from './mockData';
+import type { ModeratorDashboardSummary, Restaurant, SupportTicket, Rider, User, Vendor, Order, Area } from '../types';
 
 export const getModeratorDashboardSummary = async (): Promise<ModeratorDashboardSummary> => {
     await simulateDelay(600);
@@ -57,13 +57,23 @@ export const getAllUsersForModerator = async (): Promise<(User & { role: string 
     });
 };
 
-export const getAllVendors = async (): Promise<(Vendor & { restaurantName: string })[]> => {
+export const getAllRiders = async (): Promise<(Rider & { areaName?: string })[]> => {
+    await simulateDelay(500);
+    return mockRiders.map(rider => {
+        const area = mockAreas.find(a => a.id === rider.areaId);
+        return { ...rider, areaName: area?.name };
+    });
+};
+
+export const getAllVendors = async (): Promise<(Vendor & { restaurantName: string, areaName?: string })[]> => {
     await simulateDelay(500);
     return mockVendors.map(v => {
         const restaurant = allMockRestaurants.find(r => r.id === v.restaurantId);
+        const area = mockAreas.find(a => a.id === v.areaId);
         return {
             ...v,
-            restaurantName: restaurant?.name || 'N/A'
+            restaurantName: restaurant?.name || 'N/A',
+            areaName: area?.name,
         };
     });
 };
@@ -127,4 +137,9 @@ export const updateOrderStatusByModerator = async (orderId: string, newStatus: O
     }
     
     return { ...order };
+};
+
+export const getAreas = async (): Promise<Area[]> => {
+    await simulateDelay(300);
+    return mockAreas;
 };

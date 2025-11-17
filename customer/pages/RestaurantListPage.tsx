@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import type { Restaurant } from '@shared/types';
+import type { Restaurant, Area } from '@shared/types';
 import * as api from '@shared/api';
 import RestaurantCard from '@components/RestaurantCard';
 import { FilterIcon } from '@components/Icons';
 
 interface RestaurantListPageProps {
-    location: string;
+    area: Area;
 }
 
 const RestaurantCardSkeleton: React.FC = () => (
@@ -23,7 +23,7 @@ const RestaurantCardSkeleton: React.FC = () => (
 );
 
 
-const RestaurantListPage: React.FC<RestaurantListPageProps> = ({ location }) => {
+const RestaurantListPage: React.FC<RestaurantListPageProps> = ({ area }) => {
     const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
     const [page, setPage] = useState(1);
     const [hasMore, setHasMore] = useState(true);
@@ -37,7 +37,7 @@ const RestaurantListPage: React.FC<RestaurantListPageProps> = ({ location }) => 
     const loadMoreRestaurants = useCallback(() => {
         if (isLoading || !hasMore) return;
         setIsLoading(true);
-        api.getRestaurants(location, page)
+        api.getRestaurants(area.id, page)
             .then(data => {
                 setRestaurants(prev => [...prev, ...data.restaurants]);
                 setPage(data.nextPage);
@@ -45,7 +45,7 @@ const RestaurantListPage: React.FC<RestaurantListPageProps> = ({ location }) => 
             })
             .catch(console.error)
             .finally(() => setIsLoading(false));
-    }, [location, page, isLoading, hasMore]);
+    }, [area.id, page, isLoading, hasMore]);
     
     useEffect(() => {
         // Initial load
@@ -55,7 +55,7 @@ const RestaurantListPage: React.FC<RestaurantListPageProps> = ({ location }) => 
         // We need to wrap in a timeout to allow state to clear before loading
         setTimeout(() => loadMoreRestaurants(), 0);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [location]);
+    }, [area]);
 
     const observer = useRef<IntersectionObserver | null>(null);
     const lastRestaurantElementRef = useCallback((node: HTMLDivElement) => {

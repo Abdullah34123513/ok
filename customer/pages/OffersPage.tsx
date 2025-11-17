@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import type { Offer } from '@shared/types';
+import type { Offer, Area } from '@shared/types';
 import * as api from '@shared/api';
 import CountdownTimer from '@components/CountdownTimer';
 
@@ -29,19 +29,19 @@ const OfferCard: React.FC<{ offer: Offer }> = ({ offer }) => {
 };
 
 interface OffersPageProps {
-    location: string;
+    area: Area;
 }
 
-const OffersPage: React.FC<OffersPageProps> = ({ location }) => {
+const OffersPage: React.FC<OffersPageProps> = ({ area }) => {
     const [offers, setOffers] = useState<Offer[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
         setIsLoading(true);
-        api.getOffers(location)
+        api.getOffers(area.id)
             .then(setOffers)
             .finally(() => setIsLoading(false));
-    }, [location]);
+    }, [area.id]);
     
     // Mock filters for UI
     const filters = ['All Offers', 'Nearby', 'Restaurant-Specific'];

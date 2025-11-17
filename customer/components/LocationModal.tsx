@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { LocationIcon } from '@components/Icons';
 import * as api from '@shared/api';
+import type { Area } from '@shared/types';
 // Assuming Capacitor is set up in the project
 // In a real project: npm install @capacitor/core @capacitor/geolocation
 import { Capacitor } from '@capacitor/core';
@@ -8,7 +9,7 @@ import { Geolocation } from '@capacitor/geolocation';
 
 
 interface LocationModalProps {
-  onLocationSet: (location: string) => void;
+  onLocationSet: (area: Area) => void;
 }
 
 const LocationModal: React.FC<LocationModalProps> = ({ onLocationSet }) => {
@@ -30,7 +31,7 @@ const LocationModal: React.FC<LocationModalProps> = ({ onLocationSet }) => {
                 throw new Error('Location permission not granted.');
             }
         }
-        const position = await Geolocation.getCurrentPosition();
+        const position = await Geolocation.getCurrentPosition({ enableHighAccuracy: true, timeout: 10000 });
         return {
           latitude: position.coords.latitude,
           longitude: position.coords.longitude,
@@ -55,8 +56,8 @@ const LocationModal: React.FC<LocationModalProps> = ({ onLocationSet }) => {
 
     try {
       const { latitude, longitude } = await getPosition();
-      const locationName = await api.reverseGeocode(latitude, longitude);
-      onLocationSet(locationName);
+      const area = await api.getAreaForLocation(latitude, longitude);
+      onLocationSet(area);
     } catch (err) {
       console.error('Location detection error:', err);
       let errorType: 'permission' | 'timeout' | 'generic' = 'generic';

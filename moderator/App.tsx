@@ -6,10 +6,11 @@ import UserManagementPage from './pages/UserManagementPage';
 import VendorManagementPage from './pages/VendorManagementPage';
 import VendorDetailPage from './pages/VendorDetailPage';
 import VendorOrdersPage from './pages/VendorOrdersPage';
+import AreaManagementPage from './pages/AreaManagementPage';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
 
-export type View = 'dashboard' | 'users' | 'vendors' | 'vendorDetail' | 'vendorOrders';
+export type View = 'dashboard' | 'users' | 'vendors' | 'vendorDetail' | 'vendorOrders' | 'areas';
 
 interface Route {
     view: View;
@@ -33,6 +34,7 @@ const parseHash = (): Route => {
     switch (view) {
         case 'users': return { view: 'users' };
         case 'vendors': return { view: 'vendors' };
+        case 'areas': return { view: 'areas' };
         case 'dashboard':
         default:
             return { view: 'dashboard' };
@@ -67,6 +69,8 @@ const AppContent: React.FC = () => {
                 return route.id ? <VendorDetailPage vendorId={route.id} /> : <VendorManagementPage />;
             case 'vendorOrders':
                 return route.id ? <VendorOrdersPage vendorId={route.id} /> : <VendorManagementPage />;
+            case 'areas':
+                return <AreaManagementPage />;
             case 'dashboard':
             default:
                 return <DashboardPage />;

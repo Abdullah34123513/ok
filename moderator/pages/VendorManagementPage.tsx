@@ -3,7 +3,7 @@ import * as api from '@shared/api';
 import type { Vendor } from '@shared/types';
 import { ActAsIcon } from '../components/Icons';
 
-type VendorWithRestaurant = Vendor & { restaurantName: string };
+type VendorWithDetails = Vendor & { restaurantName: string, areaName?: string };
 
 const VendorStatusBadge: React.FC<{ status: Vendor['status'] }> = ({ status }) => {
     const statusStyles: Record<NonNullable<Vendor['status']>, string> = {
@@ -21,7 +21,7 @@ const VendorStatusBadge: React.FC<{ status: Vendor['status'] }> = ({ status }) =
 
 
 const VendorManagementPage: React.FC = () => {
-    const [vendors, setVendors] = useState<VendorWithRestaurant[]>([]);
+    const [vendors, setVendors] = useState<VendorWithDetails[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState('');
 
@@ -41,7 +41,7 @@ const VendorManagementPage: React.FC = () => {
         fetchVendors();
     }, []);
 
-    const handleActAsVendor = (vendor: VendorWithRestaurant) => {
+    const handleActAsVendor = (vendor: VendorWithDetails) => {
         if (window.confirm(`You are about to act as ${vendor.name}. You will be redirected to their dashboard. Continue?`)) {
             const MODERATOR_STORAGE_KEY = 'foodie-find-moderator-user';
             const VENDOR_STORAGE_KEY = 'foodie-find-vendor-user';
@@ -92,6 +92,7 @@ const VendorManagementPage: React.FC = () => {
                                 <tr>
                                     <th className="p-4 font-semibold">Vendor Name</th>
                                     <th className="p-4 font-semibold">Restaurant</th>
+                                    <th className="p-4 font-semibold">Area</th>
                                     <th className="p-4 font-semibold">Email</th>
                                     <th className="p-4 font-semibold">Status</th>
                                     <th className="p-4 font-semibold text-right">Actions</th>
@@ -102,6 +103,7 @@ const VendorManagementPage: React.FC = () => {
                                     <tr key={vendor.id} className="border-b last:border-0 hover:bg-gray-50">
                                         <td className="p-4 font-medium whitespace-nowrap">{vendor.name}</td>
                                         <td className="p-4 text-gray-600 whitespace-nowrap">{vendor.restaurantName}</td>
+                                        <td className="p-4 text-gray-600 font-semibold whitespace-nowrap">{vendor.areaName || 'N/A'}</td>
                                         <td className="p-4 text-gray-600 whitespace-nowrap">{vendor.email}</td>
                                         <td className="p-4">
                                             <VendorStatusBadge status={vendor.status} />

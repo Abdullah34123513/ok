@@ -1,6 +1,6 @@
 import type { Order, Rider, LocationPoint, RiderStats } from '../types';
 import { simulateDelay } from './utils';
-import { mockOrders, mockRiders } from './mockData';
+import { mockOrders, mockRiders, allMockRestaurants } from './mockData';
 
 // --- RIDER-SPECIFIC APIS ---
 
@@ -37,11 +37,22 @@ export const updateRiderLocation = async (riderId: string, location: LocationPoi
     return Promise.resolve();
 };
 
-export const getRiderNewOrders = async (): Promise<Order[]> => {
+export const getRiderNewOrders = async (riderId: string): Promise<Order[]> => {
     await simulateDelay(700);
-    // Find orders that are 'On its way' but have no rider assigned yet.
-    // In our mock data, this status means "Ready for Pickup" from the vendor side.
-    return mockOrders.filter(o => o.status === 'On its way' && !o.riderId);
+    const rider = mockRiders.find(r => r.id === riderId);
+    if (!rider?.areaId) return []; // No area or no rider, no orders
+
+    // Find restaurants in the rider's area
+    const restaurantsInArea = new Set(
+        allMockRestaurants.filter(r => r.areaId === rider.areaId).map(r => r.id)
+    );
+
+    // Find orders that are 'On its way' (ready for pickup), have no rider, and are from a restaurant in the rider's area.
+    return mockOrders.filter(o => 
+        o.status === 'On its way' && 
+        !o.riderId &&
+        o.items.some(item => restaurantsInArea.has(item.baseItem.restaurantId))
+    );
 };
 
 export const acceptRiderOrder = async (orderId: string, riderId: string): Promise<Order> => {

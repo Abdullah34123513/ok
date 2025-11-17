@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import type { Offer, Restaurant, Food, SearchResult } from '@shared/types';
+import type { Offer, Restaurant, Food, SearchResult, Area } from '@shared/types';
 import * as api from '@shared/api';
 import * as tracking from '@shared/tracking';
 import Header from '@components/Header';
@@ -12,10 +12,10 @@ import { SearchIcon, StarIcon } from '@components/Icons';
 import OngoingOrderTracker from '@components/OngoingOrderTracker';
 
 interface HomePageProps {
-    location: string;
+    area: Area;
 }
 
-const HomePage: React.FC<HomePageProps> = ({ location }) => {
+const HomePage: React.FC<HomePageProps> = ({ area }) => {
     const [offers, setOffers] = useState<Offer[]>([]);
     const [activeOffers, setActiveOffers] = useState<Offer[]>([]);
     const [topRestaurants, setTopRestaurants] = useState<Restaurant[]>([]);
@@ -48,15 +48,15 @@ const HomePage: React.FC<HomePageProps> = ({ location }) => {
         setTopRestaurants([]);
         setOffers([]);
         setActiveOffers([]);
-        api.getOffers(location).then(setOffers);
-        api.getActiveOffers(location).then(setActiveOffers);
-        api.getTopRestaurants(location).then(setTopRestaurants);
-    }, [location, resetFoodFeed]);
+        api.getOffers(area.id).then(setOffers);
+        api.getActiveOffers(area.id).then(setActiveOffers);
+        api.getTopRestaurants(area.id).then(setTopRestaurants);
+    }, [area, resetFoodFeed]);
 
     const loadMoreFoods = useCallback(() => {
         if (isLoading || !hasMore) return;
         setIsLoading(true);
-        api.getFoods(location, page)
+        api.getFoods(area.id, page)
             .then(data => {
                 setFoods(prev => [...prev, ...data.foods]);
                 setPage(data.nextPage);
@@ -64,13 +64,13 @@ const HomePage: React.FC<HomePageProps> = ({ location }) => {
             })
             .catch(console.error)
             .finally(() => setIsLoading(false));
-    }, [location, page, isLoading, hasMore]);
+    }, [area.id, page, isLoading, hasMore]);
     
     useEffect(() => {
         if (page === 1 && foods.length === 0) { // initial load
             loadMoreFoods();
         }
-    }, [location, page, foods.length, loadMoreFoods]); 
+    }, [area, page, foods.length, loadMoreFoods]); 
     
     useEffect(() => {
         if (searchQuery.trim() === '') {
@@ -80,7 +80,7 @@ const HomePage: React.FC<HomePageProps> = ({ location }) => {
 
         setIsSearching(true);
         const handler = setTimeout(() => {
-            api.search(searchQuery, location).then((results: SearchResult) => {
+            api.search(searchQuery, area.id).then((results: SearchResult) => {
                 setSearchResults(results);
                 setIsSearching(false);
                 tracking.trackEvent('search', {
@@ -92,7 +92,7 @@ const HomePage: React.FC<HomePageProps> = ({ location }) => {
         }, 500); // Debounce search
 
         return () => clearTimeout(handler);
-    }, [searchQuery, location]);
+    }, [searchQuery, area.id]);
 
     const renderSearchResults = () => (
         <div className="container mx-auto px-4 py-6">
