@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import * as api from '@shared/api';
 import type { Vendor, Restaurant, OperatingHours } from '@shared/types';
-import { ClockIcon, PlusCircleIcon, StorefrontIcon, TrashIcon, CheckCircleIcon, XCircleIcon } from '../components/Icons';
+import { ClockIcon, PlusCircleIcon, StorefrontIcon, TrashIcon, CheckCircleIcon, XCircleIcon, ActAsIcon } from '../components/Icons';
 
 const defaultHours: OperatingHours = {
     monday: { isOpen: false, slots: [] },
@@ -123,6 +123,26 @@ const VendorDetailPage: React.FC<{ vendorId: string }> = ({ vendorId }) => {
         fetchData();
     }, [fetchData]);
 
+    const handleActAsVendor = () => {
+        if (!vendor) return;
+        if (window.confirm(`You are about to act as ${vendor.name}. You will be redirected to their dashboard. Continue?`)) {
+            const MODERATOR_STORAGE_KEY = 'foodie-find-moderator-user';
+            const VENDOR_STORAGE_KEY = 'foodie-find-vendor-user';
+
+            const moderatorUser = localStorage.getItem(MODERATOR_STORAGE_KEY);
+            if (moderatorUser) {
+                sessionStorage.setItem('foodie-find-original-moderator', moderatorUser);
+                localStorage.removeItem(MODERATOR_STORAGE_KEY);
+                
+                localStorage.setItem(VENDOR_STORAGE_KEY, JSON.stringify(vendor));
+
+                window.location.href = '/vendor/';
+            } else {
+                alert('Could not establish moderator session. Please log in again.');
+            }
+        }
+    };
+
     const handleStatusUpdate = async (newStatus: Vendor['status']) => {
         if (!vendor) return;
         setIsUpdatingStatus(true);
@@ -184,7 +204,16 @@ const VendorDetailPage: React.FC<{ vendorId: string }> = ({ vendorId }) => {
 
     return (
         <div className="p-6 space-y-6">
-            <h1 className="text-2xl font-bold text-gray-800">Manage Vendor: {vendor.name}</h1>
+            <div className="flex justify-between items-center">
+                <h1 className="text-2xl font-bold text-gray-800">Manage Vendor: {vendor.name}</h1>
+                <button
+                    onClick={handleActAsVendor}
+                    className="flex items-center px-4 py-2 bg-orange-500 text-white font-semibold rounded-lg hover:bg-orange-600 transition-transform transform hover:scale-105"
+                >
+                    <ActAsIcon className="w-5 h-5 mr-2" />
+                    Act as Vendor
+                </button>
+            </div>
             
             <div className="bg-white p-6 rounded-lg shadow-md">
                 <div className="flex justify-between items-center mb-4 pb-4 border-b">

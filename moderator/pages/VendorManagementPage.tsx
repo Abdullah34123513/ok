@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import * as api from '@shared/api';
 import type { Vendor } from '@shared/types';
+import { ActAsIcon } from '../components/Icons';
 
 type VendorWithRestaurant = Vendor & { restaurantName: string };
 
@@ -40,6 +41,33 @@ const VendorManagementPage: React.FC = () => {
         fetchVendors();
     }, []);
 
+    const handleActAsVendor = (vendor: VendorWithRestaurant) => {
+        if (window.confirm(`You are about to act as ${vendor.name}. You will be redirected to their dashboard. Continue?`)) {
+            const MODERATOR_STORAGE_KEY = 'foodie-find-moderator-user';
+            const VENDOR_STORAGE_KEY = 'foodie-find-vendor-user';
+
+            const moderatorUser = localStorage.getItem(MODERATOR_STORAGE_KEY);
+            if (moderatorUser) {
+                sessionStorage.setItem('foodie-find-original-moderator', moderatorUser);
+                localStorage.removeItem(MODERATOR_STORAGE_KEY);
+                
+                const vendorAuthData: Vendor = {
+                    id: vendor.id,
+                    restaurantId: vendor.restaurantId,
+                    name: vendor.name,
+                    email: vendor.email,
+                    status: vendor.status,
+                };
+
+                localStorage.setItem(VENDOR_STORAGE_KEY, JSON.stringify(vendorAuthData));
+
+                window.location.href = '/vendor/';
+            } else {
+                alert('Could not establish moderator session. Please log in again.');
+            }
+        }
+    };
+
     return (
         <div className="p-6">
             <h1 className="text-2xl font-bold text-gray-800">Vendor Management</h1>
@@ -70,9 +98,13 @@ const VendorManagementPage: React.FC = () => {
                                             <VendorStatusBadge status={vendor.status} />
                                         </td>
                                         <td className="p-4 whitespace-nowrap text-right">
-                                            <a href={`#/vendorDetail/${vendor.id}`} className="px-4 py-2 text-sm font-semibold text-white bg-blue-600 rounded-md hover:bg-blue-700 transition">
+                                            <a href={`#/vendorDetail/${vendor.id}`} className="px-3 py-1.5 text-sm font-semibold text-blue-600 rounded-md hover:bg-blue-100 transition">
                                                 Manage
                                             </a>
+                                            <button onClick={() => handleActAsVendor(vendor)} className="ml-2 inline-flex items-center px-3 py-1.5 text-sm font-semibold text-orange-600 rounded-md hover:bg-orange-100 transition">
+                                                <ActAsIcon className="w-4 h-4 mr-1.5" />
+                                                Act as
+                                            </button>
                                         </td>
                                     </tr>
                                 ))}

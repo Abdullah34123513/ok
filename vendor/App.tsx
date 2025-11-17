@@ -9,6 +9,7 @@ import SettingsPage from './pages/SettingsPage';
 import EarningsPage from './pages/EarningsPage';
 import Navigation from './components/Sidebar';
 import Header from './components/Header';
+import MasqueradeBanner from './components/MasqueradeBanner';
 
 export type View = 'dashboard' | 'menu' | 'settings' | 'profile' | 'earnings';
 
@@ -36,12 +37,18 @@ const parseHash = (): Route => {
 const AppContent: React.FC = () => {
     const { currentVendor, isLoading } = useAuth();
     const [route, setRoute] = useState<Route>(parseHash());
+    const [isMasquerading, setIsMasquerading] = useState(false);
     
     useEffect(() => {
         const handleHashChange = () => {
             setRoute(parseHash());
             window.scrollTo(0, 0);
         };
+        // Check for masquerade session
+        if (sessionStorage.getItem('foodie-find-original-moderator')) {
+            setIsMasquerading(true);
+        }
+
         window.addEventListener('hashchange', handleHashChange);
         return () => window.removeEventListener('hashchange', handleHashChange);
     }, []);
@@ -71,15 +78,18 @@ const AppContent: React.FC = () => {
     };
     
     return (
-        <div className="flex h-screen bg-gray-100 font-sans">
-            <Navigation activeView={route.view} />
-            <div className="flex-1 flex flex-col overflow-hidden">
-                <Header vendorName={currentVendor.name} />
-                <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100 pb-16 md:pb-0">
-                    {renderView()}
-                </main>
+        <>
+            {isMasquerading && <MasqueradeBanner vendorName={currentVendor.name} />}
+            <div className="flex h-screen bg-gray-100 font-sans">
+                <Navigation activeView={route.view} />
+                <div className="flex-1 flex flex-col overflow-hidden">
+                    <Header vendorName={currentVendor.name} />
+                    <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100 pb-16 md:pb-0">
+                        {renderView()}
+                    </main>
+                </div>
             </div>
-        </div>
+        </>
     );
 };
 
