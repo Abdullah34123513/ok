@@ -95,6 +95,20 @@ export const getOrdersForVendorByModerator = async (vendorId: string): Promise<O
     );
 };
 
+export const getModeratorAllOngoingOrders = async (): Promise<Order[]> => {
+    await simulateDelay(800);
+    const ongoingStatuses: Order['status'][] = ['Placed', 'Preparing', 'On its way'];
+    return mockOrders
+        .filter(o => ongoingStatuses.includes(o.status))
+        .map(o => ({ 
+            ...o, 
+            // Ensure mock data has names for display
+            customerName: o.customerName || 'Valued Customer',
+            rider: o.riderId ? mockRiders.find(r => r.id === o.riderId) : undefined,
+         }))
+        .sort((a, b) => new Date(b.placedAt || b.date).getTime() - new Date(a.placedAt || a.date).getTime());
+};
+
 export const updateOrderStatusByModerator = async (orderId: string, newStatus: Order['status'], note?: string): Promise<Order> => {
     await simulateDelay(400);
     const orderIndex = mockOrders.findIndex(o => o.id === orderId);
@@ -105,12 +119,7 @@ export const updateOrderStatusByModerator = async (orderId: string, newStatus: O
     order.status = newStatus;
     
     if (note) {
-        // If note is just the action, replace it. If it's a new note, it won't contain the action string.
-        if (order.moderatorNote && !note.startsWith('[MOD ACTION]')) {
-             order.moderatorNote = note;
-        } else {
-            order.moderatorNote = note;
-        }
+        order.moderatorNote = note;
     }
 
     if (newStatus === 'Preparing' && !order.acceptedAt) {

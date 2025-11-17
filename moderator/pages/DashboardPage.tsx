@@ -1,96 +1,135 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import * as api from '@shared/api';
-import type { ModeratorDashboardSummary, Restaurant, SupportTicket } from '@shared/types';
-import StatCard from '../components/StatCard';
-import LiveRiderMap from '../components/LiveRiderMap';
-import { UsersIcon, PlusCircleIcon, ClockIcon, CheckCircleIcon, XCircleIcon, SupportIcon, StarIcon } from '../components/Icons';
+import type { Order } from '@shared/types';
+import OrderCard from '../components/OrderCard';
+import AddOrderNoteModal from '../components/AddOrderNoteModal';
+
+type OrderTab = 'New' | 'Preparing' | 'On its way';
 
 const DashboardPage: React.FC = () => {
-    const [summary, setSummary] = useState<ModeratorDashboardSummary | null>(null);
-    const [topVendors, setTopVendors] = useState<Pick<Restaurant, 'id' | 'name' | 'rating' | 'logoUrl'>[]>([]);
-    const [tickets, setTickets] = useState<SupportTicket[]>([]);
+    const [allOrders, setAllOrders] = useState<Order[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState('');
+    const [activeTab, setActiveTab] = useState<OrderTab>('New');
+    const [noteModalOrder, setNoteModalOrder] = useState<Order | null>(null);
 
-    useEffect(() => {
-        const fetchData = async () => {
-            setIsLoading(true);
-            try {
-                const [summaryData, vendorsData, ticketsData] = await Promise.all([
-                    api.getModeratorDashboardSummary(),
-                    api.getTopVendorsForModerator(),
-                    api.getOpenSupportTickets(),
-                ]);
-                setSummary(summaryData);
-                setTopVendors(vendorsData);
-                setTickets(ticketsData);
-            } catch (error) {
-                console.error("Failed to load dashboard data", error);
-            } finally {
-                setIsLoading(false);
-            }
-        };
-        fetchData();
+    const fetchOrders = useCallback(async (isInitialLoad = false) => {
+        if (isInitialLoad) setIsLoading(true);
+        setError('');
+        try {
+            const data = await api.getModeratorAllOngoingOrders();
+            setAllOrders(data);
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Failed to load orders.');
+        } finally {
+            if (isInitialLoad) setIsLoading(false);
+        }
     }, []);
 
-    if (isLoading) {
-        return <div className="p-6 text-center text-gray-500">Loading dashboard...</div>;
-    }
+    useEffect(() => {
+        fetchOrders(true);
+        const interval = setInterval(() => fetchOrders(false), 15000); // Poll every 15 seconds
+        return () => clearInterval(interval);
+    }, [fetchOrders]);
+    
+    const handleUpdateStatus = async (orderId: string, newStatus: Order['status'], note: string) => {
+        const originalOrders = [...allOrders];
+        setAllOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: newStatus } : o));
+        try {
+            await api.updateOrderStatusByModerator(orderId, newStatus, note);
+            await fetchOrders();
+        } catch (err) {
+            setError('Failed to update status.');
+            setAllOrders(originalOrders);
+        }
+    };
+    
+    const handleSaveNote = async (orderId: string, note: string) => {
+        const originalOrders = [...allOrders];
+         setAllOrders(prev => prev.map(o => o.id === orderId ? { ...o, moderatorNote: note } : o));
+         setNoteModalOrder(null);
+        try {
+            const orderToUpdate = originalOrders.find(o => o.id === orderId);
+            if(orderToUpdate) {
+                await api.updateOrderStatusByModerator(orderId, orderToUpdate.status, note);
+                await fetchOrders();
+            }
+        } catch (err) {
+             setError('Failed to save note.');
+             setAllOrders(originalOrders);
+        }
+    };
+
+    const filteredOrders = useMemo(() => {
+        const statusMap: Record<OrderTab, Array<Order['status']>> = {
+            'New': ['Placed'],
+            'Preparing': ['Preparing'],
+            'On its way': ['On its way'],
+        };
+        return allOrders.filter(o => statusMap[activeTab].includes(o.status));
+    }, [allOrders, activeTab]);
+
+    const tabs: { id: OrderTab, label: string }[] = [
+        { id: 'New', label: 'New Orders' },
+        { id: 'Preparing', label: 'Preparing' },
+        { id: 'On its way', label: 'Out for Delivery' },
+    ];
+
+    const renderContent = () => {
+        if (isLoading) {
+            return <div className="text-center p-8">Loading live orders...</div>;
+        }
+        if (error) {
+            return <div className="text-center p-8 text-red-500">{error}</div>;
+        }
+        if (filteredOrders.length === 0) {
+            return <div className="text-center p-8 text-gray-500">No orders in this category right now.</div>;
+        }
+        return (
+            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
+                {filteredOrders.map(order => (
+                    <OrderCard
+                        key={order.id}
+                        order={order}
+                        onUpdate={handleUpdateStatus}
+                        onAddNote={setNoteModalOrder}
+                    />
+                ))}
+            </div>
+        );
+    };
 
     return (
-        <div className="p-4 sm:p-6 space-y-6 bg-gray-50">
-            {/* Stat Cards */}
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-                <StatCard title="Active Riders" value={summary?.activeRiders ?? 0} icon={UsersIcon} color="#FF6B00" />
-                <StatCard title="New Orders Today" value={summary?.newOrdersToday ?? 0} icon={PlusCircleIcon} color="#3B82F6" />
-                <StatCard title="Ongoing Orders" value={summary?.ongoingOrders ?? 0} icon={ClockIcon} color="#F59E0B" />
-                <StatCard title="Completed Orders" value={summary?.completedOrders ?? 0} icon={CheckCircleIcon} color="#10B981" />
-                <StatCard title="Cancelled Orders" value={summary?.cancelledOrders ?? 0} icon={XCircleIcon} color="#EF4444" />
-                <StatCard title="Open Tickets" value={summary?.openSupportTickets ?? 0} icon={SupportIcon} color="#8B5CF6" />
-            </div>
-
-            {/* Main Content */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div className="lg:col-span-2 bg-white p-4 rounded-lg shadow">
-                     <h2 className="text-xl font-bold text-gray-800 mb-4">Live Rider Activity</h2>
-                     <LiveRiderMap />
+        <>
+            <div className="p-4 sm:p-6 space-y-6">
+                <h1 className="text-2xl font-bold text-gray-800">Live Order Management</h1>
+                <div className="border-b border-gray-200">
+                    <nav className="-mb-px flex space-x-4 sm:space-x-6 overflow-x-auto">
+                        {tabs.map(tab => (
+                            <button
+                                key={tab.id}
+                                onClick={() => setActiveTab(tab.id)}
+                                className={`whitespace-nowrap pb-3 px-1 border-b-2 font-semibold text-sm transition-colors ${
+                                    activeTab === tab.id
+                                        ? 'border-orange-500 text-orange-600'
+                                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                                }`}
+                            >
+                                {tab.label}
+                            </button>
+                        ))}
+                    </nav>
                 </div>
-                <div className="space-y-6">
-                    {/* Top Vendors */}
-                    <div className="bg-white p-4 rounded-lg shadow">
-                        <h2 className="text-xl font-bold text-gray-800 mb-4">Top 5 Vendors</h2>
-                        <div className="space-y-3">
-                            {topVendors.map(vendor => (
-                                <div key={vendor.id} className="flex items-center space-x-3 p-2 rounded-md hover:bg-gray-50">
-                                    <img src={vendor.logoUrl} alt={vendor.name} className="w-10 h-10 rounded-full object-cover"/>
-                                    <div className="flex-1">
-                                        <p className="font-semibold text-sm">{vendor.name}</p>
-                                    </div>
-                                    <div className="flex items-center text-sm font-bold">
-                                        <StarIcon className="w-4 h-4 text-yellow-400 mr-1"/>
-                                        {vendor.rating.toFixed(1)}
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                     {/* Open Support Tickets */}
-                    <div className="bg-white p-4 rounded-lg shadow">
-                         <h2 className="text-xl font-bold text-gray-800 mb-4">Open Support Tickets</h2>
-                          <div className="space-y-3">
-                            {tickets.map(ticket => (
-                                <div key={ticket.id} className="p-2 rounded-md hover:bg-gray-50">
-                                    <p className="font-semibold text-sm truncate">{ticket.subject}</p>
-                                    <div className="flex justify-between items-center text-xs text-gray-500 mt-1">
-                                        <span>{ticket.userEmail}</span>
-                                        <span className={`font-semibold px-2 py-0.5 rounded-full ${ticket.status === 'Open' ? 'bg-yellow-100 text-yellow-800' : 'bg-blue-100 text-blue-800'}`}>{ticket.status}</span>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                </div>
+                {renderContent()}
             </div>
-        </div>
+            {noteModalOrder && (
+                <AddOrderNoteModal
+                    order={noteModalOrder}
+                    onClose={() => setNoteModalOrder(null)}
+                    onSave={handleSaveNote}
+                />
+            )}
+        </>
     );
 };
 

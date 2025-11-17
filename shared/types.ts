@@ -293,7 +293,6 @@ export interface Rider {
   phone: string;
   vehicle: string;
   rating: number;
-  // FIX: Add 'location' to align with the Order.rider property and resolve type errors.
   location: LocationPoint;
   isOnline?: boolean;
 }
