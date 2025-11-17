@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect } from 'react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import LoginPage from './pages/LoginPage';
@@ -58,6 +59,20 @@ const AppContent: React.FC = () => {
     }
 
     if (!currentVendor) {
+        if (isMasquerading) {
+            return (
+                <div className="flex h-screen items-center justify-center p-4 text-center bg-gray-100">
+                    <div className="bg-white p-8 rounded-lg shadow-md max-w-md animate-fade-in-up">
+                        <h1 className="text-2xl font-bold text-red-600">Automatic Login Failed</h1>
+                        <p className="mt-2 text-gray-700">There was a problem automatically logging you in as the vendor. This can sometimes happen during the session switch.</p>
+                        <p className="mt-2 text-gray-700">Please return to the moderator dashboard and try again.</p>
+                        <a href="/moderator/#/vendors" className="mt-6 inline-block w-full px-4 py-3 bg-[#FF6B00] text-white font-semibold rounded-lg hover:bg-orange-600 transition">
+                            Return to Moderator Dashboard
+                        </a>
+                    </div>
+                </div>
+            );
+        }
         return <LoginPage />;
     }
 
