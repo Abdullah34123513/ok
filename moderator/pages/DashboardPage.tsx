@@ -4,13 +4,35 @@ import type { Order } from '@shared/types';
 import OrderCard from '../components/OrderCard';
 import AddOrderNoteModal from '../components/AddOrderNoteModal';
 
-type OrderTab = 'New' | 'Preparing' | 'On its way';
+const OrderColumn: React.FC<{
+    title: string;
+    orders: Order[];
+    onUpdate: (orderId: string, status: Order['status'], note: string) => void;
+    onAddNote: (order: Order) => void;
+}> = ({ title, orders, onUpdate, onAddNote }) => (
+    <div className="flex flex-col flex-shrink-0 w-full md:w-[380px] bg-gray-50 rounded-lg shadow-inner">
+        <h2 className="font-bold text-lg text-gray-700 p-3 sticky top-0 bg-gray-100 z-10 border-b rounded-t-lg">{title} ({orders.length})</h2>
+        <div className="p-3 space-y-4 overflow-y-auto">
+            {orders.length === 0 ? (
+                <p className="text-sm text-gray-500 text-center py-10">No orders here.</p>
+            ) : (
+                orders.map(order => (
+                    <OrderCard
+                        key={order.id}
+                        order={order}
+                        onUpdate={onUpdate}
+                        onAddNote={onAddNote}
+                    />
+                ))
+            )}
+        </div>
+    </div>
+);
 
 const DashboardPage: React.FC = () => {
     const [allOrders, setAllOrders] = useState<Order[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState('');
-    const [activeTab, setActiveTab] = useState<OrderTab>('New');
     const [noteModalOrder, setNoteModalOrder] = useState<Order | null>(null);
 
     const fetchOrders = useCallback(async (isInitialLoad = false) => {
@@ -60,20 +82,19 @@ const DashboardPage: React.FC = () => {
         }
     };
 
-    const filteredOrders = useMemo(() => {
-        const statusMap: Record<OrderTab, Array<Order['status']>> = {
-            'New': ['Placed'],
-            'Preparing': ['Preparing'],
-            'On its way': ['On its way'],
-        };
-        return allOrders.filter(o => statusMap[activeTab].includes(o.status));
-    }, [allOrders, activeTab]);
+    const { newOrders, preparingOrders, deliveryOrders } = useMemo(() => {
+        const newO: Order[] = [];
+        const prep: Order[] = [];
+        const deli: Order[] = [];
+        
+        allOrders.forEach(o => {
+            if (o.status === 'Placed') newO.push(o);
+            else if (o.status === 'Preparing') prep.push(o);
+            else if (o.status === 'On its way') deli.push(o);
+        });
 
-    const tabs: { id: OrderTab, label: string }[] = [
-        { id: 'New', label: 'New Orders' },
-        { id: 'Preparing', label: 'Preparing' },
-        { id: 'On its way', label: 'Out for Delivery' },
-    ];
+        return { newOrders: newO, preparingOrders: prep, deliveryOrders: deli };
+    }, [allOrders]);
 
     const renderContent = () => {
         if (isLoading) {
@@ -82,45 +103,22 @@ const DashboardPage: React.FC = () => {
         if (error) {
             return <div className="text-center p-8 text-red-500">{error}</div>;
         }
-        if (filteredOrders.length === 0) {
-            return <div className="text-center p-8 text-gray-500">No orders in this category right now.</div>;
-        }
         return (
-            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
-                {filteredOrders.map(order => (
-                    <OrderCard
-                        key={order.id}
-                        order={order}
-                        onUpdate={handleUpdateStatus}
-                        onAddNote={setNoteModalOrder}
-                    />
-                ))}
+            <div className="flex space-x-4 h-full pb-4">
+                <OrderColumn title="New Orders" orders={newOrders} onUpdate={handleUpdateStatus} onAddNote={setNoteModalOrder} />
+                <OrderColumn title="Preparing" orders={preparingOrders} onUpdate={handleUpdateStatus} onAddNote={setNoteModalOrder} />
+                <OrderColumn title="Out for Delivery" orders={deliveryOrders} onUpdate={handleUpdateStatus} onAddNote={setNoteModalOrder} />
             </div>
         );
     };
 
     return (
         <>
-            <div className="p-4 sm:p-6 space-y-6">
-                <h1 className="text-2xl font-bold text-gray-800">Live Order Management</h1>
-                <div className="border-b border-gray-200">
-                    <nav className="-mb-px flex space-x-4 sm:space-x-6 overflow-x-auto">
-                        {tabs.map(tab => (
-                            <button
-                                key={tab.id}
-                                onClick={() => setActiveTab(tab.id)}
-                                className={`whitespace-nowrap pb-3 px-1 border-b-2 font-semibold text-sm transition-colors ${
-                                    activeTab === tab.id
-                                        ? 'border-orange-500 text-orange-600'
-                                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                                }`}
-                            >
-                                {tab.label}
-                            </button>
-                        ))}
-                    </nav>
+            <div className="p-4 sm:p-6 flex flex-col h-[calc(100vh-80px)]">
+                <h1 className="text-2xl font-bold text-gray-800 mb-4 flex-shrink-0">Live Order Management</h1>
+                <div className="flex-1 overflow-x-auto">
+                   {renderContent()}
                 </div>
-                {renderContent()}
             </div>
             {noteModalOrder && (
                 <AddOrderNoteModal
