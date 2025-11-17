@@ -1,7 +1,7 @@
 
 import type { Offer, Restaurant, Food, MenuItem, Review, CartItem, Address, Order, User, Vendor, Rider, OperatingHours, CustomizationOption, ChatMessage, Moderator, SupportTicket } from '../types';
 
-// --- Utility Functions ---
+// --- UTILITY FUNCTIONS ---
 const createExpiryDate = (days: number): string => new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString();
 
 const twentyFourSevenHours: OperatingHours = {
@@ -14,98 +14,138 @@ const twentyFourSevenHours: OperatingHours = {
     sunday: { isOpen: true, slots: [{ open: '00:00', close: '23:59' }] },
 };
 
-const createMockRestaurant = (id: number): Restaurant => ({
-  id: `restaurant-${id}`,
-  logoUrl: `https://picsum.photos/seed/logo${id}/100/100`,
-  coverImageUrl: `https://picsum.photos/seed/cover${id}/1200/400`,
-  name: `Restaurant Hub ${id}`,
-  rating: parseFloat((Math.random() * 2 + 3).toFixed(1)),
-  cuisine: ['Italian', 'Mexican', 'Indian', 'Thai', 'Japanese', 'American', 'Chinese', 'French'][id % 8],
-  deliveryFee: parseFloat((Math.random() * 5).toFixed(2)),
-  deliveryTime: `${Math.floor(Math.random() * 20) + 20}-${Math.floor(Math.random() * 20) + 40} min`,
-  address: `${120 + id} Flavor St, Food City`,
-  operatingHours: {
-    monday: { isOpen: true, slots: [{ open: '09:00', close: '21:00' }] },
-    tuesday: { isOpen: true, slots: [{ open: '09:00', close: '21:00' }] },
-    wednesday: { isOpen: true, slots: [{ open: '09:00', close: '14:00' }, { open: '17:00', close: '21:00' }] },
-    thursday: { isOpen: true, slots: [{ open: '09:00', close: '21:00' }] },
-    friday: { isOpen: true, slots: [{ open: '09:00', close: '22:00' }] },
-    saturday: { isOpen: true, slots: [{ open: '11:00', close: '22:00' }] },
-    sunday: { isOpen: false, slots: [] },
-  }
-});
+const toppingsOption: CustomizationOption = {
+  id: 'toppings', name: 'Add Toppings', type: 'MULTIPLE', required: false,
+  choices: [ { name: 'Extra Cheese', price: 1.50 }, { name: 'Mushrooms', price: 0.75 }, { name: 'Pepperoni', price: 1.25 } ]
+};
+const sizeOption: CustomizationOption = {
+  id: 'size', name: 'Size', type: 'SINGLE', required: true,
+  choices: [ { name: 'Regular', price: 0.00 }, { name: 'Large', price: 3.00 }, { name: 'Extra Large', price: 5.00 } ]
+};
 
-const createMockFood = (id: number, restaurant: Restaurant): Food => ({
-  id: `food-${id}`,
-  imageUrl: `https://picsum.photos/seed/food${id}/400/300`,
-  name: `Delicious Plate ${id}`,
-  price: parseFloat((Math.random() * 20 + 5).toFixed(2)),
-  rating: parseFloat((Math.random() * 2 + 3).toFixed(1)),
-  restaurantId: restaurant.id,
-  description: 'A beautifully crafted dish made with the freshest ingredients, guaranteed to delight your taste buds.',
-  vendor: {
-    name: restaurant.name,
-  },
-  availability: { type: 'ALL_DAY' }
-});
+// --- SINGLE SOURCE OF TRUTH FOR RESTAURANT & VENDOR DATA ---
 
-// --- Base User & Moderator Data ---
-const baseUsers: User[] = [
-    { name: 'Alex Doe', email: 'alex.doe@example.com', phone: '123-456-7890', age: 30, gender: 'male' },
-];
-export const mockModerators: Moderator[] = [
-    { id: 'mod-1', name: 'Mod One', email: 'mod1@example.com', permissions: ['manage_users', 'review_content'] },
-];
+const generatedData = (() => {
+  const restaurants: Restaurant[] = [];
+  const vendors: Vendor[] = [];
+  const vendorUsers: User[] = [];
+  const vendorPasswords = new Map<string, string>();
+  const foods: Food[] = [];
 
-// --- Restaurant Data ---
-export const allMockRestaurants: Restaurant[] = Array.from({ length: 25 }, (_, i) => createMockRestaurant(i + 1));
-allMockRestaurants.push({
-  id: `restaurant-26`,
-  logoUrl: `https://picsum.photos/seed/logo26/100/100`,
-  coverImageUrl: `https://picsum.photos/seed/cover26/1200/400`,
-  name: `24/7 Diner`,
-  rating: 4.8,
-  cuisine: 'American',
-  deliveryFee: 3.50,
-  deliveryTime: '15-25 min',
-  address: `125 Flavor St, Food City`,
-  operatingHours: twentyFourSevenHours
-});
+  const restaurantCount = 25;
+  const cuisines = ['Italian', 'Mexican', 'Indian', 'Thai', 'Japanese', 'American', 'Chinese', 'French'];
 
-// --- Dynamically Generated Vendor Data ---
-const vendorUsers: User[] = [];
-const vendorPasswords = new Map<string, string>();
-export let mockVendors: Vendor[] = allMockRestaurants.map(restaurant => {
-    const restaurantIdNum = restaurant.id.split('-')[1];
-    const vendorName = `Vendor ${restaurant.name.replace('Restaurant Hub', '').trim()}`;
-    const vendorEmail = `vendor${restaurantIdNum}@example.com`;
-    
-    vendorUsers.push({ name: vendorName, email: vendorEmail, phone: `555-01${restaurantIdNum.padStart(2, '0')}` });
-    vendorPasswords.set(vendorEmail, `vendorpass${restaurantIdNum}`);
-
-    const statuses: Vendor['status'][] = ['active', 'pending', 'disabled'];
-    return {
-        id: `vendor-${restaurantIdNum}`,
-        restaurantId: restaurant.id,
-        name: vendorName,
-        email: vendorEmail,
-        status: statuses[(parseInt(restaurantIdNum, 10) - 1) % 3]
+  for (let i = 1; i <= restaurantCount; i++) {
+    // 1. Create Restaurant
+    const restaurant: Restaurant = {
+        id: `restaurant-${i}`,
+        logoUrl: `https://picsum.photos/seed/logo${i}/100/100`,
+        coverImageUrl: `https://picsum.photos/seed/cover${i}/1200/400`,
+        name: `Restaurant Hub ${i}`,
+        rating: parseFloat((Math.random() * 2 + 3).toFixed(1)),
+        cuisine: cuisines[i % cuisines.length],
+        deliveryFee: parseFloat((Math.random() * 5).toFixed(2)),
+        deliveryTime: `${Math.floor(Math.random() * 20) + 20}-${Math.floor(Math.random() * 20) + 40} min`,
+        address: `${120 + i} Flavor St, Food City`,
+        operatingHours: {
+            monday: { isOpen: true, slots: [{ open: '09:00', close: '21:00' }] },
+            tuesday: { isOpen: true, slots: [{ open: '09:00', close: '21:00' }] },
+            wednesday: { isOpen: true, slots: [{ open: '09:00', close: '14:00' }, { open: '17:00', close: '21:00' }] },
+            thursday: { isOpen: true, slots: [{ open: '09:00', close: '21:00' }] },
+            friday: { isOpen: true, slots: [{ open: '09:00', close: '22:00' }] },
+            saturday: { isOpen: true, slots: [{ open: '11:00', close: '22:00' }] },
+            sunday: { isOpen: false, slots: [] },
+        }
     };
-});
+    restaurants.push(restaurant);
 
-// --- Combined User & Password Exports ---
-export let mockUsers: User[] = [
-    ...baseUsers,
-    ...mockModerators.map(m => ({ name: m.name, email: m.email, phone: '555-0199' })),
-    ...vendorUsers,
-];
-export const mockUserPasswords = new Map<string, string>([
-    ['alex.doe@example.com', 'password123'],
-    ['mod1@example.com', 'modpass1'],
-    ...vendorPasswords
-]);
+    // 2. Create corresponding Vendor
+    const statuses: Vendor['status'][] = ['active', 'pending', 'disabled'];
+    const vendor: Vendor = {
+        id: `vendor-${i}`,
+        restaurantId: restaurant.id,
+        name: `Vendor ${i}`,
+        email: `vendor${i}@example.com`,
+        status: statuses[(i - 1) % 3]
+    };
+    vendors.push(vendor);
 
-// --- Other Mock Data ---
+    // 3. Create corresponding User & Password for the Vendor
+    const user: User = { name: vendor.name, email: vendor.email, phone: `555-01${String(i).padStart(2, '0')}` };
+    vendorUsers.push(user);
+    vendorPasswords.set(user.email, `vendorpass${i}`);
+
+    // 4. Create Menu Items for the Restaurant
+    for (let j = 0; j < 5; j++) {
+        const foodId = i * 10 + j;
+        const food: Food = {
+            id: `food-${foodId}`,
+            imageUrl: `https://picsum.photos/seed/food${foodId}/400/300`,
+            name: `Delicious Plate ${foodId}`,
+            price: parseFloat((Math.random() * 20 + 5).toFixed(2)),
+            rating: parseFloat((Math.random() * 2 + 3).toFixed(1)),
+            restaurantId: restaurant.id,
+            description: 'A beautifully crafted dish made with the freshest ingredients, guaranteed to delight your taste buds.',
+            vendor: { name: restaurant.name },
+            availability: { type: 'ALL_DAY' }
+        };
+
+        if (j === 0 && restaurant.id === 'restaurant-1') {
+            food.customizationOptions = [sizeOption, toppingsOption];
+            food.name = 'Customizable Pizza';
+            food.category = 'Main Course';
+        }
+        if (j === 1) { food.isPackage = true; food.name = "Lunch Special Package"; food.category = 'Deals'; }
+        if (j === 2) { food.category = 'Appetizers'; }
+        if (j === 3) { food.category = 'Desserts'; }
+        foods.push(food);
+    }
+  }
+
+  // Add a special 24/7 restaurant
+   const diner: Restaurant = {
+      id: `restaurant-26`,
+      logoUrl: `https://picsum.photos/seed/logo26/100/100`,
+      coverImageUrl: `https://picsum.photos/seed/cover26/1200/400`,
+      name: `24/7 Diner`,
+      rating: 4.8,
+      cuisine: 'American',
+      deliveryFee: 3.50,
+      deliveryTime: '15-25 min',
+      address: `125 Flavor St, Food City`,
+      operatingHours: twentyFourSevenHours
+   };
+   restaurants.push(diner);
+   const dinerVendor: Vendor = { id: 'vendor-26', restaurantId: diner.id, name: 'Diner Manager', email: 'vendor26@example.com', status: 'active' };
+   vendors.push(dinerVendor);
+   const dinerUser: User = { name: dinerVendor.name, email: dinerVendor.email, phone: '555-0126' };
+   vendorUsers.push(dinerUser);
+   vendorPasswords.set(dinerUser.email, 'vendorpass26');
+   const dinerFood: Food = {
+      id: 'food-260',
+      imageUrl: `https://picsum.photos/seed/food260/400/300`,
+      name: `Late Night Tacos`,
+      price: 8.99,
+      rating: 4.6,
+      restaurantId: diner.id,
+      description: 'Perfect for a late-night craving.',
+      vendor: { name: diner.name },
+      availability: { type: 'CUSTOM_TIME', startTime: '22:00', endTime: '06:00' }
+   };
+   foods.push(dinerFood);
+
+
+  return { restaurants, vendors, vendorUsers, vendorPasswords, foods };
+})();
+
+
+// --- EXPORTED MOCK DATA (DERIVED FROM THE SINGLE SOURCE) ---
+
+export const allMockRestaurants: Restaurant[] = generatedData.restaurants;
+export let mockVendors: Vendor[] = generatedData.vendors;
+export let allMockFoods: Food[] = generatedData.foods;
+
+// --- STATIC MOCK DATA ---
 
 export const mockOffers: Offer[] = [
   { id: 'offer-1', imageUrl: 'https://picsum.photos/seed/banner1/1200/400', title: '50% Off This Weekend', description: 'Get a massive 50% off on all orders this weekend. Don\'t miss out!', discountType: 'PERCENTAGE', discountValue: 50, applicableTo: 'ALL', couponCode: 'WEEKEND50', expiry: createExpiryDate(3) },
@@ -122,37 +162,28 @@ export let mockAddresses: Address[] = [
     { id: 'addr-2', label: 'Work', details: '456 Business Blvd, Suite 500, Workville, 67890' },
 ];
 
-const toppingsOption: CustomizationOption = {
-  id: 'toppings', name: 'Add Toppings', type: 'MULTIPLE', required: false,
-  choices: [ { name: 'Extra Cheese', price: 1.50 }, { name: 'Mushrooms', price: 0.75 }, { name: 'Pepperoni', price: 1.25 } ]
-};
-const sizeOption: CustomizationOption = {
-  id: 'size', name: 'Size', type: 'SINGLE', required: true,
-  choices: [ { name: 'Regular', price: 0.00 }, { name: 'Large', price: 3.00 }, { name: 'Extra Large', price: 5.00 } ]
-};
-
-export const allMockFoods: Food[] = allMockRestaurants.flatMap(r =>
-  Array.from({ length: 5 }, (_, i) => {
-    const food = createMockFood(Number(r.id.split('-')[1]) * 10 + i, r);
-    if (i === 0 && r.id === 'restaurant-1') {
-        food.customizationOptions = [sizeOption, toppingsOption];
-        food.name = 'Customizable Pizza';
-        food.category = 'Main Course';
-    }
-    if (i === 1) { food.isPackage = true; food.name = "Lunch Special Package"; food.category = 'Deals'; }
-    if (i === 2) { food.category = 'Appetizers'; }
-    if (i === 3) { food.category = 'Desserts'; }
-    if(i === 4 && r.name === '24/7 Diner') { food.name = 'Late Night Tacos'; food.availability = { type: 'CUSTOM_TIME', startTime: '22:00', endTime: '06:00' }; }
-    return food;
-  })
-);
-
 export const allMockReviews: Review[] = Array.from({ length: 50 }, (_, i) => ({
   id: `review-${i}`, author: ['Alex', 'Jamie', 'Sam', 'Taylor', 'Chris', 'Jordan'][i % 6],
   rating: parseFloat((Math.random() * 2 + 3).toFixed(1)),
   text: 'This was an amazing experience, the food was delicious and the service was top-notch. Highly recommended!',
   avatarUrl: `https://i.pravatar.cc/48?u=person${i}`,
 }));
+
+export const mockModerators: Moderator[] = [
+    { id: 'mod-1', name: 'Mod One', email: 'mod1@example.com', permissions: ['manage_users', 'review_content'] },
+];
+
+export let mockUsers: User[] = [
+    { name: 'Alex Doe', email: 'alex.doe@example.com', phone: '123-456-7890', age: 30, gender: 'male' },
+    ...mockModerators.map(m => ({ name: m.name, email: m.email, phone: '555-0199' })),
+    ...generatedData.vendorUsers,
+];
+
+export const mockUserPasswords = new Map<string, string>([
+    ['alex.doe@example.com', 'password123'],
+    ['mod1@example.com', 'modpass1'],
+    ...generatedData.vendorPasswords
+]);
 
 const foodToMenuItem = (food: Food): MenuItem => ({
     id: food.id, name: food.name, description: food.description, price: food.price, imageUrl: food.imageUrl,
