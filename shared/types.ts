@@ -196,7 +196,9 @@ export interface Order {
   customerName?: string;
   distance?: number;
   riderId?: string;
+  placedAt?: string;
   acceptedAt?: string;
+  moderatorNote?: string;
 }
 
 export interface OrderReview {

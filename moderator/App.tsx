@@ -5,10 +5,11 @@ import DashboardPage from './pages/DashboardPage';
 import UserManagementPage from './pages/UserManagementPage';
 import VendorManagementPage from './pages/VendorManagementPage';
 import VendorDetailPage from './pages/VendorDetailPage';
+import VendorOrdersPage from './pages/VendorOrdersPage';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
 
-export type View = 'dashboard' | 'users' | 'vendors' | 'vendorDetail';
+export type View = 'dashboard' | 'users' | 'vendors' | 'vendorDetail' | 'vendorOrders';
 
 interface Route {
     view: View;
@@ -25,6 +26,10 @@ const parseHash = (): Route => {
         return { view: 'vendorDetail', id };
     }
     
+    if (view === 'vendorOrders' && id) {
+        return { view: 'vendorOrders', id };
+    }
+
     switch (view) {
         case 'users': return { view: 'users' };
         case 'vendors': return { view: 'vendors' };
@@ -59,8 +64,9 @@ const AppContent: React.FC = () => {
             case 'vendors':
                 return <VendorManagementPage />;
             case 'vendorDetail':
-                // Fallback to vendors list if no ID is provided
                 return route.id ? <VendorDetailPage vendorId={route.id} /> : <VendorManagementPage />;
+            case 'vendorOrders':
+                return route.id ? <VendorOrdersPage vendorId={route.id} /> : <VendorManagementPage />;
             case 'dashboard':
             default:
                 return <DashboardPage />;

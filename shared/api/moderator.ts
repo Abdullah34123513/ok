@@ -1,6 +1,6 @@
 import { simulateDelay } from './utils';
 import { mockRiders, mockOrders, allMockRestaurants, mockSupportTickets, mockUsers, mockVendors, mockModerators } from './mockData';
-import type { ModeratorDashboardSummary, Restaurant, SupportTicket, Rider, User, Vendor } from '../types';
+import type { ModeratorDashboardSummary, Restaurant, SupportTicket, Rider, User, Vendor, Order } from '../types';
 
 export const getModeratorDashboardSummary = async (): Promise<ModeratorDashboardSummary> => {
     await simulateDelay(600);
@@ -83,4 +83,34 @@ export const updateVendorStatus = async (vendorId: string, status: 'active' | 'd
     if (vendorIndex === -1) throw new Error('Vendor not found');
     mockVendors[vendorIndex].status = status;
     return { ...mockVendors[vendorIndex] };
+};
+
+export const getOrdersForVendorByModerator = async (vendorId: string): Promise<Order[]> => {
+    await simulateDelay(700);
+    const vendor = mockVendors.find(v => v.id === vendorId);
+    if (!vendor) throw new Error("Vendor not found");
+
+    return mockOrders.filter(o => 
+        o.items.some(i => i.baseItem.restaurantId === vendor.restaurantId)
+    );
+};
+
+export const updateOrderStatusByModerator = async (orderId: string, newStatus: Order['status'], note?: string): Promise<Order> => {
+    await simulateDelay(400);
+    const orderIndex = mockOrders.findIndex(o => o.id === orderId);
+    if (orderIndex === -1) {
+      throw new Error("Order not found");
+    }
+    const order = mockOrders[orderIndex];
+    order.status = newStatus;
+    
+    if (note) {
+        order.moderatorNote = note;
+    }
+
+    if (newStatus === 'Preparing' && !order.acceptedAt) {
+        order.acceptedAt = new Date().toISOString();
+    }
+    
+    return { ...order };
 };

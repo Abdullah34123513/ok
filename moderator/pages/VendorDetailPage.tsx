@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import * as api from '@shared/api';
 import type { Vendor, Restaurant } from '@shared/types';
-import { StorefrontIcon, CheckCircleIcon, XCircleIcon, ActAsIcon } from '../components/Icons';
+import { StorefrontIcon, CheckCircleIcon, XCircleIcon, ActAsIcon, PackageIcon } from '../components/Icons';
 
 const VendorDetailPage: React.FC<{ vendorId: string }> = ({ vendorId }) => {
     const [vendor, setVendor] = useState<Vendor | null>(null);
@@ -106,13 +106,22 @@ const VendorDetailPage: React.FC<{ vendorId: string }> = ({ vendorId }) => {
                     <h1 className="text-2xl font-bold text-gray-800">Manage Vendor</h1>
                     <p className="text-gray-600">{vendor.name} ({vendor.email})</p>
                 </div>
-                <button
-                    onClick={handleActAsVendor}
-                    className="flex items-center px-4 py-2 bg-orange-500 text-white font-semibold rounded-lg hover:bg-orange-600 transition-transform transform hover:scale-105"
-                >
-                    <ActAsIcon className="w-5 h-5 mr-2" />
-                    Act as Vendor
-                </button>
+                <div className="flex space-x-2">
+                    <a
+                        href={`#/vendorOrders/${vendor.id}`}
+                        className="flex items-center px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition"
+                    >
+                        <PackageIcon className="w-5 h-5 mr-2" />
+                        Manage Orders
+                    </a>
+                    <button
+                        onClick={handleActAsVendor}
+                        className="flex items-center px-4 py-2 bg-orange-500 text-white font-semibold rounded-lg hover:bg-orange-600 transition"
+                    >
+                        <ActAsIcon className="w-5 h-5 mr-2" />
+                        Act as Vendor
+                    </button>
+                </div>
             </div>
             
             <div className="bg-white p-6 rounded-lg shadow-md space-y-6">
