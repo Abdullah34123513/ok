@@ -16,7 +16,7 @@ interface NavLinkProps {
 
 const SidebarNavLink: React.FC<NavLinkProps> = ({ view, label, icon: Icon, isActive }) => (
     <a href={`#/${view}`} className={`flex items-center space-x-3 px-4 py-3 rounded-lg font-semibold transition-colors ${
-        isActive ? 'bg-purple-600 text-white shadow-md' : 'text-gray-600 hover:bg-gray-100'
+        isActive ? 'bg-[#FF6B00] text-white shadow-md' : 'text-gray-600 hover:bg-gray-100'
     }`}>
         <Icon className="w-6 h-6" />
         <span>{label}</span>

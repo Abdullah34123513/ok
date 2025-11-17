@@ -292,6 +292,7 @@ export interface Rider {
   rating: number;
   // FIX: Add 'location' to align with the Order.rider property and resolve type errors.
   location: LocationPoint;
+  isOnline?: boolean;
 }
 
 export interface RiderStats {
@@ -305,4 +306,21 @@ export interface VendorDashboardSummary {
   totalOrders: number;
   activeOrders: number;
   averageItemRating: number;
+}
+
+export interface SupportTicket {
+    id: string;
+    userEmail: string;
+    subject: string;
+    status: 'Open' | 'In Progress' | 'Closed';
+    lastUpdate: string;
+}
+
+export interface ModeratorDashboardSummary {
+    activeRiders: number;
+    newOrdersToday: number;
+    ongoingOrders: number;
+    completedOrders: number;
+    cancelledOrders: number;
+    openSupportTickets: number;
 }

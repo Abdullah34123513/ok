@@ -1,6 +1,4 @@
-
-
-import type { Offer, Restaurant, Food, MenuItem, Review, CartItem, Address, Order, User, Vendor, Rider, OperatingHours, CustomizationOption, ChatMessage, Moderator } from '../types';
+import type { Offer, Restaurant, Food, MenuItem, Review, CartItem, Address, Order, User, Vendor, Rider, OperatingHours, CustomizationOption, ChatMessage, Moderator, SupportTicket } from '../types';
 
 // --- Mock Databases ---
 export let mockUsers: User[] = [
@@ -356,7 +354,16 @@ export let mockOrders: Order[] = [
 ];
 
 export const mockRiders: Rider[] = [
-    { id: 'rider-1', name: 'John Rider', phone: '1700000000', vehicle: 'Honda Activa', rating: 4.8, location: { lat: 34.045, lng: -118.24 } },
+    { id: 'rider-1', name: 'John Rider', phone: '1700000000', vehicle: 'Honda Activa', rating: 4.8, location: { lat: 34.045, lng: -118.24 }, isOnline: true },
+    { id: 'rider-2', name: 'Jane Driver', phone: '1800000000', vehicle: 'Suzuki Gixxer', rating: 4.9, location: { lat: 34.06, lng: -118.25 }, isOnline: true },
+    { id: 'rider-3', name: 'Mike Bike', phone: '1900000000', vehicle: 'Yamaha FZ', rating: 4.6, location: { lat: 34.05, lng: -118.23 }, isOnline: false },
+    { id: 'rider-4', name: 'Sara Speed', phone: '1600000000', vehicle: 'TVS Apache', rating: 4.7, location: { lat: 34.055, lng: -118.245 }, isOnline: true },
 ];
 
 export const mockChatHistory = new Map<string, ChatMessage[]>();
+
+export let mockSupportTickets: SupportTicket[] = [
+    { id: 'ticket-1', userEmail: 'alex.doe@example.com', subject: 'Wrong item delivered', status: 'Open', lastUpdate: '2 hours ago' },
+    { id: 'ticket-2', userEmail: 'customer2@example.com', subject: 'Late delivery inquiry', status: 'In Progress', lastUpdate: '1 day ago' },
+    { id: 'ticket-3', userEmail: 'customer3@example.com', subject: 'Payment issue', status: 'Open', lastUpdate: '5 minutes ago' },
+];
