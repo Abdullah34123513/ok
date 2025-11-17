@@ -105,7 +105,12 @@ export const updateOrderStatusByModerator = async (orderId: string, newStatus: O
     order.status = newStatus;
     
     if (note) {
-        order.moderatorNote = note;
+        // If note is just the action, replace it. If it's a new note, it won't contain the action string.
+        if (order.moderatorNote && !note.startsWith('[MOD ACTION]')) {
+             order.moderatorNote = note;
+        } else {
+            order.moderatorNote = note;
+        }
     }
 
     if (newStatus === 'Preparing' && !order.acceptedAt) {
