@@ -1,6 +1,6 @@
 import React from 'react';
 import { View } from '../App';
-import { DashboardIcon, UsersIcon, LogoIcon, LogoutIcon } from './Icons';
+import { DashboardIcon, UsersIcon, LogoIcon, LogoutIcon, StorefrontIcon } from './Icons';
 import { useAuth } from '../contexts/AuthContext';
 
 interface NavProps {
@@ -28,6 +28,7 @@ const Sidebar: React.FC<NavProps> = ({ activeView }) => {
     const navItems: { view: View; label: string; icon: React.ComponentType<{ className?: string }>; }[] = [
         { view: 'dashboard', label: 'Dashboard', icon: DashboardIcon },
         { view: 'users', label: 'Users', icon: UsersIcon },
+        { view: 'vendors', label: 'Vendors', icon: StorefrontIcon },
     ];
 
     return (

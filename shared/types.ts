@@ -275,6 +275,7 @@ export interface Vendor {
   restaurantId: string;
   name: string;
   email: string;
+  status?: 'active' | 'disabled' | 'pending';
 }
 
 export interface Moderator {

@@ -4,6 +4,8 @@ import type { Offer, Restaurant, Food, MenuItem, Review, CartItem, Address, Orde
 export let mockUsers: User[] = [
     { name: 'Alex Doe', email: 'alex.doe@example.com', phone: '123-456-7890', age: 30, gender: 'male' },
     { name: 'Vendor One', email: 'vendor1@example.com', phone: '555-0101' },
+    { name: 'Vendor Two', email: 'vendor2@example.com', phone: '555-0102' },
+    { name: 'Vendor Three', email: 'vendor3@example.com', phone: '555-0103' },
     { name: 'Mod One', email: 'mod1@example.com', phone: '555-0102' },
 ];
 
@@ -11,6 +13,8 @@ export let mockUsers: User[] = [
 export const mockUserPasswords = new Map<string, string>([
     ['alex.doe@example.com', 'password123'],
     ['vendor1@example.com', 'vendorpass1'],
+    ['vendor2@example.com', 'vendorpass2'],
+    ['vendor3@example.com', 'vendorpass3'],
     ['mod1@example.com', 'modpass1'],
 ]);
 
@@ -136,8 +140,10 @@ allMockRestaurants.push({
   operatingHours: twentyFourSevenHours
 });
 
-export const mockVendors: Vendor[] = [
-    { id: 'vendor-1', restaurantId: 'restaurant-1', name: 'Vendor One', email: 'vendor1@example.com' },
+export let mockVendors: Vendor[] = [
+    { id: 'vendor-1', restaurantId: 'restaurant-1', name: 'Vendor One', email: 'vendor1@example.com', status: 'active' },
+    { id: 'vendor-2', restaurantId: 'restaurant-2', name: 'Vendor Two', email: 'vendor2@example.com', status: 'pending' },
+    { id: 'vendor-3', restaurantId: 'restaurant-3', name: 'Vendor Three', email: 'vendor3@example.com', status: 'disabled' },
 ];
 
 export const mockModerators: Moderator[] = [

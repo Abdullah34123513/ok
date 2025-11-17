@@ -3,19 +3,35 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
 import UserManagementPage from './pages/UserManagementPage';
+import VendorManagementPage from './pages/VendorManagementPage';
+import VendorDetailPage from './pages/VendorDetailPage';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
 
-export type View = 'dashboard' | 'users';
+export type View = 'dashboard' | 'users' | 'vendors' | 'vendorDetail';
 
 interface Route {
     view: View;
+    id?: string;
 }
 
 const parseHash = (): Route => {
     const hash = window.location.hash.substring(2) || 'dashboard'; // remove '#/'
-    const view = hash.split('/')[0] as View;
-    return { view };
+    const parts = hash.split('/');
+    const view = parts[0] as View;
+    const id = parts[1];
+
+    if (view === 'vendorDetail' && id) {
+        return { view: 'vendorDetail', id };
+    }
+    
+    switch (view) {
+        case 'users': return { view: 'users' };
+        case 'vendors': return { view: 'vendors' };
+        case 'dashboard':
+        default:
+            return { view: 'dashboard' };
+    }
 };
 
 const AppContent: React.FC = () => {
@@ -40,6 +56,11 @@ const AppContent: React.FC = () => {
         switch (route.view) {
             case 'users':
                 return <UserManagementPage />;
+            case 'vendors':
+                return <VendorManagementPage />;
+            case 'vendorDetail':
+                // Fallback to vendors list if no ID is provided
+                return route.id ? <VendorDetailPage vendorId={route.id} /> : <VendorManagementPage />;
             case 'dashboard':
             default:
                 return <DashboardPage />;

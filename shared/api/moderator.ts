@@ -1,6 +1,6 @@
 import { simulateDelay } from './utils';
 import { mockRiders, mockOrders, allMockRestaurants, mockSupportTickets, mockUsers, mockVendors, mockModerators } from './mockData';
-import type { ModeratorDashboardSummary, Restaurant, SupportTicket, Rider, User } from '../types';
+import type { ModeratorDashboardSummary, Restaurant, SupportTicket, Rider, User, Vendor } from '../types';
 
 export const getModeratorDashboardSummary = async (): Promise<ModeratorDashboardSummary> => {
     await simulateDelay(600);
@@ -55,4 +55,32 @@ export const getAllUsersForModerator = async (): Promise<(User & { role: string 
         if (mockModerators.some(m => m.email === user.email)) role = 'Moderator';
         return { ...user, role };
     });
+};
+
+export const getAllVendors = async (): Promise<(Vendor & { restaurantName: string })[]> => {
+    await simulateDelay(500);
+    return mockVendors.map(v => {
+        const restaurant = allMockRestaurants.find(r => r.id === v.restaurantId);
+        return {
+            ...v,
+            restaurantName: restaurant?.name || 'N/A'
+        };
+    });
+};
+
+export const getVendorDetailsForModerator = async (vendorId: string): Promise<{vendor: Vendor, restaurant: Restaurant} | null> => {
+    await simulateDelay(400);
+    const vendor = mockVendors.find(v => v.id === vendorId);
+    if (!vendor) return null;
+    const restaurant = allMockRestaurants.find(r => r.id === vendor.restaurantId);
+    if (!restaurant) return null;
+    return { vendor: { ...vendor }, restaurant: { ...restaurant } };
+};
+
+export const updateVendorStatus = async (vendorId: string, status: 'active' | 'disabled' | 'pending'): Promise<Vendor> => {
+    await simulateDelay(400);
+    const vendorIndex = mockVendors.findIndex(v => v.id === vendorId);
+    if (vendorIndex === -1) throw new Error('Vendor not found');
+    mockVendors[vendorIndex].status = status;
+    return { ...mockVendors[vendorIndex] };
 };
