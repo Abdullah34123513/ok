@@ -18,7 +18,14 @@ const MAP_BOUNDS = {
 
 const MapMock: React.FC<MapMockProps> = ({ restaurantLocation, deliveryLocation, riderLocation }) => {
     
-  const getPositionStyle = (location?: LocationPoint | null): React.CSSProperties => {
+  // FIX: Using a specific return type instead of React.CSSProperties to resolve property access errors.
+  const getPositionStyle = (location?: LocationPoint | null): { 
+    display?: 'none'; 
+    top?: string; 
+    left?: string; 
+    position?: 'absolute'; 
+    transform?: string;
+  } => {
     if (!location) return { display: 'none' };
 
     const latPercent = ((location.lat - MAP_BOUNDS.minLat) / (MAP_BOUNDS.maxLat - MAP_BOUNDS.minLat)) * 100;

@@ -1,17 +1,19 @@
 
 
-import type { Offer, Restaurant, Food, MenuItem, Review, CartItem, Address, Order, User, Vendor, Rider, OperatingHours, CustomizationOption, ChatMessage } from '../types';
+import type { Offer, Restaurant, Food, MenuItem, Review, CartItem, Address, Order, User, Vendor, Rider, OperatingHours, CustomizationOption, ChatMessage, Moderator } from '../types';
 
 // --- Mock Databases ---
 export let mockUsers: User[] = [
     { name: 'Alex Doe', email: 'alex.doe@example.com', phone: '123-456-7890', age: 30, gender: 'male' },
     { name: 'Vendor One', email: 'vendor1@example.com', phone: '555-0101' },
+    { name: 'Mod One', email: 'mod1@example.com', phone: '555-0102' },
 ];
 
 // In a real app, passwords would be hashed. For this mock, we'll store them in a separate map.
 export const mockUserPasswords = new Map<string, string>([
     ['alex.doe@example.com', 'password123'],
     ['vendor1@example.com', 'vendorpass1'],
+    ['mod1@example.com', 'modpass1'],
 ]);
 
 // Helper to create future expiry dates
@@ -138,6 +140,10 @@ allMockRestaurants.push({
 
 export const mockVendors: Vendor[] = [
     { id: 'vendor-1', restaurantId: 'restaurant-1', name: 'Vendor One', email: 'vendor1@example.com' },
+];
+
+export const mockModerators: Moderator[] = [
+    { id: 'mod-1', name: 'Mod One', email: 'mod1@example.com', permissions: ['manage_users', 'review_content'] },
 ];
 
 export let mockCart: CartItem[] = [];

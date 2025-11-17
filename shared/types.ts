@@ -17,6 +17,7 @@ export interface AuthResponse {
   user: User;
   token: string;
   vendorId?: string;
+  moderatorId?: string;
 }
 
 // --- Core App Entities ---
@@ -274,6 +275,13 @@ export interface Vendor {
   restaurantId: string;
   name: string;
   email: string;
+}
+
+export interface Moderator {
+  id: string;
+  name: string;
+  email: string;
+  permissions: string[];
 }
 
 export interface Rider {

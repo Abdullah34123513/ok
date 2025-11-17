@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect } from 'react';
 import * as api from '@shared/api';
 import type { LocationPoint, Order } from '@shared/types';
@@ -13,7 +14,14 @@ const MAP_BOUNDS = {
   maxLng: -118.23,
 };
 
-const getPositionStyle = (location?: LocationPoint | null): React.CSSProperties => {
+// FIX: Using a specific return type instead of React.CSSProperties to resolve property access errors.
+const getPositionStyle = (location?: LocationPoint | null): { 
+  display?: 'none'; 
+  top?: string; 
+  left?: string; 
+  position?: 'absolute'; 
+  transform?: string;
+} => {
     if (!location) return { display: 'none' };
     const latPercent = ((location.lat - MAP_BOUNDS.minLat) / (MAP_BOUNDS.maxLat - MAP_BOUNDS.minLat)) * 100;
     const lngPercent = ((location.lng - MAP_BOUNDS.minLng) / (MAP_BOUNDS.maxLng - MAP_BOUNDS.minLng)) * 100;
