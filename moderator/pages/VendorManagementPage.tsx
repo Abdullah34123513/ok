@@ -61,7 +61,16 @@ const VendorManagementPage: React.FC = () => {
 
                 localStorage.setItem(VENDOR_STORAGE_KEY, JSON.stringify(vendorAuthData));
 
-                window.location.href = '/vendor/';
+                const getVendorUrl = () => {
+                    // In development, we assume the vendor app is running on port 3001 on the same host.
+                    // FIX: Replaced import.meta.env.DEV with a check on window.location.hostname to resolve a TypeScript error and reliably detect development environments.
+                    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+                        return `${window.location.protocol}//${window.location.hostname}:3001/`;
+                    }
+                    // In a production build, we assume apps are served from subdirectories.
+                    return '/vendor/';
+                }
+                window.location.href = getVendorUrl();
             } else {
                 alert('Could not establish moderator session. Please log in again.');
             }
