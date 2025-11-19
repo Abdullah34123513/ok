@@ -1,5 +1,8 @@
+
 import React, { useState, useEffect } from 'react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { NotificationProvider } from '@shared/contexts/NotificationContext';
+import Notification from '@shared/components/Notification';
 import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
 import UserManagementPage from './pages/UserManagementPage';
@@ -92,9 +95,12 @@ const AppContent: React.FC = () => {
 
 const App: React.FC = () => {
     return (
-        <AuthProvider>
-            <AppContent />
-        </AuthProvider>
+        <NotificationProvider>
+            <AuthProvider>
+                <Notification />
+                <AppContent />
+            </AuthProvider>
+        </NotificationProvider>
     );
 };
 

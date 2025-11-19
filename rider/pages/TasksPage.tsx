@@ -1,8 +1,12 @@
-import React, { useState, useEffect, useCallback } from 'react';
+
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import * as api from '@shared/api';
 import type { Order, LocationPoint, Restaurant } from '@shared/types';
 import { useAuth } from '../contexts/AuthContext';
-import { StorefrontIcon, HomeIcon, MapPinIcon, PhoneIcon, LogoutIcon, CheckCircleIcon, ClockIcon } from '../components/Icons';
+import { StorefrontIcon, HomeIcon, MapPinIcon, PhoneIcon, LogoutIcon, CheckCircleIcon, ClockIcon, TasksIcon, BellIcon } from '../components/Icons';
+import EmptyState from '@shared/components/EmptyState';
+import { SkeletonCard } from '@shared/components/Skeletons';
+import { useBrowserNotification } from '@shared/hooks/useBrowserNotification';
 
 // --- DUMMY DATA (for UI, as API doesn't provide it on order) ---
 const allMockRestaurants: Pick<Restaurant, 'id' | 'name' | 'address'>[] = [
@@ -189,9 +193,12 @@ const FindJobView: React.FC<{ orders: Order[], onAccept: (orderId: string) => vo
 
     if (orders.length === 0) {
         return (
-            <div className="text-center p-8 text-gray-500 space-y-2">
-                <p className="font-semibold">Waiting for new jobs...</p>
-                <p className="text-sm">We'll notify you when a new order is available in your area.</p>
+            <div className="p-4">
+                <EmptyState
+                    title="Waiting for jobs"
+                    description="We'll notify you when a new order is available in your area."
+                    icon={<TasksIcon className="w-12 h-12 text-gray-300" />}
+                />
             </div>
         );
     }
@@ -206,6 +213,9 @@ const TasksPage: React.FC = () => {
     const [error, setError] = useState('');
     const [updatingOrderId, setUpdatingOrderId] = useState<string | null>(null);
     const [isOnline, setIsOnline] = useState(true);
+    const { permission, requestPermission, sendNotification } = useBrowserNotification();
+    const previousJobIdsRef = useRef<Set<string>>(new Set());
+
     const hasMaxOrders = activeOrders.length >= 2;
 
     const fetchData = useCallback(async (showLoading = false) => {
@@ -219,20 +229,31 @@ const TasksPage: React.FC = () => {
             if (ongoing.length < 2) {
                 const newJobs = await api.getRiderNewOrders(currentRider.id);
                 setAvailableJobs(newJobs);
+
+                // Notify for new jobs
+                newJobs.forEach(job => {
+                    if (!previousJobIdsRef.current.has(job.id)) {
+                        sendNotification('New Delivery Job!', {
+                            body: `From ${job.restaurantName} - Earn ৳${job.deliveryFee.toFixed(2)}`
+                        });
+                    }
+                });
+                previousJobIdsRef.current = new Set(newJobs.map(j => j.id));
+
             } else {
-                setAvailableJobs([]); // Don't fetch new jobs if at capacity
+                setAvailableJobs([]); 
             }
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Failed to load data.');
         } finally {
             if (showLoading) setIsLoading(false);
         }
-    }, [currentRider]);
+    }, [currentRider, sendNotification]);
 
     useEffect(() => {
         if (currentRider && isOnline) {
             fetchData(true);
-            const interval = setInterval(() => fetchData(false), 15000);
+            const interval = setInterval(() => fetchData(false), 10000); // Poll every 10s
             return () => clearInterval(interval);
         } else {
             setActiveOrders([]);
@@ -284,11 +305,37 @@ const TasksPage: React.FC = () => {
                     </div>
                 </div>
             </header>
+            
+            {permission === 'default' && isOnline && (
+                <div className="container mx-auto px-4 mt-2">
+                    <div className="bg-blue-50 border-l-4 border-blue-400 p-3 flex justify-between items-center rounded-r-md">
+                        <div className="flex items-center">
+                            <BellIcon className="w-5 h-5 text-blue-500 mr-2" />
+                            <span className="text-sm text-blue-700">Get notified about new jobs instantly!</span>
+                        </div>
+                        <button onClick={requestPermission} className="text-xs font-bold bg-blue-500 text-white px-3 py-1.5 rounded hover:bg-blue-600">Allow</button>
+                    </div>
+                </div>
+            )}
 
             <main className="container mx-auto">
-                {isLoading ? ( <div className="text-center p-8 text-gray-500">Loading...</div> )
+                {isLoading ? ( 
+                    <div className="p-4 space-y-4">
+                        {Array.from({ length: 3 }).map((_, i) => <SkeletonCard key={i} />)}
+                    </div>
+                 )
                  : error ? ( <div className="text-center p-8 text-red-500">{error}</div> )
-                 : !isOnline ? (<div className="text-center p-8 text-gray-500">You are offline. Go online to see tasks.</div>)
+                 : !isOnline ? (
+                    <div className="p-4">
+                        <EmptyState
+                            title="You are offline"
+                            description="Go online to start receiving delivery tasks."
+                            icon={<LogoutIcon className="w-12 h-12 text-gray-400" />}
+                            actionLabel="Go Online"
+                            onAction={() => setIsOnline(true)}
+                        />
+                    </div>
+                 )
                  : hasActiveOrders ? (
                     <ActiveOrdersDashboard 
                         orders={activeOrders} 

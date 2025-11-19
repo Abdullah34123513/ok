@@ -1,5 +1,7 @@
+
 import React, { useState, useEffect } from 'react';
 import * as api from '@shared/api';
+import { useNotification } from '@shared/contexts/NotificationContext';
 import type { Vendor } from '@shared/types';
 import { ActAsIcon } from '../components/Icons';
 
@@ -24,6 +26,7 @@ const VendorManagementPage: React.FC = () => {
     const [vendors, setVendors] = useState<VendorWithDetails[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState('');
+    const { showNotification } = useNotification();
 
     useEffect(() => {
         const fetchVendors = async () => {
@@ -72,7 +75,7 @@ const VendorManagementPage: React.FC = () => {
                 }
                 window.location.href = getVendorUrl();
             } else {
-                alert('Could not establish moderator session. Please log in again.');
+                showNotification('Could not establish moderator session. Please log in again.', 'error');
             }
         }
     };

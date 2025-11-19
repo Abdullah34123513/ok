@@ -1,6 +1,8 @@
+
 import React, { useState, useEffect } from 'react';
 import * as api from '@shared/api';
 import { useAuth } from '../contexts/AuthContext';
+import { useNotification } from '@shared/contexts/NotificationContext';
 import type { Restaurant } from '@shared/types';
 import { StorefrontIcon } from '../components/Icons';
 
@@ -31,6 +33,7 @@ const ProfilePageSkeleton = () => (
 
 const ProfilePage: React.FC = () => {
     const { currentVendor, logout } = useAuth();
+    const { showNotification } = useNotification();
     const [restaurant, setRestaurant] = useState<Partial<Restaurant>>({});
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
@@ -59,7 +62,7 @@ const ProfilePage: React.FC = () => {
         setError('');
         try {
             await api.updateRestaurantDetails(currentVendor.restaurantId, restaurant);
-            alert('Profile updated successfully!');
+            showNotification('Profile updated successfully!', 'success');
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Failed to save changes.');
         } finally {

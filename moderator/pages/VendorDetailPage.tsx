@@ -1,5 +1,7 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import * as api from '@shared/api';
+import { useNotification } from '@shared/contexts/NotificationContext';
 import type { Vendor, Restaurant } from '@shared/types';
 import { StorefrontIcon, CheckCircleIcon, XCircleIcon, ActAsIcon, PackageIcon } from '../components/Icons';
 
@@ -9,6 +11,7 @@ const VendorDetailPage: React.FC<{ vendorId: string }> = ({ vendorId }) => {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState('');
     const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+    const { showNotification } = useNotification();
 
     const fetchData = useCallback(async () => {
         setError('');
@@ -57,7 +60,7 @@ const VendorDetailPage: React.FC<{ vendorId: string }> = ({ vendorId }) => {
                 }
                 window.location.href = getVendorUrl();
             } else {
-                alert('Could not establish moderator session. Please log in again.');
+                showNotification('Could not establish moderator session. Please log in again.', 'error');
             }
         }
     };
@@ -68,8 +71,9 @@ const VendorDetailPage: React.FC<{ vendorId: string }> = ({ vendorId }) => {
         try {
             const updatedVendor = await api.updateVendorStatus(vendor.id, newStatus!);
             setVendor(updatedVendor);
+            showNotification(`Vendor status updated to ${newStatus}.`, 'success');
         } catch (err) {
-            setError(err instanceof Error ? err.message : 'Failed to update status.');
+            showNotification(err instanceof Error ? err.message : 'Failed to update status.', 'error');
         } finally {
             setIsUpdatingStatus(false);
         }

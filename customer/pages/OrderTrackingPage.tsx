@@ -1,9 +1,10 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import * as api from '@shared/api';
 import type { Order, LocationPoint, CartItem } from '@shared/types';
 import MapMock from '@components/MapMock';
 import { PhoneIcon, StarIcon } from '@components/Icons';
+import { useBrowserNotification } from '@shared/hooks/useBrowserNotification';
 
 interface OrderTrackingPageProps {
   orderId: string;
@@ -75,22 +76,51 @@ const OrderTrackingPage: React.FC<OrderTrackingPageProps> = ({ orderId }) => {
   const [order, setOrder] = useState<Order | null>(null);
   const [riderLocation, setRiderLocation] = useState<LocationPoint | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const { requestPermission, sendNotification } = useBrowserNotification();
+  const prevStatusRef = useRef<Order['status'] | null>(null);
 
   useEffect(() => {
-    setIsLoading(true);
-    api.getOrderDetails(orderId).then((data: Order | undefined) => {
-      if (data) {
-        setOrder(data);
-        if (data.rider?.location) {
-          setRiderLocation(data.rider.location);
+      // Auto-request permission for tracking
+      requestPermission();
+  }, [requestPermission]);
+
+  useEffect(() => {
+    let isMounted = true;
+    const fetchOrderDetails = async () => {
+        try {
+            const data = await api.getOrderDetails(orderId);
+            if (isMounted && data) {
+                setOrder(data);
+                if (data.rider?.location) {
+                    setRiderLocation(data.rider.location);
+                }
+                
+                // Check for status change
+                if (prevStatusRef.current && prevStatusRef.current !== data.status) {
+                    sendNotification(`Order Update: ${STATUS_LABELS[data.status]}`, {
+                        body: `Your order from ${data.restaurantName} is updated.`
+                    });
+                }
+                prevStatusRef.current = data.status;
+            }
+        } catch (error) {
+            console.error("Failed to fetch order details", error);
+        } finally {
+            if (isMounted && isLoading) setIsLoading(false);
         }
-      }
-      setIsLoading(false);
-    });
-  }, [orderId]);
+    };
+
+    fetchOrderDetails();
+    const intervalId = setInterval(fetchOrderDetails, 10000); // Poll status every 10s
+
+    return () => {
+        isMounted = false;
+        clearInterval(intervalId);
+    };
+  }, [orderId, isLoading, sendNotification]);
 
   useEffect(() => {
-    if (!order || order.status !== 'On its way' && order.status !== 'Preparing') return;
+    if (!order || (order.status !== 'On its way' && order.status !== 'Preparing')) return;
 
     const intervalId = setInterval(() => {
       api.getRiderLocation(orderId).then((location: LocationPoint | null) => {
@@ -98,10 +128,10 @@ const OrderTrackingPage: React.FC<OrderTrackingPageProps> = ({ orderId }) => {
           setRiderLocation(location);
         }
       });
-    }, 5000); // Poll every 5 seconds
+    }, 5000); // Poll rider location more frequently (every 5s)
 
-    return () => clearInterval(intervalId); // Cleanup on unmount
-  }, [orderId, order]);
+    return () => clearInterval(intervalId);
+  }, [orderId, order?.status]); // Changed dependency to verify status specifically
 
   if (isLoading) {
     return <OrderTrackingPageSkeleton />;

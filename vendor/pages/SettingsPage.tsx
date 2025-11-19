@@ -1,6 +1,8 @@
+
 import React, { useState, useEffect } from 'react';
 import * as api from '@shared/api';
 import { useAuth } from '../contexts/AuthContext';
+import { useNotification } from '@shared/contexts/NotificationContext';
 import { BellIcon, LockClosedIcon, ClockIcon, PlusCircleIcon, TrashIcon } from '../components/Icons';
 import type { OperatingHours } from '@shared/types';
 import ChangePasswordModal from '../components/ChangePasswordModal';
@@ -49,6 +51,7 @@ const defaultHours: OperatingHours = {
 
 const SettingsPage: React.FC = () => {
     const { currentVendor } = useAuth();
+    const { showNotification } = useNotification();
     const [notifications, setNotifications] = useState({
         newOrders: true,
         orderUpdates: true,
@@ -137,10 +140,10 @@ const SettingsPage: React.FC = () => {
         setIsSavingHours(true);
         try {
             await api.updateRestaurantDetails(currentVendor.restaurantId, { operatingHours });
-            alert('Operating hours updated successfully!');
+            showNotification('Operating hours updated successfully!', 'success');
         } catch (error) {
             console.error(error);
-            alert('Failed to save operating hours.');
+            showNotification('Failed to save operating hours.', 'error');
         } finally {
             setIsSavingHours(false);
         }
