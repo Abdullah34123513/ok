@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { useCart } from '@contexts/CartContext';
 import * as api from '@shared/api';
@@ -5,6 +6,7 @@ import * as tracking from '@shared/tracking';
 import type { Address, Order, CartItem, SelectedCustomization, CustomizationChoice } from '@shared/types';
 import AddressModal from '@components/AddressModal';
 import { useNotification } from '@contexts/NotificationContext';
+import { NoteIcon, MoneyIcon } from '@components/Icons';
 
 interface CheckoutPageProps {}
 
@@ -34,6 +36,10 @@ const CheckoutPage: React.FC<CheckoutPageProps> = () => {
     const [isAddressLoading, setIsAddressLoading] = useState(true);
     const [couponCode, setCouponCode] = useState('');
     const [isApplyingCoupon, setIsApplyingCoupon] = useState(false);
+    
+    // New Fields
+    const [deliveryInstructions, setDeliveryInstructions] = useState('');
+    const [tipAmount, setTipAmount] = useState(0);
 
     const currentDeliveryFee = useMemo(() => {
         return deliveryOption === 'home' ? deliveryFee : 0;
@@ -44,8 +50,8 @@ const CheckoutPage: React.FC<CheckoutPageProps> = () => {
     }, [paymentOption, cartTotal]);
 
     const currentGrandTotal = useMemo(() => {
-        return Math.max(0, cartTotal + currentDeliveryFee - discountAmount - onlinePaymentDiscount);
-    }, [cartTotal, currentDeliveryFee, discountAmount, onlinePaymentDiscount]);
+        return Math.max(0, cartTotal + currentDeliveryFee + tipAmount - discountAmount - onlinePaymentDiscount);
+    }, [cartTotal, currentDeliveryFee, tipAmount, discountAmount, onlinePaymentDiscount]);
 
     const groupedItems = useMemo(() => {
         return cartItems.reduce<Record<string, { restaurantName: string, items: CartItem[] }>>((acc, item) => {
@@ -136,6 +142,8 @@ const CheckoutPage: React.FC<CheckoutPageProps> = () => {
             address,
             paymentMethod: paymentOption,
             deliveryOption,
+            deliveryInstructions,
+            tip: tipAmount
         };
         
         try {
@@ -146,6 +154,7 @@ const CheckoutPage: React.FC<CheckoutPageProps> = () => {
                 subtotal: newOrder.subtotal,
                 deliveryFee: newOrder.deliveryFee,
                 discount: newOrder.discount,
+                tip: newOrder.tip,
                 itemCount: cartItems.reduce((acc, item) => acc + item.quantity, 0),
                 restaurantIds: [...new Set(cartItems.map(item => item.baseItem.restaurantId))],
             });
@@ -187,6 +196,18 @@ const CheckoutPage: React.FC<CheckoutPageProps> = () => {
                                 </div>
                             )}
                             <button onClick={() => setIsAddressModalOpen(true)} className="mt-4 text-red-500 font-semibold hover:text-red-600 transition">+ Add New Address</button>
+                        </div>
+                        
+                        {/* Delivery Instructions */}
+                        <div className="bg-white p-6 rounded-lg shadow-md">
+                            <h2 className="text-xl font-bold mb-4 flex items-center"><NoteIcon className="w-5 h-5 mr-2 text-gray-600" /> Delivery Instructions</h2>
+                            <textarea
+                                value={deliveryInstructions}
+                                onChange={(e) => setDeliveryInstructions(e.target.value)}
+                                placeholder="E.g., Gate code is 1234, please leave at door, etc."
+                                className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-400"
+                                rows={3}
+                            ></textarea>
                         </div>
 
                         {/* Delivery & Payment Options */}
@@ -235,6 +256,26 @@ const CheckoutPage: React.FC<CheckoutPageProps> = () => {
                                 </div>
                              ))}
                             </div>
+                            
+                            {/* Tip Section */}
+                            <div className="border-t pt-3 pb-3">
+                                <div className="flex items-center justify-between mb-2">
+                                    <span className="font-semibold text-sm flex items-center"><MoneyIcon className="w-4 h-4 mr-1"/> Rider Tip</span>
+                                    <span className="font-semibold text-sm">৳{tipAmount.toFixed(2)}</span>
+                                </div>
+                                <div className="flex space-x-2">
+                                    {[0, 10, 20, 50].map(amount => (
+                                        <button
+                                            key={amount}
+                                            onClick={() => setTipAmount(amount)}
+                                            className={`flex-1 py-1 text-xs font-bold rounded border transition ${tipAmount === amount ? 'bg-blue-500 text-white border-blue-500' : 'bg-white text-gray-600 hover:bg-gray-50'}`}
+                                        >
+                                            {amount === 0 ? 'None' : `৳${amount}`}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
                             <div className="border-t pt-3 space-y-2">
                                 <div className="flex justify-between text-sm">
                                     <span>Subtotal</span>
@@ -254,6 +295,12 @@ const CheckoutPage: React.FC<CheckoutPageProps> = () => {
                                     <div className="flex justify-between text-sm text-green-600">
                                         <span className="font-semibold">Online Payment Discount (5%)</span>
                                         <span className="font-semibold">-৳{onlinePaymentDiscount.toFixed(2)}</span>
+                                    </div>
+                                )}
+                                {tipAmount > 0 && (
+                                    <div className="flex justify-between text-sm text-blue-600">
+                                        <span>Rider Tip</span>
+                                        <span className="font-semibold">৳{tipAmount.toFixed(2)}</span>
                                     </div>
                                 )}
                                 <div className="flex justify-between font-bold text-lg text-black mt-2 pt-2 border-t">

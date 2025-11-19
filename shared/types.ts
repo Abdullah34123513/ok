@@ -1,3 +1,4 @@
+
 // --- Authentication ---
 export interface LoginCredentials {
   email: string;
@@ -205,6 +206,10 @@ export interface Order {
   placedAt?: string;
   acceptedAt?: string;
   moderatorNote?: string;
+  
+  // New fields
+  deliveryInstructions?: string;
+  tip?: number;
 }
 
 export interface OrderReview {

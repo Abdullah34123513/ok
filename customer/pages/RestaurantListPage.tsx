@@ -1,8 +1,9 @@
+
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import type { Restaurant, Area } from '@shared/types';
 import * as api from '@shared/api';
 import RestaurantCard from '@components/RestaurantCard';
-import { FilterIcon } from '@components/Icons';
+import { FilterIcon, StarIcon, ClockIcon, MoneyIcon } from '@components/Icons';
 
 interface RestaurantListPageProps {
     area: Area;
@@ -22,7 +23,6 @@ const RestaurantCardSkeleton: React.FC = () => (
     </div>
 );
 
-
 const RestaurantListPage: React.FC<RestaurantListPageProps> = ({ area }) => {
     const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
     const [page, setPage] = useState(1);
@@ -30,32 +30,41 @@ const RestaurantListPage: React.FC<RestaurantListPageProps> = ({ area }) => {
     const [isLoading, setIsLoading] = useState(false);
     const [showFilters, setShowFilters] = useState(false);
     
+    // Filter States
+    const [sortBy, setSortBy] = useState<'rating' | 'deliveryTime' | 'deliveryFee' | undefined>(undefined);
+    const [priceRange, setPriceRange] = useState<string | undefined>(undefined);
+    const [minRating, setMinRating] = useState<number | undefined>(undefined);
+
     const onRestaurantClick = (id: string) => {
         window.location.hash = `#/restaurant/${id}`;
     };
     
-    const loadMoreRestaurants = useCallback(() => {
-        if (isLoading || !hasMore) return;
+    const loadRestaurants = useCallback((isReset = false) => {
+        if (isLoading || (!hasMore && !isReset)) return;
         setIsLoading(true);
-        api.getRestaurants(area.id, page)
+        
+        const currentPage = isReset ? 1 : page;
+        
+        api.getRestaurants(area.id, currentPage, 12, { sortBy, priceRange, minRating })
             .then(data => {
-                setRestaurants(prev => [...prev, ...data.restaurants]);
+                setRestaurants(prev => isReset ? data.restaurants : [...prev, ...data.restaurants]);
                 setPage(data.nextPage);
                 setHasMore(data.hasMore);
             })
             .catch(console.error)
             .finally(() => setIsLoading(false));
-    }, [area.id, page, isLoading, hasMore]);
-    
+    }, [area.id, page, isLoading, hasMore, sortBy, priceRange, minRating]);
+
+    // Effect to reload when filters change
     useEffect(() => {
-        // Initial load
-        setRestaurants([]);
         setPage(1);
         setHasMore(true);
-        // We need to wrap in a timeout to allow state to clear before loading
-        setTimeout(() => loadMoreRestaurants(), 0);
+        setRestaurants([]);
+        // Use timeout to allow state to settle
+        const timeoutId = setTimeout(() => loadRestaurants(true), 0);
+        return () => clearTimeout(timeoutId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [area]);
+    }, [area, sortBy, priceRange, minRating]); // Trigger reload on filter change
 
     const observer = useRef<IntersectionObserver | null>(null);
     const lastRestaurantElementRef = useCallback((node: HTMLDivElement) => {
@@ -63,12 +72,11 @@ const RestaurantListPage: React.FC<RestaurantListPageProps> = ({ area }) => {
         if (observer.current) observer.current.disconnect();
         observer.current = new IntersectionObserver(entries => {
             if (entries[0].isIntersecting && hasMore) {
-                loadMoreRestaurants();
+                loadRestaurants();
             }
         });
         if (node) observer.current.observe(node);
-    }, [isLoading, hasMore, loadMoreRestaurants]);
-
+    }, [isLoading, hasMore, loadRestaurants]);
 
     return (
         <div className="container mx-auto px-4 py-6">
@@ -76,22 +84,58 @@ const RestaurantListPage: React.FC<RestaurantListPageProps> = ({ area }) => {
                 <h2 className="text-xl font-bold text-gray-800">All Restaurants</h2>
                 <button 
                     onClick={() => setShowFilters(!showFilters)}
-                    className="flex items-center space-x-2 px-4 py-2 bg-white border rounded-full shadow-sm hover:bg-gray-50"
+                    className={`flex items-center space-x-2 px-4 py-2 border rounded-full shadow-sm transition ${showFilters ? 'bg-red-50 border-red-200 text-red-600' : 'bg-white hover:bg-gray-50 text-gray-700'}`}
                 >
-                    <FilterIcon className="w-5 h-5 text-gray-600" />
-                    <span className="font-semibold text-gray-700">Filters</span>
+                    <FilterIcon className="w-5 h-5" />
+                    <span className="font-semibold">Filters</span>
                 </button>
             </div>
 
             {showFilters && (
-                <div className="bg-white p-4 rounded-lg shadow mb-6 animate-fade-in-up">
-                    <h3 className="font-semibold mb-2">Filter by:</h3>
-                    <div className="flex flex-wrap gap-4 text-sm">
-                        {/* Placeholder filter options */}
-                        <button className="px-3 py-1 border rounded-full hover:bg-red-500 hover:text-white transition">Cuisine</button>
-                        <button className="px-3 py-1 border rounded-full hover:bg-red-500 hover:text-white transition">Rating 4.0+</button>
-                        <button className="px-3 py-1 border rounded-full hover:bg-red-500 hover:text-white transition">Price</button>
-                        <button className="px-3 py-1 border rounded-full hover:bg-red-500 hover:text-white transition">Delivery Time</button>
+                <div className="bg-white p-4 rounded-lg shadow mb-6 animate-fade-in-up border border-gray-100">
+                    <div className="space-y-4">
+                        {/* Sort By */}
+                        <div>
+                            <h3 className="text-xs font-bold text-gray-500 uppercase mb-2">Sort By</h3>
+                            <div className="flex flex-wrap gap-2">
+                                <button onClick={() => setSortBy(sortBy === 'rating' ? undefined : 'rating')} className={`px-3 py-1.5 text-sm rounded-full border flex items-center transition ${sortBy === 'rating' ? 'bg-red-500 text-white border-red-500' : 'bg-white text-gray-700 hover:bg-gray-50'}`}>
+                                    <StarIcon className="w-4 h-4 mr-1" /> Rating
+                                </button>
+                                <button onClick={() => setSortBy(sortBy === 'deliveryTime' ? undefined : 'deliveryTime')} className={`px-3 py-1.5 text-sm rounded-full border flex items-center transition ${sortBy === 'deliveryTime' ? 'bg-red-500 text-white border-red-500' : 'bg-white text-gray-700 hover:bg-gray-50'}`}>
+                                    <ClockIcon className="w-4 h-4 mr-1" /> Fastest Delivery
+                                </button>
+                                <button onClick={() => setSortBy(sortBy === 'deliveryFee' ? undefined : 'deliveryFee')} className={`px-3 py-1.5 text-sm rounded-full border flex items-center transition ${sortBy === 'deliveryFee' ? 'bg-red-500 text-white border-red-500' : 'bg-white text-gray-700 hover:bg-gray-50'}`}>
+                                    <MoneyIcon className="w-4 h-4 mr-1" /> Lowest Cost
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Price Range */}
+                        <div>
+                            <h3 className="text-xs font-bold text-gray-500 uppercase mb-2">Price Range</h3>
+                             <div className="flex flex-wrap gap-2">
+                                {['$', '$$', '$$$'].map(range => (
+                                    <button 
+                                        key={range}
+                                        onClick={() => setPriceRange(priceRange === range ? undefined : range)}
+                                        className={`px-3 py-1.5 text-sm rounded-full border transition ${priceRange === range ? 'bg-red-500 text-white border-red-500' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
+                                    >
+                                        {range}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                        
+                        {/* Min Rating */}
+                        <div>
+                            <h3 className="text-xs font-bold text-gray-500 uppercase mb-2">Rating</h3>
+                            <button 
+                                onClick={() => setMinRating(minRating === 4.0 ? undefined : 4.0)}
+                                className={`px-3 py-1.5 text-sm rounded-full border flex items-center transition ${minRating === 4.0 ? 'bg-red-500 text-white border-red-500' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
+                            >
+                                <StarIcon className="w-4 h-4 mr-1" /> 4.0+
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}
@@ -105,11 +149,17 @@ const RestaurantListPage: React.FC<RestaurantListPageProps> = ({ area }) => {
                         </div>
                     );
                 })}
-                {isLoading && Array.from({ length: 8 }).map((_, i) => <RestaurantCardSkeleton key={`skeleton-${i}`} />)}
+                {isLoading && Array.from({ length: 4 }).map((_, i) => <RestaurantCardSkeleton key={`skeleton-${i}`} />)}
             </div>
 
             {!hasMore && !isLoading && restaurants.length > 0 && (
-                <p className="text-center text-gray-500 mt-8">You've seen all restaurants!</p>
+                <p className="text-center text-gray-500 mt-8">You've seen all matching restaurants!</p>
+            )}
+             {!hasMore && !isLoading && restaurants.length === 0 && (
+                <div className="text-center py-10">
+                    <p className="text-gray-600 text-lg">No restaurants found matching your filters.</p>
+                    <button onClick={() => { setSortBy(undefined); setPriceRange(undefined); setMinRating(undefined); }} className="mt-2 text-red-500 font-semibold hover:underline">Clear Filters</button>
+                </div>
             )}
         </div>
     );

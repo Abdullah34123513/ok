@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import * as api from '@shared/api';
 import type { User, Address, Order, Restaurant } from '@shared/types';
@@ -8,12 +9,13 @@ import AddressModal from '@components/AddressModal';
 import SupportModal from '@components/SupportModal';
 import ChatWindow from '@components/ChatWindow';
 import ReviewModal from '@components/ReviewModal';
+import OrderDetailModal from '@components/OrderDetailModal';
 
 interface ProfilePageProps {
     onChangeLocation: () => void;
 }
 
-type ProfileTab = 'profile' | 'addresses' | 'orders' | 'favorites';
+type ProfileTab = 'profile' | 'addresses' | 'orders'; // Removed 'favorites' as it is now a main tab
 type OrderFilter = 'ongoing' | 'past' | 'cancelled';
 
 const ProfilePageSkeleton = () => (
@@ -28,7 +30,6 @@ const ProfilePageSkeleton = () => (
                        <div className="mt-1 h-4 bg-gray-200 rounded w-1/2 mx-auto"></div>
                     </div>
                     <div className="flex flex-col space-y-2">
-                        <div className="h-10 bg-gray-200 rounded"></div>
                         <div className="h-10 bg-gray-200 rounded"></div>
                         <div className="h-10 bg-gray-200 rounded"></div>
                         <div className="h-10 bg-gray-200 rounded"></div>
@@ -63,13 +64,14 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ onChangeLocation }) => {
     const [user, setUser] = useState<User | null>(null);
     const [addresses, setAddresses] = useState<Address[]>([]);
     const [orders, setOrders] = useState<Order[]>([]);
-    const [favoriteRestaurants, setFavoriteRestaurants] = useState<Restaurant[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [orderFilter, setOrderFilter] = useState<OrderFilter>('ongoing');
     const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
     const [isSupportModalOpen, setIsSupportModalOpen] = useState(false);
     const [isChatWindowOpen, setIsChatWindowOpen] = useState(false);
     const [reviewingOrder, setReviewingOrder] = useState<Order | null>(null);
+    const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+    
     const { logout } = useAuth();
     const { showNotification } = useNotification();
 
@@ -86,14 +88,12 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ onChangeLocation }) => {
         const loadAllData = async () => {
             setIsLoading(true);
             try {
-                const [profileData, addressesData, favsData] = await Promise.all([
+                const [profileData, addressesData] = await Promise.all([
                     api.getUserProfile(),
                     api.getAddresses(),
-                    api.getFavoriteRestaurants(),
                 ]);
                 setUser(profileData);
                 setAddresses(addressesData);
-                setFavoriteRestaurants(favsData);
             } catch (error) {
                 console.error("Failed to load profile data", error);
             } finally {
@@ -147,7 +147,6 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ onChangeLocation }) => {
                                 <TabButton id="profile" label="Profile Info" activeTab={activeTab} onClick={setActiveTab} />
                                 <TabButton id="addresses" label="My Addresses" activeTab={activeTab} onClick={setActiveTab} />
                                 <TabButton id="orders" label="Order History" activeTab={activeTab} onClick={setActiveTab} />
-                                <TabButton id="favorites" label="Saved Restaurants" activeTab={activeTab} onClick={setActiveTab} />
                             </nav>
                             <div className="mt-6 pt-4 border-t">
                                 <button
@@ -189,9 +188,9 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ onChangeLocation }) => {
                                     filter={orderFilter}
                                     onFilterChange={setOrderFilter}
                                     onReviewClick={setReviewingOrder}
+                                    onOrderClick={setSelectedOrder}
                                 />
                             )}
-                            {activeTab === 'favorites' && <FavoritesSection restaurants={favoriteRestaurants} />}
                         </div>
                     </main>
                 </div>
@@ -204,6 +203,12 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ onChangeLocation }) => {
                     order={reviewingOrder}
                     onClose={() => setReviewingOrder(null)}
                     onSubmit={handleReviewSubmitted}
+                />
+            )}
+            {selectedOrder && (
+                <OrderDetailModal 
+                    order={selectedOrder}
+                    onClose={() => setSelectedOrder(null)}
                 />
             )}
         </>
@@ -304,13 +309,11 @@ const AddressSection: React.FC<{ addresses: Address[], onAddClick: () => void, o
 );
 
 // Orders Section
-const OrdersSection: React.FC<{ orders: Order[], filter: OrderFilter, onFilterChange: (filter: OrderFilter) => void, onReviewClick: (order: Order) => void }> = ({ orders, filter, onFilterChange, onReviewClick }) => {
+const OrdersSection: React.FC<{ orders: Order[], filter: OrderFilter, onFilterChange: (filter: OrderFilter) => void, onReviewClick: (order: Order) => void, onOrderClick: (order: Order) => void }> = ({ orders, filter, onFilterChange, onReviewClick, onOrderClick }) => {
     
-    const handleOrderClick = (order: Order) => {
-        // This handler is only attached when filter is 'ongoing'.
-        if (filter === 'ongoing') {
-            window.location.hash = `#/track/${order.id}`;
-        }
+    const handleTrackClick = (e: React.MouseEvent, orderId: string) => {
+        e.stopPropagation();
+        window.location.hash = `#/track/${orderId}`;
     };
 
     return (
@@ -325,12 +328,11 @@ const OrdersSection: React.FC<{ orders: Order[], filter: OrderFilter, onFilterCh
             </div>
             <div className="space-y-4">
                 {orders.length > 0 ? orders.map(order => {
-                    const isClickable = filter === 'ongoing';
                     return (
                         <div 
                             key={order.id} 
-                            className={`p-4 border rounded-lg ${isClickable ? 'cursor-pointer hover:shadow-md transition-shadow' : ''}`}
-                            onClick={isClickable ? () => handleOrderClick(order) : undefined}
+                            className="p-4 border rounded-lg cursor-pointer hover:shadow-md transition-shadow"
+                            onClick={() => onOrderClick(order)}
                         >
                             <div className="flex justify-between items-start">
                                 <div>
@@ -345,29 +347,32 @@ const OrdersSection: React.FC<{ orders: Order[], filter: OrderFilter, onFilterCh
                             </div>
                             <div className="mt-4 pt-4 border-t text-right">
                                 {filter === 'ongoing' && (
-                                    <a 
-                                        href={`#/track/${order.id}`}
+                                    <button 
+                                        onClick={(e) => handleTrackClick(e, order.id)}
                                         className="px-4 py-2 bg-red-500 text-white font-semibold rounded-lg hover:bg-red-600 transition inline-block"
                                     >
                                         Track Order
-                                    </a>
+                                    </button>
                                 )}
                                 {filter === 'past' && (
-                                    order.isReviewed ? (
-                                        <button className="px-4 py-2 bg-gray-200 text-gray-500 font-semibold rounded-lg cursor-not-allowed" disabled>
-                                            Reviewed
-                                        </button>
-                                    ) : (
-                                        <button
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                onReviewClick(order);
-                                            }}
-                                            className="px-4 py-2 bg-blue-500 text-white font-semibold rounded-lg hover:bg-blue-600 transition inline-block"
-                                        >
-                                            Leave a Review
-                                        </button>
-                                    )
+                                    <div className="flex justify-end space-x-3">
+                                         <span className="self-center text-sm text-blue-600 font-semibold hover:underline">View Details / Re-order</span>
+                                        {order.isReviewed ? (
+                                            <button className="px-4 py-2 bg-gray-200 text-gray-500 font-semibold rounded-lg cursor-not-allowed" disabled onClick={(e) => e.stopPropagation()}>
+                                                Reviewed
+                                            </button>
+                                        ) : (
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    onReviewClick(order);
+                                                }}
+                                                className="px-4 py-2 bg-blue-500 text-white font-semibold rounded-lg hover:bg-blue-600 transition inline-block"
+                                            >
+                                                Leave a Review
+                                            </button>
+                                        )}
+                                    </div>
                                 )}
                             </div>
                         </div>
@@ -382,25 +387,6 @@ const OrderFilterButton: React.FC<{ label: string, id: OrderFilter, activeFilter
     <button onClick={() => onClick(id)} className={`px-3 py-2 font-semibold transition ${activeFilter === id ? 'border-b-2 border-red-500 text-red-500' : 'text-gray-500 hover:text-red-500'}`}>
         {label}
     </button>
-);
-
-
-// Favorites Section
-const FavoritesSection: React.FC<{ restaurants: Restaurant[] }> = ({ restaurants }) => (
-    <div>
-        <h2 className="text-2xl font-bold mb-6">Saved Restaurants</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-            {restaurants.length > 0 ? restaurants.map(r => (
-                <a key={r.id} href={`#/restaurant/${r.id}`} className="p-4 border rounded-lg flex items-center space-x-4 cursor-pointer hover:bg-gray-50 transition">
-                    <img src={r.logoUrl} alt={r.name} className="w-16 h-16 rounded-full object-cover" />
-                    <div>
-                        <p className="font-bold">{r.name}</p>
-                        <p className="text-sm text-gray-600">{r.cuisine}</p>
-                    </div>
-                </a>
-            )) : <p>You haven't saved any restaurants yet.</p>}
-        </div>
-    </div>
 );
 
 

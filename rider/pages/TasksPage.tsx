@@ -3,7 +3,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import * as api from '@shared/api';
 import type { Order, LocationPoint, Restaurant } from '@shared/types';
 import { useAuth } from '../contexts/AuthContext';
-import { StorefrontIcon, HomeIcon, MapPinIcon, PhoneIcon, LogoutIcon, CheckCircleIcon, ClockIcon, TasksIcon, BellIcon } from '../components/Icons';
+import { StorefrontIcon, HomeIcon, MapPinIcon, LogoutIcon, CheckCircleIcon, ClockIcon, TasksIcon, BellIcon } from '../components/Icons';
 import EmptyState from '@shared/components/EmptyState';
 import { SkeletonCard } from '@shared/components/Skeletons';
 import { useBrowserNotification } from '@shared/hooks/useBrowserNotification';

@@ -1,6 +1,4 @@
 
-
-
 import React, { useState, useEffect } from 'react';
 import { useLocalStorage } from '@hooks/useLocalStorage';
 import Header from '@components/Header';
@@ -18,6 +16,7 @@ import OrderTrackingPage from '@pages/OrderTrackingPage';
 import OrderConfirmationPage from '@pages/OrderConfirmationPage';
 import OffersPage from '@pages/OffersPage';
 import OfferDetailPage from '@pages/OfferDetailPage';
+import FavoritesPage from '@pages/FavoritesPage';
 import BottomNav from '@components/BottomNav';
 import { CartProvider } from '@contexts/CartContext';
 import { NotificationProvider } from '@contexts/NotificationContext';
@@ -26,7 +25,7 @@ import Notification from '@components/Notification';
 import type { Area } from '@shared/types';
 
 
-export type View = 'home' | 'restaurants' | 'restaurantDetail' | 'foodDetail' | 'cart' | 'checkout' | 'profile' | 'login' | 'signup' | 'orderTracking' | 'orderConfirmation' | 'offers' | 'offerDetail';
+export type View = 'home' | 'restaurants' | 'restaurantDetail' | 'foodDetail' | 'cart' | 'checkout' | 'profile' | 'login' | 'signup' | 'orderTracking' | 'orderConfirmation' | 'offers' | 'offerDetail' | 'favorites';
 
 interface Route {
     view: View;
@@ -52,6 +51,7 @@ const parseHash = (): Route => {
         case 'confirmation': return { view: 'orderConfirmation', id };
         case 'offers': return { view: 'offers' };
         case 'offer': return { view: 'offerDetail', id };
+        case 'favorites': return { view: 'favorites' };
         case 'home':
         default:
             return { view: 'home' };
@@ -77,7 +77,7 @@ const AppContent: React.FC = () => {
         return <LocationModal onLocationSet={setArea} />;
     }
 
-    const protectedViews: View[] = ['profile', 'checkout', 'orderTracking', 'orderConfirmation'];
+    const protectedViews: View[] = ['profile', 'checkout', 'orderTracking', 'orderConfirmation', 'favorites'];
     const authViews: View[] = ['login', 'signup'];
 
     // Handle routing logic based on auth status and current route
@@ -122,6 +122,8 @@ const AppContent: React.FC = () => {
                 return <Header title="Limited-Time Offers" />;
             case 'offerDetail':
                 return <Header title="Special Offer" />;
+            case 'favorites':
+                return <Header title="Saved Restaurants" />;
             case 'login':
             case 'signup':
                 return null;
@@ -161,6 +163,8 @@ const AppContent: React.FC = () => {
             case 'offerDetail':
                 if (!id) { window.location.hash = '#/offers'; return null; }
                 return <OfferDetailPage offerId={id} area={area} />;
+            case 'favorites':
+                return <FavoritesPage />;
             case 'home':
             default:
                 return <HomePage area={area} />;

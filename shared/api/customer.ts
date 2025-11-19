@@ -3,7 +3,7 @@ import type { Offer, Restaurant, Food, PaginatedFoods, SearchResult, PaginatedRe
 import { simulateDelay, shuffleArray } from './utils';
 import { mockOffers, allMockRestaurants, allMockFoods, mockCart, mockAddresses, mockOrders, allMockReviews, mockChatHistory, mockUsers, mockRiders, mockAreas } from './mockData';
 
-export const getAreaForLocation = async (lat: number, lng: number): Promise<Area> => {
+export const getAreaForLocation = async (lat: number, _lng: number): Promise<Area> => {
     await simulateDelay(300);
     // Simple mock logic: Downtown for higher latitude, Suburbia otherwise.
     if (lat > 34.055) {
@@ -78,17 +78,72 @@ export const getTopRestaurants = async (areaId: string): Promise<Restaurant[]> =
   return shuffleArray(areaRestaurants, seed).slice(0, 10);
 };
 
-export const getRestaurants = async (areaId: string, page: number, limit = 12): Promise<PaginatedRestaurants> => {
+interface RestaurantFilters {
+    sortBy?: 'rating' | 'deliveryTime' | 'deliveryFee';
+    minRating?: number;
+    priceRange?: string; // $, $$, $$$
+}
+
+export const getRestaurants = async (
+    areaId: string, 
+    page: number, 
+    limit = 12, 
+    filters?: RestaurantFilters
+): Promise<PaginatedRestaurants> => {
     await simulateDelay(800);
-    const seed = locationHash(areaId);
-    const areaRestaurants = allMockRestaurants.filter(r => r.areaId === areaId);
-    const shuffled = shuffleArray(areaRestaurants, seed);
+    
+    let filtered = allMockRestaurants.filter(r => r.areaId === areaId);
+
+    if (filters) {
+        if (filters.minRating) {
+            filtered = filtered.filter(r => r.rating >= filters.minRating!);
+        }
+        if (filters.priceRange) {
+            // Mock logic: derive price range from delivery fee for demo purposes
+            // Low fee = $, High fee = $$$
+            filtered = filtered.filter(r => {
+                if (filters.priceRange === '$') return r.deliveryFee < 2;
+                if (filters.priceRange === '$$') return r.deliveryFee >= 2 && r.deliveryFee < 4;
+                if (filters.priceRange === '$$$') return r.deliveryFee >= 4;
+                return true;
+            });
+        }
+
+        if (filters.sortBy) {
+            filtered.sort((a, b) => {
+                switch(filters.sortBy) {
+                    case 'rating':
+                        return b.rating - a.rating;
+                    case 'deliveryFee':
+                        return a.deliveryFee - b.deliveryFee;
+                    case 'deliveryTime':
+                        // Parse "20-30 min" -> 25
+                        const parseTime = (str: string) => {
+                            const match = str.match(/\d+/);
+                            return match ? parseInt(match[0]) : 999;
+                        };
+                        return parseTime(a.deliveryTime) - parseTime(b.deliveryTime);
+                    default:
+                        return 0;
+                }
+            });
+        } else {
+             // Default shuffle if no sort
+             const seed = locationHash(areaId);
+             filtered = shuffleArray(filtered, seed);
+        }
+    } else {
+        const seed = locationHash(areaId);
+        filtered = shuffleArray(filtered, seed);
+    }
+
     const start = (page - 1) * limit;
     const end = start + limit;
-    const restaurants = shuffled.slice(start, end);
+    const restaurants = filtered.slice(start, end);
+    
     return {
         restaurants,
-        hasMore: end < shuffled.length,
+        hasMore: end < filtered.length,
         nextPage: page + 1,
     };
 };
