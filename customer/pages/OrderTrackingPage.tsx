@@ -90,7 +90,11 @@ const OrderTrackingPage: React.FC<OrderTrackingPageProps> = ({ orderId }) => {
         try {
             const data = await api.getOrderDetails(orderId);
             if (isMounted && data) {
-                setOrder(data);
+                // FIX: Create a shallow copy of data. Since the mock API returns a reference
+                // to the same object, React's object comparison would bail out of the update
+                // if we passed 'data' directly, preventing the UI from showing status changes.
+                setOrder({ ...data });
+                
                 if (data.rider?.location) {
                     setRiderLocation(data.rider.location);
                 }
