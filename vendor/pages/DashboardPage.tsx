@@ -79,6 +79,24 @@ const OrderStatusButton: React.FC<{
     }
 };
 
+const calculateETA = (durationString?: string) => {
+    if (!durationString) return null;
+    
+    // If it already looks like a time (contains :) or AM/PM, return it
+    if (durationString.includes(':') || durationString.includes('AM') || durationString.includes('PM')) {
+        return durationString;
+    }
+    
+    const matches = durationString.match(/(\d+)/g);
+    if (matches && matches.length > 0) {
+        // Take the last number found as the max duration (e.g. "20-30" -> 30)
+        const minutes = parseInt(matches[matches.length - 1], 10);
+        const eta = new Date(Date.now() + minutes * 60000);
+        return eta.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+    }
+    
+    return durationString;
+};
 
 const DashboardPage: React.FC = () => {
     const { currentVendor } = useAuth();
@@ -214,6 +232,11 @@ const DashboardPage: React.FC = () => {
                                     <tr className="border-b last:border-0 hover:bg-gray-50 animate-fade-in-up transition-colors">
                                          <td className="p-4 align-top">
                                             <OrderStatusBadge status={order.status} />
+                                            {order.status === 'On its way' && order.estimatedDeliveryTime && (
+                                                <div className="mt-2 text-xs font-bold text-purple-700 bg-purple-50 px-2 py-1 rounded border border-purple-100 inline-block">
+                                                    ETA: {calculateETA(order.estimatedDeliveryTime)}
+                                                </div>
+                                            )}
                                         </td>
                                         <td className="p-4 align-top">
                                             <div className="font-mono text-sm text-blue-600 font-semibold">{order.id.split('-')[1]}</div>
@@ -271,6 +294,11 @@ const DashboardPage: React.FC = () => {
                                 <div>
                                     <OrderStatusBadge status={order.status} />
                                     <div className="font-mono text-xs text-blue-600 mt-1">{order.id.split('-')[1]}</div>
+                                    {order.status === 'On its way' && order.estimatedDeliveryTime && (
+                                        <div className="mt-2 text-xs font-bold text-purple-700">
+                                            ETA: {calculateETA(order.estimatedDeliveryTime)}
+                                        </div>
+                                    )}
                                 </div>
                                 <div className="font-bold text-lg">৳{order.total.toFixed(2)}</div>
                             </div>
