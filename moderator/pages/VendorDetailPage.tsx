@@ -2,12 +2,13 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import * as api from '@shared/api';
 import { useNotification } from '@shared/contexts/NotificationContext';
-import type { Vendor, Restaurant } from '@shared/types';
-import { StorefrontIcon, CheckCircleIcon, XCircleIcon, ActAsIcon, PackageIcon } from '../components/Icons';
+import type { Vendor, Restaurant, Area } from '@shared/types';
+import { StorefrontIcon, CheckCircleIcon, XCircleIcon, ActAsIcon, PackageIcon, MapPinIcon } from '../components/Icons';
 
 const VendorDetailPage: React.FC<{ vendorId: string }> = ({ vendorId }) => {
     const [vendor, setVendor] = useState<Vendor | null>(null);
     const [restaurant, setRestaurant] = useState<Partial<Restaurant>>({});
+    const [areas, setAreas] = useState<Area[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState('');
     const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
@@ -16,13 +17,17 @@ const VendorDetailPage: React.FC<{ vendorId: string }> = ({ vendorId }) => {
     const fetchData = useCallback(async () => {
         setError('');
         try {
-            const data = await api.getVendorDetailsForModerator(vendorId);
-            if (data) {
-                setVendor(data.vendor);
-                setRestaurant(data.restaurant);
+            const [details, areasData] = await Promise.all([
+                api.getVendorDetailsForModerator(vendorId),
+                api.getAreas()
+            ]);
+            if (details) {
+                setVendor(details.vendor);
+                setRestaurant(details.restaurant);
             } else {
                 setError('Vendor not found.');
             }
+            setAreas(areasData);
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Failed to load vendor details.');
         } finally {
@@ -50,12 +55,9 @@ const VendorDetailPage: React.FC<{ vendorId: string }> = ({ vendorId }) => {
                 localStorage.setItem(VENDOR_STORAGE_KEY, JSON.stringify(vendor));
 
                 const getVendorUrl = () => {
-                    // In development, we assume the vendor app is running on port 3001 on the same host.
-                    // FIX: Replaced import.meta.env.DEV with a check on window.location.hostname to resolve a TypeScript error and reliably detect development environments.
                     if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
                         return `${window.location.protocol}//${window.location.hostname}:3001/`;
                     }
-                    // In a production build, we assume apps are served from subdirectories.
                     return '/vendor/';
                 }
                 window.location.href = getVendorUrl();
@@ -78,6 +80,19 @@ const VendorDetailPage: React.FC<{ vendorId: string }> = ({ vendorId }) => {
             setIsUpdatingStatus(false);
         }
     };
+
+    const handleAreaChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
+        if (!vendor) return;
+        const newAreaId = e.target.value;
+        try {
+            await api.updateVendorArea(vendor.id, newAreaId);
+            setVendor({ ...vendor, areaId: newAreaId });
+            setRestaurant(prev => ({ ...prev, areaId: newAreaId }));
+            showNotification('Area updated successfully', 'success');
+        } catch(err) {
+            showNotification('Failed to update area', 'error');
+        }
+    }
 
     if (isLoading) return <div className="p-6 text-center">Loading vendor details...</div>;
     if (error) return <div className="p-6 text-center text-red-500">{error}</div>;
@@ -148,6 +163,18 @@ const VendorDetailPage: React.FC<{ vendorId: string }> = ({ vendorId }) => {
                         <p><strong>Name:</strong> {restaurant.name || 'N/A'}</p>
                         <p><strong>Cuisine:</strong> {restaurant.cuisine || 'N/A'}</p>
                         <p><strong>Address:</strong> {restaurant.address || 'N/A'}</p>
+                        <div className="flex items-center mt-2">
+                            <MapPinIcon className="w-4 h-4 mr-2 text-gray-500" />
+                            <strong>Area:</strong>
+                            <select 
+                                value={vendor.areaId || ''} 
+                                onChange={handleAreaChange}
+                                className="ml-2 p-1 border rounded text-sm"
+                            >
+                                <option value="">Unassigned</option>
+                                {areas.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
+                            </select>
+                        </div>
                     </div>
                     <p className="text-xs text-gray-500 mt-2 italic">
                         To manage the restaurant's profile, menu, orders, or operating hours, please use the "Act as Vendor" button to access their dashboard directly.

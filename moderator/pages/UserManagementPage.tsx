@@ -1,20 +1,38 @@
+
 import React, { useState, useEffect } from 'react';
 import * as api from '@shared/api';
-import type { Rider } from '@shared/types';
-import { StarIcon } from '../components/Icons';
+import type { Rider, User } from '@shared/types';
+import { StarIcon, EditIcon } from '../components/Icons';
+import EditRiderModal from '../components/EditRiderModal';
+import CustomerAddressModal from '../components/CustomerAddressModal';
 
 type RiderWithArea = Rider & { areaName?: string };
 
+type Tab = 'riders' | 'customers';
+
 const UserManagementPage: React.FC = () => {
+    const [activeTab, setActiveTab] = useState<Tab>('riders');
     const [riders, setRiders] = useState<RiderWithArea[]>([]);
+    const [customers, setCustomers] = useState<User[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [riderToEdit, setRiderToEdit] = useState<RiderWithArea | null>(null);
+    const [customerToView, setCustomerToView] = useState<User | null>(null);
+
+    const fetchData = async () => {
+        setIsLoading(true);
+        if (activeTab === 'riders') {
+            const data = await api.getAllRiders();
+            setRiders(data);
+        } else {
+            const data = await api.getCustomers();
+            setCustomers(data);
+        }
+        setIsLoading(false);
+    };
 
     useEffect(() => {
-        setIsLoading(true);
-        api.getAllRiders()
-            .then(data => setRiders(data))
-            .finally(() => setIsLoading(false));
-    }, []);
+        fetchData();
+    }, [activeTab]);
     
     const StatusBadge: React.FC<{ isOnline: boolean }> = ({ isOnline }) => (
         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
@@ -27,10 +45,24 @@ const UserManagementPage: React.FC = () => {
 
     return (
         <div className="p-6">
-            <h1 className="text-2xl font-bold text-gray-800">Rider Management</h1>
-             <div className="mt-6 bg-white rounded-lg shadow-md overflow-hidden">
+            <div className="flex space-x-6 border-b mb-6">
+                <button 
+                    className={`pb-2 font-bold text-lg ${activeTab === 'riders' ? 'text-[#FF6B00] border-b-2 border-[#FF6B00]' : 'text-gray-500'}`}
+                    onClick={() => setActiveTab('riders')}
+                >
+                    Riders
+                </button>
+                <button 
+                    className={`pb-2 font-bold text-lg ${activeTab === 'customers' ? 'text-[#FF6B00] border-b-2 border-[#FF6B00]' : 'text-gray-500'}`}
+                    onClick={() => setActiveTab('customers')}
+                >
+                    Customers
+                </button>
+            </div>
+
+             <div className="bg-white rounded-lg shadow-md overflow-hidden">
                 {isLoading ? (
-                    <p className="p-6 text-center text-gray-500">Loading riders...</p>
+                    <p className="p-6 text-center text-gray-500">Loading...</p>
                 ) : (
                     <div className="overflow-x-auto">
                         <table className="w-full text-left">
@@ -38,15 +70,15 @@ const UserManagementPage: React.FC = () => {
                                 <tr>
                                     <th className="p-4 font-semibold">Name</th>
                                     <th className="p-4 font-semibold">Contact</th>
-                                    <th className="p-4 font-semibold">Vehicle</th>
-                                    <th className="p-4 font-semibold">Rating</th>
-                                    <th className="p-4 font-semibold">Area</th>
-                                    <th className="p-4 font-semibold">Status</th>
+                                    {activeTab === 'riders' && <th className="p-4 font-semibold">Vehicle</th>}
+                                    {activeTab === 'riders' && <th className="p-4 font-semibold">Rating</th>}
+                                    {activeTab === 'riders' && <th className="p-4 font-semibold">Area</th>}
+                                    {activeTab === 'riders' && <th className="p-4 font-semibold">Status</th>}
                                     <th className="p-4 font-semibold">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {riders.map(rider => (
+                                {activeTab === 'riders' ? riders.map(rider => (
                                     <tr key={rider.id} className="border-b last:border-0 hover:bg-gray-50">
                                         <td className="p-4 font-medium whitespace-nowrap">{rider.name}</td>
                                         <td className="p-4 text-gray-600 whitespace-nowrap">{rider.phone}</td>
@@ -60,8 +92,15 @@ const UserManagementPage: React.FC = () => {
                                         <td className="p-4 text-gray-600 font-semibold whitespace-nowrap">{rider.areaName || 'Unassigned'}</td>
                                         <td className="p-4"><StatusBadge isOnline={!!rider.isOnline} /></td>
                                         <td className="p-4 whitespace-nowrap">
-                                            <button className="text-sm font-semibold text-blue-600 hover:underline">Edit</button>
-                                            <button className="ml-4 text-sm font-semibold text-red-600 hover:underline">Delete</button>
+                                            <button onClick={() => setRiderToEdit(rider)} className="text-sm font-semibold text-blue-600 hover:underline inline-flex items-center"><EditIcon className="w-4 h-4 mr-1" /> Edit Area</button>
+                                        </td>
+                                    </tr>
+                                )) : customers.map(customer => (
+                                    <tr key={customer.email} className="border-b last:border-0 hover:bg-gray-50">
+                                        <td className="p-4 font-medium whitespace-nowrap">{customer.name}</td>
+                                        <td className="p-4 text-gray-600 whitespace-nowrap">{customer.email}</td>
+                                        <td className="p-4 whitespace-nowrap">
+                                            <button onClick={() => setCustomerToView(customer)} className="text-sm font-semibold text-blue-600 hover:underline">Manage Addresses</button>
                                         </td>
                                     </tr>
                                 ))}
@@ -70,6 +109,8 @@ const UserManagementPage: React.FC = () => {
                     </div>
                 )}
             </div>
+            {riderToEdit && <EditRiderModal rider={riderToEdit} onClose={() => setRiderToEdit(null)} onSave={() => { setRiderToEdit(null); fetchData(); }} />}
+            {customerToView && <CustomerAddressModal user={customerToView} onClose={() => setCustomerToView(null)} />}
         </div>
     );
 };

@@ -1,7 +1,7 @@
 
 import { simulateDelay } from './utils';
-import { mockRiders, mockOrders, allMockRestaurants, mockSupportTickets, mockUsers, mockVendors, mockModerators, mockAreas } from './mockData';
-import type { ModeratorDashboardSummary, Restaurant, SupportTicket, Rider, User, Vendor, Order, Area, SystemAlert } from '../types';
+import { mockRiders, mockOrders, allMockRestaurants, mockSupportTickets, mockUsers, mockVendors, mockModerators, mockAreas, mockAddresses } from './mockData';
+import type { ModeratorDashboardSummary, Restaurant, SupportTicket, Rider, User, Vendor, Order, Area, SystemAlert, Address } from '../types';
 
 export const getModeratorDashboardSummary = async (): Promise<ModeratorDashboardSummary> => {
     await simulateDelay(600);
@@ -194,4 +194,66 @@ export const getSystemAlerts = async (): Promise<SystemAlert[]> => {
     });
 
     return alerts;
+};
+
+// --- NEW MANAGEMENT APIS ---
+
+export const createArea = async (name: string): Promise<Area> => {
+    await simulateDelay(400);
+    const newArea = { id: `area-${Date.now()}`, name };
+    mockAreas.push(newArea);
+    return newArea;
+};
+
+export const updateArea = async (id: string, name: string): Promise<Area> => {
+    await simulateDelay(400);
+    const area = mockAreas.find(a => a.id === id);
+    if (!area) throw new Error("Area not found");
+    area.name = name;
+    return area;
+};
+
+export const deleteArea = async (id: string): Promise<void> => {
+    await simulateDelay(400);
+    const index = mockAreas.findIndex(a => a.id === id);
+    if (index > -1) {
+        mockAreas.splice(index, 1);
+    }
+};
+
+export const updateRiderArea = async (riderId: string, areaId: string): Promise<void> => {
+    await simulateDelay(400);
+    const rider = mockRiders.find(r => r.id === riderId);
+    if (rider) {
+        rider.areaId = areaId;
+    }
+};
+
+export const updateVendorArea = async (vendorId: string, areaId: string): Promise<void> => {
+    await simulateDelay(400);
+    const vendor = mockVendors.find(v => v.id === vendorId);
+    if (vendor) {
+        vendor.areaId = areaId;
+        const restaurant = allMockRestaurants.find(r => r.id === vendor.restaurantId);
+        if (restaurant) restaurant.areaId = areaId;
+    }
+};
+
+export const getCustomers = async (): Promise<User[]> => {
+    await simulateDelay(500);
+    const vendorEmails = new Set(mockVendors.map(v => v.email));
+    const modEmails = new Set(mockModerators.map(m => m.email));
+    return mockUsers.filter(u => !vendorEmails.has(u.email) && !modEmails.has(u.email));
+};
+
+export const getCustomerAddresses = async (userEmail: string): Promise<Address[]> => {
+    await simulateDelay(300);
+    // In mock, we return all addresses as a demo since they aren't linked by ID in the mock structure
+    return mockAddresses;
+};
+
+export const deleteCustomerAddress = async (addressId: string): Promise<void> => {
+    await simulateDelay(300);
+    const index = mockAddresses.findIndex(a => a.id === addressId);
+    if(index > -1) mockAddresses.splice(index, 1);
 };
