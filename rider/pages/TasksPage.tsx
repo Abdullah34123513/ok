@@ -9,10 +9,25 @@ import { SkeletonCard } from '@shared/components/Skeletons';
 import { useBrowserNotification } from '@shared/hooks/useBrowserNotification';
 
 // --- DUMMY DATA (for UI, as API doesn't provide it on order) ---
-const allMockRestaurants: Pick<Restaurant, 'id' | 'name' | 'address'>[] = [
-    { id: 'restaurant-1', name: 'Restaurant Hub 1', address: '121 Flavor St, Food City' },
-    { id: 'restaurant-2', name: 'Restaurant Hub 2', address: '122 Flavor St, Food City' },
-    { id: 'restaurant-26', name: '24/7 Diner', address: '125 Flavor St, Food City' },
+const allMockRestaurants: (Pick<Restaurant, 'id' | 'name' | 'address'> & { coverImageUrl: string })[] = [
+    { 
+        id: 'restaurant-1', 
+        name: 'Restaurant Hub 1', 
+        address: '121 Flavor St, Food City',
+        coverImageUrl: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80'
+    },
+    { 
+        id: 'restaurant-2', 
+        name: 'Restaurant Hub 2', 
+        address: '122 Flavor St, Food City',
+        coverImageUrl: 'https://images.unsplash.com/photo-1552566626-52f8b828add9?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80'
+    },
+    { 
+        id: 'restaurant-26', 
+        name: '24/7 Diner', 
+        address: '125 Flavor St, Food City',
+        coverImageUrl: 'https://images.unsplash.com/photo-1559339352-11d035aa65de?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80'
+    },
 ];
 
 // --- UTILITY ---
@@ -179,6 +194,8 @@ const ActiveOrdersDashboard: React.FC<{
 
 const NewOrderCard: React.FC<{ order: Order, onAccept: (orderId: string) => void, isUpdating: boolean, riderLocation: LocationPoint | null }> = ({ order, onAccept, isUpdating, riderLocation }) => {
     
+    const restaurantInfo = allMockRestaurants.find(r => r.name === order.restaurantName);
+
     const distRiderToRest = (riderLocation && order.restaurantLocation) 
         ? getDistanceFromLatLonInKm(riderLocation.lat, riderLocation.lng, order.restaurantLocation.lat, order.restaurantLocation.lng).toFixed(1) 
         : '...';
@@ -188,54 +205,71 @@ const NewOrderCard: React.FC<{ order: Order, onAccept: (orderId: string) => void
         : '...';
 
     return (
-        <div className="bg-white rounded-xl p-5 shadow-md border animate-fade-in-up relative overflow-hidden">
-            {/* Earning Badge */}
-            <div className="absolute top-0 right-0 bg-green-100 text-green-800 px-4 py-2 rounded-bl-xl font-bold text-lg shadow-sm">
-                ৳{order.deliveryFee.toFixed(2)}
-            </div>
-
-            <div className="pr-16 mb-4">
-                <h3 className="text-lg font-bold text-gray-800">New Job Opportunity</h3>
-                <p className="text-xs text-gray-500 font-mono">{order.id}</p>
-            </div>
-
-            {/* Timeline View */}
-            <div className="relative pl-4 space-y-6 before:content-[''] before:absolute before:left-[21px] before:top-2 before:bottom-6 before:w-0.5 before:bg-gray-300 before:border-l before:border-dashed">
+        <div className="bg-white rounded-xl shadow-md border animate-fade-in-up relative overflow-hidden">
+            
+            {/* Restaurant Cover Image */}
+            <div className="h-32 w-full relative">
+                <img 
+                    src={restaurantInfo?.coverImageUrl || 'https://via.placeholder.com/800x400?text=Restaurant'} 
+                    alt={order.restaurantName} 
+                    className="w-full h-full object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
                 
-                {/* Pickup Point */}
-                <div className="relative flex items-start">
-                    <div className="absolute -left-[21px] bg-blue-100 p-1 rounded-full z-10">
-                        <StorefrontIcon className="w-4 h-4 text-blue-600" />
-                    </div>
-                    <div className="ml-2">
-                        <p className="text-xs font-semibold text-blue-600 uppercase tracking-wider">Pickup ({distRiderToRest} km away)</p>
-                        <p className="font-bold text-gray-800 text-base">{order.restaurantName}</p>
-                        <p className="text-sm text-gray-500">{allMockRestaurants.find(r => r.name === order.restaurantName)?.address}</p>
-                    </div>
+                {/* Earning Badge on Image */}
+                <div className="absolute top-3 right-3 bg-white/90 text-green-800 px-3 py-1 rounded-lg font-bold text-sm shadow-sm backdrop-blur-sm">
+                    Earn ৳{order.deliveryFee.toFixed(2)}
                 </div>
-
-                {/* Dropoff Point */}
-                <div className="relative flex items-start">
-                    <div className="absolute -left-[21px] bg-green-100 p-1 rounded-full z-10">
-                        <HomeIcon className="w-4 h-4 text-green-600" />
-                    </div>
-                    <div className="ml-2">
-                        <p className="text-xs font-semibold text-green-600 uppercase tracking-wider">Dropoff ({distRestToCust} km trip)</p>
-                        <p className="font-bold text-gray-800 text-base">Customer</p>
-                        <p className="text-sm text-gray-500">{order.address.details}</p>
-                    </div>
+                
+                <div className="absolute bottom-3 left-3 text-white">
+                    <h3 className="font-bold text-lg shadow-sm">{order.restaurantName}</h3>
                 </div>
             </div>
 
-            <div className="mt-6">
-                <button onClick={() => onAccept(order.id)} disabled={isUpdating} className="w-full px-8 py-3 text-lg font-bold text-white bg-[#FF6B00] rounded-xl hover:bg-orange-600 transition-colors disabled:opacity-50 shadow-lg flex items-center justify-center">
-                    {isUpdating ? (
-                        <>
-                            <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                            Accepting...
-                        </>
-                    ) : 'Accept Delivery'}
-                </button>
+            <div className="p-5">
+                <div className="mb-4 flex justify-between items-start">
+                    <div>
+                        <h4 className="font-bold text-gray-800">New Delivery Job</h4>
+                        <p className="text-xs text-gray-500 font-mono">#{order.id.split('-')[1]}</p>
+                    </div>
+                </div>
+
+                {/* Timeline View */}
+                <div className="relative pl-4 space-y-6 before:content-[''] before:absolute before:left-[21px] before:top-2 before:bottom-6 before:w-0.5 before:bg-gray-300 before:border-l before:border-dashed">
+                    
+                    {/* Pickup Point */}
+                    <div className="relative flex items-start">
+                        <div className="absolute -left-[21px] bg-blue-100 p-1 rounded-full z-10">
+                            <StorefrontIcon className="w-4 h-4 text-blue-600" />
+                        </div>
+                        <div className="ml-2">
+                            <p className="text-xs font-semibold text-blue-600 uppercase tracking-wider">Pickup ({distRiderToRest} km away)</p>
+                            <p className="text-sm text-gray-500">{restaurantInfo?.address || 'Address hidden until accepted'}</p>
+                        </div>
+                    </div>
+
+                    {/* Dropoff Point */}
+                    <div className="relative flex items-start">
+                        <div className="absolute -left-[21px] bg-green-100 p-1 rounded-full z-10">
+                            <HomeIcon className="w-4 h-4 text-green-600" />
+                        </div>
+                        <div className="ml-2">
+                            <p className="text-xs font-semibold text-green-600 uppercase tracking-wider">Dropoff ({distRestToCust} km trip)</p>
+                            <p className="text-sm text-gray-500">{order.address.details}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="mt-6">
+                    <button onClick={() => onAccept(order.id)} disabled={isUpdating} className="w-full px-8 py-3 text-lg font-bold text-white bg-[#FF6B00] rounded-xl hover:bg-orange-600 transition-colors disabled:opacity-50 shadow-lg flex items-center justify-center">
+                        {isUpdating ? (
+                            <>
+                                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                                Accepting...
+                            </>
+                        ) : 'Accept Delivery'}
+                    </button>
+                </div>
             </div>
         </div>
     );
