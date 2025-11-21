@@ -9,6 +9,12 @@ import { SkeletonCard } from '@shared/components/Skeletons';
 import { useBrowserNotification } from '@shared/hooks/useBrowserNotification';
 import DeliveryVerificationModal from '../components/DeliveryVerificationModal';
 
+declare global {
+    interface Window {
+        google: any;
+    }
+}
+
 // --- DUMMY DATA (for UI, as API doesn't provide it on order) ---
 const allMockRestaurants: (Pick<Restaurant, 'id' | 'name' | 'address'> & { coverImageUrl: string })[] = [
     { 
@@ -198,16 +204,61 @@ const ActiveOrdersDashboard: React.FC<{
 const NewOrderCard: React.FC<{ order: Order, onAccept: (orderId: string) => void, isUpdating: boolean, riderLocation: LocationPoint | null }> = ({ order, onAccept, isUpdating, riderLocation }) => {
     
     const restaurantInfo = allMockRestaurants.find(r => r.name === order.restaurantName);
+    
+    // State for real driving info
+    const [pickupInfo, setPickupInfo] = useState<{ text: string, duration: string } | null>(null);
+    const [dropoffInfo, setDropoffInfo] = useState<{ text: string, duration: string } | null>(null);
 
+    // Fallback calculations
     const distRiderToRest = (riderLocation && order.restaurantLocation) 
-        ? getDistanceFromLatLonInKm(riderLocation.lat, riderLocation.lng, order.restaurantLocation.lat, order.restaurantLocation.lng).toFixed(1) 
+        ? getDistanceFromLatLonInKm(riderLocation.lat, riderLocation.lng, order.restaurantLocation.lat, order.restaurantLocation.lng).toFixed(1) + ' km'
         : '...';
 
     const distRestToCust = (order.restaurantLocation && order.deliveryLocation)
-        ? getDistanceFromLatLonInKm(order.restaurantLocation.lat, order.restaurantLocation.lng, order.deliveryLocation.lat, order.deliveryLocation.lng).toFixed(1)
+        ? getDistanceFromLatLonInKm(order.restaurantLocation.lat, order.restaurantLocation.lng, order.deliveryLocation.lat, order.deliveryLocation.lng).toFixed(1) + ' km'
         : '...';
 
     const totalEarnings = order.deliveryFee + (order.tip || 0);
+
+    useEffect(() => {
+        // 1. Calculate Rider -> Restaurant (Pickup)
+        if (riderLocation && order.restaurantLocation && window.google && window.google.maps) {
+            const service = new window.google.maps.DistanceMatrixService();
+            service.getDistanceMatrix({
+                origins: [riderLocation],
+                destinations: [order.restaurantLocation],
+                travelMode: 'DRIVING',
+                unitSystem: window.google.maps.UnitSystem.METRIC,
+            }, (response: any, status: any) => {
+                if (status === 'OK' && response.rows[0].elements[0].status === 'OK') {
+                    const element = response.rows[0].elements[0];
+                    setPickupInfo({
+                        text: element.distance.text,
+                        duration: element.duration.text
+                    });
+                }
+            });
+        }
+
+        // 2. Calculate Restaurant -> Customer (Delivery)
+        if (order.restaurantLocation && order.deliveryLocation && window.google && window.google.maps) {
+            const service = new window.google.maps.DistanceMatrixService();
+            service.getDistanceMatrix({
+                origins: [order.restaurantLocation],
+                destinations: [order.deliveryLocation],
+                travelMode: 'DRIVING',
+                unitSystem: window.google.maps.UnitSystem.METRIC,
+            }, (response: any, status: any) => {
+                if (status === 'OK' && response.rows[0].elements[0].status === 'OK') {
+                    const element = response.rows[0].elements[0];
+                    setDropoffInfo({
+                        text: element.distance.text,
+                        duration: element.duration.text
+                    });
+                }
+            });
+        }
+    }, [riderLocation, order.restaurantLocation, order.deliveryLocation]);
 
     return (
         <div className="bg-white rounded-xl shadow-md border animate-fade-in-up relative overflow-hidden">
@@ -248,8 +299,13 @@ const NewOrderCard: React.FC<{ order: Order, onAccept: (orderId: string) => void
                             <StorefrontIcon className="w-4 h-4 text-blue-600" />
                         </div>
                         <div className="ml-2">
-                            <p className="text-xs font-semibold text-blue-600 uppercase tracking-wider">Pickup ({distRiderToRest} km away)</p>
-                            <p className="text-sm text-gray-500">{restaurantInfo?.address || 'Address hidden until accepted'}</p>
+                            <div className="flex items-center space-x-2">
+                                <p className="text-xs font-semibold text-blue-600 uppercase tracking-wider">Pickup</p>
+                                <span className="text-xs bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded border border-blue-100">
+                                    {pickupInfo ? `${pickupInfo.text} • ${pickupInfo.duration}` : `${distRiderToRest} (est)`}
+                                </span>
+                            </div>
+                            <p className="text-sm text-gray-500 mt-0.5">{restaurantInfo?.address || 'Address hidden until accepted'}</p>
                         </div>
                     </div>
 
@@ -259,8 +315,13 @@ const NewOrderCard: React.FC<{ order: Order, onAccept: (orderId: string) => void
                             <HomeIcon className="w-4 h-4 text-green-600" />
                         </div>
                         <div className="ml-2">
-                            <p className="text-xs font-semibold text-green-600 uppercase tracking-wider">Dropoff ({distRestToCust} km trip)</p>
-                            <p className="text-sm text-gray-500">{order.address.details}</p>
+                            <div className="flex items-center space-x-2">
+                                <p className="text-xs font-semibold text-green-600 uppercase tracking-wider">Dropoff</p>
+                                <span className="text-xs bg-green-50 text-green-600 px-1.5 py-0.5 rounded border border-green-100">
+                                    {dropoffInfo ? `${dropoffInfo.text} • ${dropoffInfo.duration}` : `${distRestToCust} (est)`}
+                                </span>
+                            </div>
+                            <p className="text-sm text-gray-500 mt-0.5">{order.address.details}</p>
                         </div>
                     </div>
                 </div>
