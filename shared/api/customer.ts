@@ -347,12 +347,13 @@ export const getAddresses = async (): Promise<Address[]> => {
     return [...mockAddresses];
 };
 
-export const addAddress = async (label: string, details: AddressDetails): Promise<Address[]> => {
+export const addAddress = async (label: string, details: AddressDetails, location?: LocationPoint): Promise<Address[]> => {
     await simulateDelay(500);
     const newAddress: Address = {
         id: `addr-${Date.now()}`,
         label,
-        details: `${details.street}, ${details.city}, ${details.postalCode}`
+        details: `${details.street}, ${details.city}, ${details.postalCode}`,
+        location
     };
     mockAddresses.push(newAddress);
     return [...mockAddresses];
@@ -378,7 +379,7 @@ export const createOrder = async (orderData: Omit<Order, 'id' | 'status' | 'rest
         ...orderData,
         // Mock tracking data
         restaurantLocation: { lat: 34.0522, lng: -118.2437 }, // Downtown LA
-        deliveryLocation: { lat: 34.0622, lng: -118.2537 },
+        deliveryLocation: orderData.address.location || { lat: 34.0622, lng: -118.2537 }, // Use address location or default
         estimatedDeliveryTime: '8:45 PM',
         rider: {
             name: 'John Rider',

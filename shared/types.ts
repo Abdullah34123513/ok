@@ -230,6 +230,7 @@ export interface Address {
   id: string;
   label: string;
   details: string;
+  location?: LocationPoint;
 }
 
 export interface AddressSuggestion {
