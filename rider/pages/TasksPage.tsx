@@ -15,6 +15,24 @@ const allMockRestaurants: Pick<Restaurant, 'id' | 'name' | 'address'>[] = [
     { id: 'restaurant-26', name: '24/7 Diner', address: '125 Flavor St, Food City' },
 ];
 
+// --- UTILITY ---
+function getDistanceFromLatLonInKm(lat1: number, lon1: number, lat2: number, lon2: number) {
+  const R = 6371; // Radius of the earth in km
+  const dLat = deg2rad(lat2 - lat1);
+  const dLon = deg2rad(lon2 - lon1);
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  const d = R * c; // Distance in km
+  return d;
+}
+
+function deg2rad(deg: number) {
+  return deg * (Math.PI / 180);
+}
+
 // --- SUB-COMPONENTS ---
 
 const Timer: React.FC<{ acceptedAt: string }> = ({ acceptedAt }) => {
@@ -159,31 +177,71 @@ const ActiveOrdersDashboard: React.FC<{
 };
 
 
-const NewOrderCard: React.FC<{ order: Order, onAccept: (orderId: string) => void, isUpdating: boolean }> = ({ order, onAccept, isUpdating }) => (
-    <div className="bg-white rounded-xl p-4 shadow-md border animate-fade-in-up">
-        <div className="flex justify-between items-start">
-            <div>
-                <p className="font-bold text-lg text-gray-800">{order.restaurantName}</p>
-                <p className="text-sm text-gray-500">{allMockRestaurants.find(r => r.name === order.restaurantName)?.address}</p>
-            </div>
-            <div className="text-right flex-shrink-0 ml-4">
-                <p className="text-xs font-semibold text-green-600">EARNING</p>
-                <p className="font-extrabold text-2xl text-green-600">৳{order.deliveryFee.toFixed(2)}</p>
-            </div>
-        </div>
-        <div className="mt-3 pt-3 border-t border-dashed flex items-center justify-between text-sm text-gray-700">
-            <span className="font-semibold">{order.distance} km away</span>
-            <span className="font-semibold">{order.estimatedDeliveryTime}</span>
-        </div>
-        <div className="mt-4">
-            <button onClick={() => onAccept(order.id)} disabled={isUpdating} className="w-full px-8 py-3 text-lg font-bold text-white bg-[#FF6B00] rounded-full hover:bg-orange-600 transition-colors disabled:opacity-50 shadow-lg">
-                {isUpdating ? 'Accepting...' : 'Accept Job'}
-            </button>
-        </div>
-    </div>
-);
+const NewOrderCard: React.FC<{ order: Order, onAccept: (orderId: string) => void, isUpdating: boolean, riderLocation: LocationPoint | null }> = ({ order, onAccept, isUpdating, riderLocation }) => {
+    
+    const distRiderToRest = (riderLocation && order.restaurantLocation) 
+        ? getDistanceFromLatLonInKm(riderLocation.lat, riderLocation.lng, order.restaurantLocation.lat, order.restaurantLocation.lng).toFixed(1) 
+        : '...';
 
-const FindJobView: React.FC<{ orders: Order[], onAccept: (orderId: string) => void, isUpdating: boolean, hasMaxOrders: boolean }> = ({ orders, onAccept, isUpdating, hasMaxOrders }) => {
+    const distRestToCust = (order.restaurantLocation && order.deliveryLocation)
+        ? getDistanceFromLatLonInKm(order.restaurantLocation.lat, order.restaurantLocation.lng, order.deliveryLocation.lat, order.deliveryLocation.lng).toFixed(1)
+        : '...';
+
+    return (
+        <div className="bg-white rounded-xl p-5 shadow-md border animate-fade-in-up relative overflow-hidden">
+            {/* Earning Badge */}
+            <div className="absolute top-0 right-0 bg-green-100 text-green-800 px-4 py-2 rounded-bl-xl font-bold text-lg shadow-sm">
+                ৳{order.deliveryFee.toFixed(2)}
+            </div>
+
+            <div className="pr-16 mb-4">
+                <h3 className="text-lg font-bold text-gray-800">New Job Opportunity</h3>
+                <p className="text-xs text-gray-500 font-mono">{order.id}</p>
+            </div>
+
+            {/* Timeline View */}
+            <div className="relative pl-4 space-y-6 before:content-[''] before:absolute before:left-[21px] before:top-2 before:bottom-6 before:w-0.5 before:bg-gray-300 before:border-l before:border-dashed">
+                
+                {/* Pickup Point */}
+                <div className="relative flex items-start">
+                    <div className="absolute -left-[21px] bg-blue-100 p-1 rounded-full z-10">
+                        <StorefrontIcon className="w-4 h-4 text-blue-600" />
+                    </div>
+                    <div className="ml-2">
+                        <p className="text-xs font-semibold text-blue-600 uppercase tracking-wider">Pickup ({distRiderToRest} km away)</p>
+                        <p className="font-bold text-gray-800 text-base">{order.restaurantName}</p>
+                        <p className="text-sm text-gray-500">{allMockRestaurants.find(r => r.name === order.restaurantName)?.address}</p>
+                    </div>
+                </div>
+
+                {/* Dropoff Point */}
+                <div className="relative flex items-start">
+                    <div className="absolute -left-[21px] bg-green-100 p-1 rounded-full z-10">
+                        <HomeIcon className="w-4 h-4 text-green-600" />
+                    </div>
+                    <div className="ml-2">
+                        <p className="text-xs font-semibold text-green-600 uppercase tracking-wider">Dropoff ({distRestToCust} km trip)</p>
+                        <p className="font-bold text-gray-800 text-base">Customer</p>
+                        <p className="text-sm text-gray-500">{order.address.details}</p>
+                    </div>
+                </div>
+            </div>
+
+            <div className="mt-6">
+                <button onClick={() => onAccept(order.id)} disabled={isUpdating} className="w-full px-8 py-3 text-lg font-bold text-white bg-[#FF6B00] rounded-xl hover:bg-orange-600 transition-colors disabled:opacity-50 shadow-lg flex items-center justify-center">
+                    {isUpdating ? (
+                        <>
+                            <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                            Accepting...
+                        </>
+                    ) : 'Accept Delivery'}
+                </button>
+            </div>
+        </div>
+    );
+};
+
+const FindJobView: React.FC<{ orders: Order[], onAccept: (orderId: string) => void, isUpdating: boolean, hasMaxOrders: boolean, riderLocation: LocationPoint | null }> = ({ orders, onAccept, isUpdating, hasMaxOrders, riderLocation }) => {
     if (hasMaxOrders) {
         return <div className="text-center p-8 text-gray-600 bg-blue-50 rounded-lg m-4">
             <p className="font-bold text-lg">Order Limit Reached</p>
@@ -202,7 +260,19 @@ const FindJobView: React.FC<{ orders: Order[], onAccept: (orderId: string) => vo
             </div>
         );
     }
-    return <div className="p-4 space-y-4">{orders.map(order => <NewOrderCard key={order.id} order={order} onAccept={onAccept} isUpdating={isUpdating} />)}</div>;
+    return (
+        <div className="p-4 space-y-4">
+            {orders.map(order => (
+                <NewOrderCard 
+                    key={order.id} 
+                    order={order} 
+                    onAccept={onAccept} 
+                    isUpdating={isUpdating} 
+                    riderLocation={riderLocation}
+                />
+            ))}
+        </div>
+    );
 }
 
 const TasksPage: React.FC = () => {
@@ -348,6 +418,7 @@ const TasksPage: React.FC = () => {
                         onAccept={handleAcceptJob}
                         isUpdating={!!updatingOrderId}
                         hasMaxOrders={hasMaxOrders}
+                        riderLocation={currentRider?.location || null}
                     />
                  )
                 }
