@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import * as api from '@shared/api';
 import type { Order, LocationPoint, CartItem } from '@shared/types';
 import MapMock from '@components/MapMock';
-import { PhoneIcon, StarIcon } from '@components/Icons';
+import { PhoneIcon, StarIcon, LockClosedIcon } from '@components/Icons';
 import { useBrowserNotification } from '@shared/hooks/useBrowserNotification';
 
 interface OrderTrackingPageProps {
@@ -171,6 +171,18 @@ const OrderTrackingPage: React.FC<OrderTrackingPageProps> = ({ orderId }) => {
                 </div>
             </div>
         </div>
+
+        {/* OTP Display Section */}
+        {order.status === 'On its way' && order.deliveryOtp && (
+            <div className="mb-6 bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-center animate-fade-in-up">
+                <p className="text-sm text-yellow-800 font-semibold mb-1">Share this PIN with the Rider</p>
+                <div className="flex items-center justify-center space-x-2">
+                    <LockClosedIcon className="w-5 h-5 text-yellow-600" />
+                    <span className="text-3xl font-mono font-bold text-yellow-900 tracking-widest">{order.deliveryOtp}</span>
+                </div>
+                <p className="text-xs text-yellow-700 mt-1">The rider will ask for this code to confirm delivery.</p>
+            </div>
+        )}
 
         {/* Map Section */}
         <div className="mb-6">

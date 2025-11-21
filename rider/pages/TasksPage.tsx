@@ -7,6 +7,7 @@ import { StorefrontIcon, HomeIcon, MapPinIcon, LogoutIcon, CheckCircleIcon, Cloc
 import EmptyState from '@shared/components/EmptyState';
 import { SkeletonCard } from '@shared/components/Skeletons';
 import { useBrowserNotification } from '@shared/hooks/useBrowserNotification';
+import DeliveryVerificationModal from '../components/DeliveryVerificationModal';
 
 // --- DUMMY DATA (for UI, as API doesn't provide it on order) ---
 const allMockRestaurants: (Pick<Restaurant, 'id' | 'name' | 'address'> & { coverImageUrl: string })[] = [
@@ -94,8 +95,9 @@ const Timer: React.FC<{ acceptedAt: string }> = ({ acceptedAt }) => {
 const OrderCard: React.FC<{
     order: Order;
     onUpdateStatus: (orderId: string, status: Order['status']) => void;
+    onVerifyDelivery: (orderId: string) => void;
     isUpdating: (orderId: string) => boolean;
-}> = ({ order, onUpdateStatus, isUpdating }) => {
+}> = ({ order, onUpdateStatus, onVerifyDelivery, isUpdating }) => {
     
     const isPickupStage = order.status === 'Preparing';
     const currentStageLocation = isPickupStage ? order.restaurantLocation : order.deliveryLocation;
@@ -162,7 +164,7 @@ const OrderCard: React.FC<{
                         <span>Confirm Pickup</span>
                     </button>
                 ) : (
-                    <button onClick={() => onUpdateStatus(order.id, 'Delivered')} disabled={isUpdating(order.id)} className="flex items-center justify-center space-x-2 px-4 py-3 font-bold text-white bg-green-500 rounded-xl hover:bg-green-600 disabled:opacity-50 transition-colors">
+                    <button onClick={() => onVerifyDelivery(order.id)} disabled={isUpdating(order.id)} className="flex items-center justify-center space-x-2 px-4 py-3 font-bold text-white bg-green-500 rounded-xl hover:bg-green-600 disabled:opacity-50 transition-colors">
                         <CheckCircleIcon className="w-5 h-5"/>
                         <span>Confirm Delivery</span>
                     </button>
@@ -175,8 +177,9 @@ const OrderCard: React.FC<{
 const ActiveOrdersDashboard: React.FC<{
     orders: Order[];
     onUpdateStatus: (orderId: string, status: Order['status']) => void;
+    onVerifyDelivery: (orderId: string) => void;
     isUpdating: (orderId: string) => boolean;
-}> = ({ orders, onUpdateStatus, isUpdating }) => {
+}> = ({ orders, onUpdateStatus, onVerifyDelivery, isUpdating }) => {
     return (
         <div className="p-4 space-y-4">
              <h2 className="text-xl font-bold text-gray-800">
@@ -184,7 +187,7 @@ const ActiveOrdersDashboard: React.FC<{
             </h2>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 {orders.map(order => (
-                    <OrderCard key={order.id} order={order} onUpdateStatus={onUpdateStatus} isUpdating={isUpdating} />
+                    <OrderCard key={order.id} order={order} onUpdateStatus={onUpdateStatus} onVerifyDelivery={onVerifyDelivery} isUpdating={isUpdating} />
                 ))}
             </div>
         </div>
@@ -204,6 +207,8 @@ const NewOrderCard: React.FC<{ order: Order, onAccept: (orderId: string) => void
         ? getDistanceFromLatLonInKm(order.restaurantLocation.lat, order.restaurantLocation.lng, order.deliveryLocation.lat, order.deliveryLocation.lng).toFixed(1)
         : '...';
 
+    const totalEarnings = order.deliveryFee + (order.tip || 0);
+
     return (
         <div className="bg-white rounded-xl shadow-md border animate-fade-in-up relative overflow-hidden">
             
@@ -218,7 +223,7 @@ const NewOrderCard: React.FC<{ order: Order, onAccept: (orderId: string) => void
                 
                 {/* Earning Badge on Image */}
                 <div className="absolute top-3 right-3 bg-white/90 text-green-800 px-3 py-1 rounded-lg font-bold text-sm shadow-sm backdrop-blur-sm">
-                    Earn ৳{order.deliveryFee.toFixed(2)}
+                    Earn ৳{totalEarnings.toFixed(2)}
                 </div>
                 
                 <div className="absolute bottom-3 left-3 text-white">
@@ -317,6 +322,7 @@ const TasksPage: React.FC = () => {
     const [error, setError] = useState('');
     const [updatingOrderId, setUpdatingOrderId] = useState<string | null>(null);
     const [isOnline, setIsOnline] = useState(true);
+    const [verificationOrder, setVerificationOrder] = useState<Order | null>(null);
     const { permission, requestPermission, sendNotification } = useBrowserNotification();
     const previousJobIdsRef = useRef<Set<string>>(new Set());
 
@@ -388,6 +394,30 @@ const TasksPage: React.FC = () => {
         finally { setUpdatingOrderId(null); }
     };
 
+    const initiateVerification = (orderId: string) => {
+        const order = activeOrders.find(o => o.id === orderId);
+        if (order) {
+            setVerificationOrder(order);
+        }
+    };
+
+    const handleVerifyDelivery = async (otp: string) => {
+        if (!verificationOrder) return;
+        setVerificationOrder(null); // Close modal immediately to show loading state on card
+        setUpdatingOrderId(verificationOrder.id);
+        
+        try {
+            await api.verifyDeliveryOtp(verificationOrder.id, otp);
+            await fetchData();
+        } catch (err) {
+            // If verification fails, re-open modal or show alert
+            alert(err instanceof Error ? err.message : 'Verification failed');
+            setError(err instanceof Error ? err.message : 'Verification failed');
+        } finally {
+            setUpdatingOrderId(null);
+        }
+    };
+
     const hasActiveOrders = activeOrders.length > 0;
 
     return (
@@ -444,6 +474,7 @@ const TasksPage: React.FC = () => {
                     <ActiveOrdersDashboard 
                         orders={activeOrders} 
                         onUpdateStatus={updateOrderStatus}
+                        onVerifyDelivery={initiateVerification}
                         isUpdating={orderId => updatingOrderId === orderId}
                     />
                  ) : (
@@ -457,6 +488,15 @@ const TasksPage: React.FC = () => {
                  )
                 }
             </main>
+            
+            {verificationOrder && (
+                <DeliveryVerificationModal
+                    orderId={verificationOrder.id}
+                    customerName={verificationOrder.customerName || 'Customer'}
+                    onClose={() => setVerificationOrder(null)}
+                    onVerify={handleVerifyDelivery}
+                />
+            )}
         </div>
     );
 };

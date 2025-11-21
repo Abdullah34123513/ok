@@ -1,3 +1,4 @@
+
 import type { Order, Rider, LocationPoint, RiderStats } from '../types';
 import { simulateDelay } from './utils';
 import { mockOrders, mockRiders, allMockRestaurants } from './mockData';
@@ -12,7 +13,7 @@ export const loginRider = async (phone: string): Promise<Rider | undefined> => {
 export const getRiderStats = async (riderId: string): Promise<RiderStats> => {
     await simulateDelay(500);
     const deliveredOrders = mockOrders.filter(o => o.riderId === riderId && o.status === 'Delivered');
-    const todayEarnings = deliveredOrders.reduce((sum, order) => sum + order.deliveryFee, 0);
+    const todayEarnings = deliveredOrders.reduce((sum, order) => sum + order.deliveryFee + (order.tip || 0), 0);
     const rider = mockRiders.find(r => r.id === riderId);
 
     return {
@@ -118,4 +119,21 @@ export const getNewOrderOpportunities = async (riderId: string): Promise<Order[]
 
     const availableOrder = mockOrders.find(o => o.status === 'On its way' && !o.riderId);
     return availableOrder ? [availableOrder] : [];
+};
+
+export const verifyDeliveryOtp = async (orderId: string, otp: string): Promise<Order> => {
+    await simulateDelay(500);
+    const orderIndex = mockOrders.findIndex(o => o.id === orderId);
+    if (orderIndex === -1) throw new Error("Order not found");
+    
+    const order = mockOrders[orderIndex];
+    
+    if (order.deliveryOtp !== otp) {
+        throw new Error("Incorrect delivery PIN.");
+    }
+    
+    order.status = 'Delivered';
+    order.date = new Date().toLocaleString('en-US');
+    
+    return { ...order };
 };

@@ -389,6 +389,7 @@ export const createOrder = async (orderData: Omit<Order, 'id' | 'status' | 'rest
             location: { lat: 34.0522, lng: -118.2437 }
         },
         isReviewed: false,
+        deliveryOtp: Math.floor(1000 + Math.random() * 9000).toString(), // Generate 4-digit OTP
     };
     mockOrders.unshift(newOrder); // Add to the beginning of the list
     mockCart.length = 0; // Clear the cart after order

@@ -213,6 +213,7 @@ export interface Order {
   // New fields
   deliveryInstructions?: string;
   tip?: number;
+  deliveryOtp?: string;
 }
 
 export interface OrderReview {
