@@ -43,6 +43,10 @@ const generatedData = (() => {
 
   for (let i = 1; i <= restaurantCount; i++) {
     const area = mockAreas[(i - 1) % mockAreas.length];
+    
+    // Jitter location slightly around area center
+    const lat = area.center!.lat + (Math.random() - 0.5) * 0.02;
+    const lng = area.center!.lng + (Math.random() - 0.5) * 0.02;
 
     // 1. Create Restaurant
     const restaurant: Restaurant = {
@@ -56,6 +60,7 @@ const generatedData = (() => {
         deliveryTime: `${Math.floor(Math.random() * 20) + 20}-${Math.floor(Math.random() * 20) + 40} min`,
         address: `${120 + i} Flavor St, ${area.name}`,
         areaId: area.id,
+        location: { lat, lng },
         operatingHours: {
             monday: { isOpen: true, slots: [{ open: '09:00', close: '21:00' }] },
             tuesday: { isOpen: true, slots: [{ open: '09:00', close: '21:00' }] },
@@ -124,6 +129,7 @@ const generatedData = (() => {
       deliveryTime: '15-25 min',
       address: `125 Flavor St, Downtown`,
       areaId: 'area-1',
+      location: { lat: 34.0522, lng: -118.2437 },
       operatingHours: twentyFourSevenHours
    };
    restaurants.push(diner);

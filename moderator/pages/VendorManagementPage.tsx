@@ -3,7 +3,8 @@ import React, { useState, useEffect } from 'react';
 import * as api from '@shared/api';
 import { useNotification } from '@shared/contexts/NotificationContext';
 import type { Vendor } from '@shared/types';
-import { ActAsIcon } from '../components/Icons';
+import { ActAsIcon, PlusIcon } from '../components/Icons';
+import VendorCreateModal from '../components/VendorCreateModal';
 
 type VendorWithDetails = Vendor & { restaurantName: string, areaName?: string };
 
@@ -26,23 +27,31 @@ const VendorManagementPage: React.FC = () => {
     const [vendors, setVendors] = useState<VendorWithDetails[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState('');
+    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const { showNotification } = useNotification();
 
+    const fetchVendors = async () => {
+        setIsLoading(true);
+        setError('');
+        try {
+            const data = await api.getAllVendors();
+            setVendors(data);
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Failed to load vendors.');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
     useEffect(() => {
-        const fetchVendors = async () => {
-            setIsLoading(true);
-            setError('');
-            try {
-                const data = await api.getAllVendors();
-                setVendors(data);
-            } catch (err) {
-                setError(err instanceof Error ? err.message : 'Failed to load vendors.');
-            } finally {
-                setIsLoading(false);
-            }
-        };
         fetchVendors();
     }, []);
+
+    const handleCreateSuccess = () => {
+        setIsCreateModalOpen(false);
+        showNotification('Vendor created successfully!', 'success');
+        fetchVendors();
+    };
 
     const handleActAsVendor = (vendor: VendorWithDetails) => {
         if (window.confirm(`You are about to act as ${vendor.name}. You will be redirected to their dashboard. Continue?`)) {
@@ -65,12 +74,9 @@ const VendorManagementPage: React.FC = () => {
                 localStorage.setItem(VENDOR_STORAGE_KEY, JSON.stringify(vendorAuthData));
 
                 const getVendorUrl = () => {
-                    // In development, we assume the vendor app is running on port 3001 on the same host.
-                    // FIX: Replaced import.meta.env.DEV with a check on window.location.hostname to resolve a TypeScript error and reliably detect development environments.
                     if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
                         return `${window.location.protocol}//${window.location.hostname}:3001/`;
                     }
-                    // In a production build, we assume apps are served from subdirectories.
                     return '/vendor/';
                 }
                 window.location.href = getVendorUrl();
@@ -82,7 +88,13 @@ const VendorManagementPage: React.FC = () => {
 
     return (
         <div className="p-6">
-            <h1 className="text-2xl font-bold text-gray-800">Vendor Management</h1>
+            <div className="flex justify-between items-center">
+                <h1 className="text-2xl font-bold text-gray-800">Vendor Management</h1>
+                <button onClick={() => setIsCreateModalOpen(true)} className="px-4 py-2 bg-[#FF6B00] text-white font-semibold rounded-lg hover:bg-orange-600 transition flex items-center">
+                    <PlusIcon className="w-4 h-4 mr-2" /> Create New Vendor
+                </button>
+            </div>
+
             <div className="mt-6 bg-white rounded-lg shadow-md overflow-hidden">
                 {isLoading ? (
                     <p className="p-6 text-center text-gray-500">Loading vendors...</p>
@@ -127,6 +139,7 @@ const VendorManagementPage: React.FC = () => {
                     </div>
                 )}
             </div>
+            {isCreateModalOpen && <VendorCreateModal onClose={() => setIsCreateModalOpen(false)} onSuccess={handleCreateSuccess} />}
         </div>
     );
 };

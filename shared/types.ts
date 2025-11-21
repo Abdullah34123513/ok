@@ -51,6 +51,11 @@ export interface OperatingHours {
   sunday: OperatingHoursForDay;
 }
 
+export interface LocationPoint {
+  lat: number;
+  lng: number;
+}
+
 export interface Area {
   id: string;
   name: string;
@@ -69,6 +74,7 @@ export interface Restaurant {
   deliveryFee: number;
   deliveryTime: string;
   address: string;
+  location?: LocationPoint;
   isFavorite?: boolean;
   operatingHours?: OperatingHours;
   areaId?: string;
@@ -170,11 +176,6 @@ export interface CartItem {
   quantity: number;
   selectedCustomizations: SelectedCustomization[];
   totalPrice: number;
-}
-
-export interface LocationPoint {
-  lat: number;
-  lng: number;
 }
 
 export interface Order {

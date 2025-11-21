@@ -1,7 +1,7 @@
 
 import { simulateDelay } from './utils';
-import { mockRiders, mockOrders, allMockRestaurants, mockSupportTickets, mockUsers, mockVendors, mockModerators, mockAreas, mockAddresses } from './mockData';
-import type { ModeratorDashboardSummary, Restaurant, SupportTicket, Rider, User, Vendor, Order, Area, SystemAlert, Address, LocationPoint } from '../types';
+import { mockRiders, mockOrders, allMockRestaurants, mockSupportTickets, mockUsers, mockVendors, mockModerators, mockAreas, mockAddresses, mockUserPasswords } from './mockData';
+import type { ModeratorDashboardSummary, Restaurant, SupportTicket, Rider, User, Vendor, Order, Area, SystemAlert, Address, LocationPoint, OperatingHours } from '../types';
 
 export const getModeratorDashboardSummary = async (): Promise<ModeratorDashboardSummary> => {
     await simulateDelay(600);
@@ -94,6 +94,73 @@ export const updateVendorStatus = async (vendorId: string, status: 'active' | 'd
     if (vendorIndex === -1) throw new Error('Vendor not found');
     mockVendors[vendorIndex].status = status;
     return { ...mockVendors[vendorIndex] };
+};
+
+export const createVendor = async (
+    vendorName: string, 
+    email: string, 
+    restaurantName: string, 
+    cuisine: string, 
+    address: string, 
+    areaId: string,
+    location: LocationPoint
+): Promise<Vendor> => {
+    await simulateDelay(1000);
+    
+    if (mockVendors.some(v => v.email === email)) {
+        throw new Error("Vendor with this email already exists");
+    }
+
+    // 1. Create Restaurant
+    const newRestaurant: Restaurant = {
+        id: `restaurant-${Date.now()}`,
+        name: restaurantName,
+        cuisine,
+        address,
+        areaId,
+        location,
+        rating: 0,
+        deliveryFee: 5.00,
+        deliveryTime: '30-40 min',
+        logoUrl: 'https://via.placeholder.com/100',
+        coverImageUrl: 'https://via.placeholder.com/1200x400',
+        operatingHours: {
+            monday: { isOpen: true, slots: [{ open: '09:00', close: '21:00' }] },
+            tuesday: { isOpen: true, slots: [{ open: '09:00', close: '21:00' }] },
+            wednesday: { isOpen: true, slots: [{ open: '09:00', close: '21:00' }] },
+            thursday: { isOpen: true, slots: [{ open: '09:00', close: '21:00' }] },
+            friday: { isOpen: true, slots: [{ open: '09:00', close: '22:00' }] },
+            saturday: { isOpen: true, slots: [{ open: '10:00', close: '22:00' }] },
+            sunday: { isOpen: false, slots: [] },
+        }
+    };
+    allMockRestaurants.push(newRestaurant);
+
+    // 2. Create Vendor
+    const newVendor: Vendor = {
+        id: `vendor-${Date.now()}`,
+        restaurantId: newRestaurant.id,
+        name: vendorName,
+        email,
+        status: 'active',
+        areaId
+    };
+    mockVendors.push(newVendor);
+
+    // 3. Create Vendor User Login
+    mockUsers.push({ name: vendorName, email, phone: '555-0000' });
+    mockUserPasswords.set(email, 'password123'); // Default password
+
+    return newVendor;
+};
+
+export const updateRestaurantLocation = async (restaurantId: string, location: LocationPoint): Promise<Restaurant> => {
+    await simulateDelay(500);
+    const restaurant = allMockRestaurants.find(r => r.id === restaurantId);
+    if (!restaurant) throw new Error("Restaurant not found");
+    
+    restaurant.location = location;
+    return { ...restaurant };
 };
 
 export const getOrdersForVendorByModerator = async (vendorId: string): Promise<Order[]> => {

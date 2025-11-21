@@ -1,9 +1,16 @@
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import * as api from '@shared/api';
 import { useNotification } from '@shared/contexts/NotificationContext';
-import type { Vendor, Restaurant, Area } from '@shared/types';
-import { StorefrontIcon, CheckCircleIcon, XCircleIcon, ActAsIcon, PackageIcon, MapPinIcon } from '../components/Icons';
+import type { Vendor, Restaurant, Area, LocationPoint } from '@shared/types';
+import { StorefrontIcon, CheckCircleIcon, XCircleIcon, ActAsIcon, PackageIcon, MapPinIcon, EditIcon } from '../components/Icons';
+import LocationPickerModal from '../components/LocationPickerModal';
+
+declare global {
+    interface Window {
+        google: any;
+    }
+}
 
 const VendorDetailPage: React.FC<{ vendorId: string }> = ({ vendorId }) => {
     const [vendor, setVendor] = useState<Vendor | null>(null);
@@ -12,7 +19,12 @@ const VendorDetailPage: React.FC<{ vendorId: string }> = ({ vendorId }) => {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState('');
     const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+    const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
     const { showNotification } = useNotification();
+    
+    const mapRef = useRef<HTMLDivElement>(null);
+    const mapInstance = useRef<any>(null);
+    const markerInstance = useRef<any>(null);
 
     const fetchData = useCallback(async () => {
         setError('');
@@ -39,6 +51,26 @@ const VendorDetailPage: React.FC<{ vendorId: string }> = ({ vendorId }) => {
         setIsLoading(true);
         fetchData();
     }, [fetchData]);
+
+    // Initialize Map for viewing location
+    useEffect(() => {
+        if (!mapRef.current || !window.google || !restaurant.location) return;
+
+        if (!mapInstance.current) {
+            mapInstance.current = new window.google.maps.Map(mapRef.current, {
+                center: restaurant.location,
+                zoom: 15,
+                disableDefaultUI: true,
+            });
+            markerInstance.current = new window.google.maps.Marker({
+                position: restaurant.location,
+                map: mapInstance.current,
+            });
+        } else {
+            mapInstance.current.setCenter(restaurant.location);
+            markerInstance.current.setPosition(restaurant.location);
+        }
+    }, [restaurant.location]);
 
     const handleActAsVendor = () => {
         if (!vendor) return;
@@ -93,6 +125,18 @@ const VendorDetailPage: React.FC<{ vendorId: string }> = ({ vendorId }) => {
             showNotification('Failed to update area', 'error');
         }
     }
+
+    const handleLocationSave = async (newLocation: LocationPoint) => {
+        if(!restaurant.id) return;
+        try {
+            await api.updateRestaurantLocation(restaurant.id, newLocation);
+            setRestaurant(prev => ({ ...prev, location: newLocation }));
+            setIsLocationModalOpen(false);
+            showNotification('Location updated successfully', 'success');
+        } catch(err) {
+            showNotification('Failed to update location', 'error');
+        }
+    };
 
     if (isLoading) return <div className="p-6 text-center">Loading vendor details...</div>;
     if (error) return <div className="p-6 text-center text-red-500">{error}</div>;
@@ -157,30 +201,55 @@ const VendorDetailPage: React.FC<{ vendorId: string }> = ({ vendorId }) => {
                 </div>
 
                 {/* Restaurant Info */}
-                <div>
-                    <h2 className="text-lg font-bold text-gray-800 mb-3 flex items-center"><StorefrontIcon className="w-5 h-5 mr-2" />Restaurant Information</h2>
-                    <div className="space-y-2 text-sm bg-gray-50 p-4 rounded-md">
-                        <p><strong>Name:</strong> {restaurant.name || 'N/A'}</p>
-                        <p><strong>Cuisine:</strong> {restaurant.cuisine || 'N/A'}</p>
-                        <p><strong>Address:</strong> {restaurant.address || 'N/A'}</p>
-                        <div className="flex items-center mt-2">
-                            <MapPinIcon className="w-4 h-4 mr-2 text-gray-500" />
-                            <strong>Area:</strong>
-                            <select 
-                                value={vendor.areaId || ''} 
-                                onChange={handleAreaChange}
-                                className="ml-2 p-1 border rounded text-sm"
-                            >
-                                <option value="">Unassigned</option>
-                                {areas.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
-                            </select>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <h2 className="text-lg font-bold text-gray-800 mb-3 flex items-center"><StorefrontIcon className="w-5 h-5 mr-2" />Restaurant Information</h2>
+                        <div className="space-y-3 text-sm bg-gray-50 p-4 rounded-md">
+                            <p><strong>Name:</strong> {restaurant.name || 'N/A'}</p>
+                            <p><strong>Cuisine:</strong> {restaurant.cuisine || 'N/A'}</p>
+                            <p><strong>Address:</strong> {restaurant.address || 'N/A'}</p>
+                            <div className="flex items-center">
+                                <MapPinIcon className="w-4 h-4 mr-2 text-gray-500" />
+                                <strong>Area:</strong>
+                                <select 
+                                    value={vendor.areaId || ''} 
+                                    onChange={handleAreaChange}
+                                    className="ml-2 p-1 border rounded text-sm"
+                                >
+                                    <option value="">Unassigned</option>
+                                    {areas.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
+                                </select>
+                            </div>
+                        </div>
+                        <p className="text-xs text-gray-500 mt-2 italic">
+                            To manage the restaurant's profile, menu, orders, or operating hours, please use the "Act as Vendor" button to access their dashboard directly.
+                        </p>
+                    </div>
+
+                    {/* Location Map */}
+                    <div>
+                        <div className="flex justify-between items-center mb-3">
+                            <h2 className="text-lg font-bold text-gray-800">Location Map</h2>
+                            <button onClick={() => setIsLocationModalOpen(true)} className="text-sm text-blue-600 font-semibold hover:underline flex items-center">
+                                <EditIcon className="w-4 h-4 mr-1" /> Change Location
+                            </button>
+                        </div>
+                        <div className="h-48 bg-gray-100 rounded-lg overflow-hidden border relative">
+                             {!window.google && <div className="absolute inset-0 flex items-center justify-center text-gray-500">Loading Map...</div>}
+                             <div ref={mapRef} className="w-full h-full"></div>
                         </div>
                     </div>
-                    <p className="text-xs text-gray-500 mt-2 italic">
-                        To manage the restaurant's profile, menu, orders, or operating hours, please use the "Act as Vendor" button to access their dashboard directly.
-                    </p>
                 </div>
             </div>
+            
+            {isLocationModalOpen && (
+                <LocationPickerModal 
+                    title="Update Restaurant Location"
+                    initialLocation={restaurant.location}
+                    onClose={() => setIsLocationModalOpen(false)}
+                    onSave={handleLocationSave}
+                />
+            )}
         </div>
     );
 };
