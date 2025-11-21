@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import * as api from '@shared/api';
-import type { Area } from '@shared/types';
+import type { Area, LocationPoint } from '@shared/types';
 import { GlobeIcon, TrashIcon, EditIcon, PlusIcon } from '../components/Icons';
 import AreaModal from '../components/AreaModal';
 
@@ -46,11 +46,11 @@ const AreaManagementPage: React.FC = () => {
         }
     };
 
-    const handleSave = async (name: string) => {
+    const handleSave = async (name: string, center?: LocationPoint, radius?: number) => {
         if (modalArea) {
-            await api.updateArea(modalArea.id, name);
+            await api.updateArea(modalArea.id, name, center, radius);
         } else {
-            await api.createArea(name);
+            await api.createArea(name, center, radius);
         }
         setIsModalOpen(false);
         fetchAreas();
@@ -80,6 +80,7 @@ const AreaManagementPage: React.FC = () => {
                                 <tr>
                                     <th className="p-4 font-semibold">Area Name</th>
                                     <th className="p-4 font-semibold">Area ID</th>
+                                    <th className="p-4 font-semibold">Details</th>
                                     <th className="p-4 font-semibold text-right">Actions</th>
                                 </tr>
                             </thead>
@@ -87,7 +88,16 @@ const AreaManagementPage: React.FC = () => {
                                 {areas.map(area => (
                                     <tr key={area.id} className="border-b last:border-0 hover:bg-gray-50">
                                         <td className="p-4 font-medium whitespace-nowrap">{area.name}</td>
-                                        <td className="p-4 text-gray-600 font-mono whitespace-nowrap">{area.id}</td>
+                                        <td className="p-4 text-gray-600 font-mono whitespace-nowrap text-xs">{area.id}</td>
+                                        <td className="p-4 text-sm text-gray-500">
+                                            {area.center ? (
+                                                <span>
+                                                    {area.center.lat.toFixed(2)}, {area.center.lng.toFixed(2)} 
+                                                    <span className="mx-1">•</span> 
+                                                    r: {Math.round(area.radius || 0)}m
+                                                </span>
+                                            ) : 'No geo data'}
+                                        </td>
                                         <td className="p-4 whitespace-nowrap text-right">
                                             <button onClick={() => handleEdit(area)} className="text-sm font-semibold text-blue-600 hover:underline mr-4 inline-flex items-center"><EditIcon className="w-4 h-4 mr-1" />Edit</button>
                                             <button onClick={() => handleDelete(area.id)} className="text-sm font-semibold text-red-600 hover:underline inline-flex items-center"><TrashIcon className="w-4 h-4 mr-1" />Delete</button>

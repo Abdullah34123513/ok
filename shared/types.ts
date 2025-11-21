@@ -54,6 +54,8 @@ export interface OperatingHours {
 export interface Area {
   id: string;
   name: string;
+  center?: LocationPoint;
+  radius?: number; // in meters
 }
 
 

@@ -1,7 +1,7 @@
 
 import { simulateDelay } from './utils';
 import { mockRiders, mockOrders, allMockRestaurants, mockSupportTickets, mockUsers, mockVendors, mockModerators, mockAreas, mockAddresses } from './mockData';
-import type { ModeratorDashboardSummary, Restaurant, SupportTicket, Rider, User, Vendor, Order, Area, SystemAlert, Address } from '../types';
+import type { ModeratorDashboardSummary, Restaurant, SupportTicket, Rider, User, Vendor, Order, Area, SystemAlert, Address, LocationPoint } from '../types';
 
 export const getModeratorDashboardSummary = async (): Promise<ModeratorDashboardSummary> => {
     await simulateDelay(600);
@@ -198,18 +198,20 @@ export const getSystemAlerts = async (): Promise<SystemAlert[]> => {
 
 // --- NEW MANAGEMENT APIS ---
 
-export const createArea = async (name: string): Promise<Area> => {
+export const createArea = async (name: string, center?: LocationPoint, radius?: number): Promise<Area> => {
     await simulateDelay(400);
-    const newArea = { id: `area-${Date.now()}`, name };
+    const newArea = { id: `area-${Date.now()}`, name, center, radius };
     mockAreas.push(newArea);
     return newArea;
 };
 
-export const updateArea = async (id: string, name: string): Promise<Area> => {
+export const updateArea = async (id: string, name: string, center?: LocationPoint, radius?: number): Promise<Area> => {
     await simulateDelay(400);
     const area = mockAreas.find(a => a.id === id);
     if (!area) throw new Error("Area not found");
     area.name = name;
+    area.center = center;
+    area.radius = radius;
     return area;
 };
 

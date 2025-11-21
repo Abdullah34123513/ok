@@ -1,3 +1,4 @@
+
 import type { Offer, Restaurant, Food, MenuItem, Review, CartItem, Address, Order, User, Vendor, Rider, OperatingHours, CustomizationOption, ChatMessage, Moderator, SupportTicket, Area } from '../types';
 
 // --- UTILITY FUNCTIONS ---
@@ -25,9 +26,9 @@ const sizeOption: CustomizationOption = {
 // --- SINGLE SOURCE OF TRUTH FOR RESTAURANT & VENDOR DATA ---
 
 export const mockAreas: Area[] = [
-    { id: 'area-1', name: 'Downtown' },
-    { id: 'area-2', name: 'Suburbia' },
-    { id: 'area-3', name: 'Market District' },
+    { id: 'area-1', name: 'Downtown', center: { lat: 34.0522, lng: -118.2437 }, radius: 3000 },
+    { id: 'area-2', name: 'Suburbia', center: { lat: 34.0622, lng: -118.2537 }, radius: 5000 },
+    { id: 'area-3', name: 'Market District', center: { lat: 34.0422, lng: -118.2337 }, radius: 2000 },
 ];
 
 const generatedData = (() => {
