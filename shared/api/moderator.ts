@@ -1,6 +1,7 @@
+
 import { simulateDelay } from './utils';
 import { mockRiders, mockOrders, allMockRestaurants, mockSupportTickets, mockUsers, mockVendors, mockModerators, mockAreas } from './mockData';
-import type { ModeratorDashboardSummary, Restaurant, SupportTicket, Rider, User, Vendor, Order, Area } from '../types';
+import type { ModeratorDashboardSummary, Restaurant, SupportTicket, Rider, User, Vendor, Order, Area, SystemAlert } from '../types';
 
 export const getModeratorDashboardSummary = async (): Promise<ModeratorDashboardSummary> => {
     await simulateDelay(600);
@@ -142,4 +143,55 @@ export const updateOrderStatusByModerator = async (orderId: string, newStatus: O
 export const getAreas = async (): Promise<Area[]> => {
     await simulateDelay(300);
     return mockAreas;
+};
+
+export const getSystemAlerts = async (): Promise<SystemAlert[]> => {
+    await simulateDelay(600);
+    const alerts: SystemAlert[] = [];
+
+    // 1. Scan Vendors for Low Ratings
+    allMockRestaurants.forEach(restaurant => {
+        if (restaurant.rating < 3.5) {
+            alerts.push({
+                id: `alert-vendor-${restaurant.id}`,
+                type: 'vendor_rating',
+                severity: 'high',
+                title: 'Low Vendor Rating',
+                message: `${restaurant.name} has a critically low rating of ${restaurant.rating}. Investigate quality issues.`,
+                entityId: restaurant.id,
+                timestamp: new Date().toISOString(),
+            });
+        }
+    });
+
+    // 2. Scan Riders for Conduct (Cancellations & Offline)
+    mockRiders.forEach(rider => {
+        const cancelledCount = mockOrders.filter(o => o.riderId === rider.id && o.status === 'Cancelled').length;
+        
+        if (cancelledCount > 0 && !rider.isOnline) {
+             alerts.push({
+                id: `alert-rider-offline-${rider.id}`,
+                type: 'rider_conduct',
+                severity: 'high',
+                title: 'Suspicious Rider Activity',
+                message: `${rider.name} went offline after ${cancelledCount} cancelled order(s).`,
+                entityId: rider.id,
+                timestamp: new Date().toISOString(),
+            });
+        }
+
+        if (rider.rating < 4.2) {
+             alerts.push({
+                id: `alert-rider-rating-${rider.id}`,
+                type: 'rider_conduct',
+                severity: 'medium',
+                title: 'Low Rider Rating',
+                message: `${rider.name} has a rating of ${rider.rating}. Monitoring recommended.`,
+                entityId: rider.id,
+                timestamp: new Date().toISOString(),
+            });
+        }
+    });
+
+    return alerts;
 };

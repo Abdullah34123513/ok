@@ -339,3 +339,13 @@ export interface ModeratorDashboardSummary {
     cancelledOrders: number;
     openSupportTickets: number;
 }
+
+export interface SystemAlert {
+    id: string;
+    type: 'vendor_rating' | 'rider_conduct' | 'system';
+    severity: 'low' | 'medium' | 'high';
+    title: string;
+    message: string;
+    entityId?: string;
+    timestamp: string;
+}

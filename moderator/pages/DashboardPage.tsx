@@ -1,8 +1,10 @@
+
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import * as api from '@shared/api';
-import type { Order } from '@shared/types';
+import type { Order, SystemAlert } from '@shared/types';
 import OrderCard from '../components/OrderCard';
 import AddOrderNoteModal from '../components/AddOrderNoteModal';
+import AlertsWidget from '../components/AlertsWidget';
 
 const OrderColumn: React.FC<{
     title: string;
@@ -31,6 +33,7 @@ const OrderColumn: React.FC<{
 
 const DashboardPage: React.FC = () => {
     const [allOrders, setAllOrders] = useState<Order[]>([]);
+    const [alerts, setAlerts] = useState<SystemAlert[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState('');
     const [noteModalOrder, setNoteModalOrder] = useState<Order | null>(null);
@@ -48,11 +51,30 @@ const DashboardPage: React.FC = () => {
         }
     }, []);
 
+    const fetchAlerts = useCallback(async () => {
+        try {
+            const alertData = await api.getSystemAlerts();
+            // In a real app, we'd filter out dismissed alerts using local storage or an API call
+            // For now, we just set them.
+            setAlerts(prevAlerts => {
+                // Simple merge strategy to keep dismissal in session working roughly
+                const dismissedIds = new Set(JSON.parse(sessionStorage.getItem('dismissed_alerts') || '[]'));
+                return alertData.filter(a => !dismissedIds.has(a.id));
+            });
+        } catch (err) {
+            console.error("Failed to fetch alerts", err);
+        }
+    }, []);
+
     useEffect(() => {
         fetchOrders(true);
-        const interval = setInterval(() => fetchOrders(false), 15000); // Poll every 15 seconds
+        fetchAlerts();
+        const interval = setInterval(() => {
+            fetchOrders(false);
+            fetchAlerts();
+        }, 15000); // Poll every 15 seconds
         return () => clearInterval(interval);
-    }, [fetchOrders]);
+    }, [fetchOrders, fetchAlerts]);
     
     const handleUpdateStatus = async (orderId: string, newStatus: Order['status'], note: string) => {
         const originalOrders = [...allOrders];
@@ -80,6 +102,13 @@ const DashboardPage: React.FC = () => {
              setError('Failed to save note.');
              setAllOrders(originalOrders);
         }
+    };
+
+    const handleDismissAlert = (alertId: string) => {
+        setAlerts(prev => prev.filter(a => a.id !== alertId));
+        const dismissed = JSON.parse(sessionStorage.getItem('dismissed_alerts') || '[]');
+        dismissed.push(alertId);
+        sessionStorage.setItem('dismissed_alerts', JSON.stringify(dismissed));
     };
 
     const { newOrders, preparingOrders, deliveryOrders } = useMemo(() => {
@@ -116,6 +145,12 @@ const DashboardPage: React.FC = () => {
         <>
             <div className="p-4 sm:p-6 flex flex-col h-[calc(100vh-80px)]">
                 <h1 className="text-2xl font-bold text-gray-800 mb-4 flex-shrink-0">Live Order Management</h1>
+                
+                {/* Alerts Section */}
+                <div className="mb-6 flex-shrink-0">
+                    <AlertsWidget alerts={alerts} onDismiss={handleDismissAlert} />
+                </div>
+
                 <div className="flex-1 overflow-x-auto">
                    {renderContent()}
                 </div>
