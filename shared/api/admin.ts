@@ -3,16 +3,25 @@ import { simulateDelay } from './utils';
 import { mockRiders, mockOrders, allMockRestaurants, mockUsers, mockVendors, mockModerators, mockAdmins, mockUserPasswords, mockExpenses } from './mockData';
 import type { AdminDashboardSummary, Moderator, User, Expense, MonthlyFinancialReport, ExpenseCategory } from '../types';
 
+const VENDOR_COMMISSION_RATE = 0.15; // 15% take from subtotal
+const DELIVERY_PROFIT_RATE = 0.20;   // 20% take from delivery fee
+
 export const getAdminDashboardSummary = async (): Promise<AdminDashboardSummary> => {
     await simulateDelay(600);
     
+    // Calculate Total Gross Merchandise Value (GMV) - Total money flowing through system
     const totalRevenue = mockOrders.reduce((acc, order) => acc + order.total, 0);
-    // Assuming a flat 15% commission on subtotal + delivery fee for profit calculation
-    const netProfit = mockOrders.reduce((acc, order) => acc + (order.subtotal * 0.15) + (order.deliveryFee * 0.2), 0);
+    
+    // Calculate Actual Platform Profit
+    const netProfit = mockOrders.reduce((acc, order) => {
+        const vendorCut = order.subtotal * VENDOR_COMMISSION_RATE;
+        const deliveryCut = order.deliveryFee * DELIVERY_PROFIT_RATE;
+        return acc + vendorCut + deliveryCut;
+    }, 0);
 
     return {
-        totalRevenue,
-        netProfit,
+        totalRevenue, // This is GMV
+        netProfit,    // This is Platform Earnings
         totalOrders: mockOrders.length,
         activeUsers: mockUsers.length,
         activeVendors: mockVendors.filter(v => v.status === 'active').length,
@@ -74,9 +83,10 @@ export const getExpenses = async (): Promise<Expense[]> => {
 export const getYearlyFinancialReport = async (year: number): Promise<MonthlyFinancialReport[]> => {
     await simulateDelay(800);
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const currentMonthIndex = new Date().getMonth();
     
     return months.map((monthName, index) => {
-        // 1. Calculate Real Expenses from mockExpenses
+        // 1. Calculate Real Expenses
         const monthlyExpenses = mockExpenses.filter(e => {
             const d = new Date(e.date);
             return d.getFullYear() === year && d.getMonth() === index;
@@ -93,28 +103,45 @@ export const getYearlyFinancialReport = async (year: number): Promise<MonthlyFin
             }
         });
 
-        // 2. Calculate Real Revenue from mockOrders (limited data usually, so we might simulate past months)
-        // For current month and last month, try to use real data. For older months, simulate consistent revenue.
-        let totalRevenue = 0;
+        // 2. Calculate Platform Profit
+        let platformProfit = 0;
+        let grossSales = 0;
+
         const monthlyOrders = mockOrders.filter(o => {
-            const d = new Date(o.date);
+            // Use placedAt if available, otherwise date string
+            const dateStr = o.placedAt || o.date;
+            const d = new Date(dateStr);
             return d.getFullYear() === year && d.getMonth() === index;
         });
 
         if (monthlyOrders.length > 0) {
-            totalRevenue = monthlyOrders.reduce((sum, o) => sum + o.total, 0);
-        } else if (year === new Date().getFullYear() && index <= new Date().getMonth()) {
-            // Simulate revenue for past months without mock order data
-            totalRevenue = 15000 + Math.random() * 5000; 
+            grossSales = monthlyOrders.reduce((sum, o) => sum + o.total, 0);
+            platformProfit = monthlyOrders.reduce((sum, o) => {
+                const vendorShare = o.subtotal * VENDOR_COMMISSION_RATE;
+                const deliveryShare = o.deliveryFee * DELIVERY_PROFIT_RATE;
+                return sum + vendorShare + deliveryShare;
+            }, 0);
+        } else if (year === new Date().getFullYear() && index <= currentMonthIndex) {
+            // Simulate past data for visual fullness if no mock orders exist for that month
+            // In a real app, this block wouldn't exist, we'd just show 0
+            const simulatedOrderVolume = 50000 + Math.random() * 20000; // ~50k-70k sales
+            grossSales = simulatedOrderVolume;
+            
+            const simulatedSubtotal = simulatedOrderVolume * 0.85;
+            const simulatedDeliveryFees = simulatedOrderVolume * 0.15;
+            
+            platformProfit = (simulatedSubtotal * VENDOR_COMMISSION_RATE) + (simulatedDeliveryFees * DELIVERY_PROFIT_RATE);
         }
 
         return {
             month: `${monthName} ${year}`,
             year,
             monthIndex: index,
-            revenue: totalRevenue,
-            expenses: totalExpense,
-            profit: totalRevenue - totalExpense,
+            revenue: grossSales, // GMV
+            expenses: totalExpense, // Costs
+            profit: platformProfit - totalExpense, // Net Income
+            // Extra fields for UI breakdown (not in interface but useful if we extended it)
+            // platformRevenue: platformProfit 
             expenseBreakdown
         };
     });

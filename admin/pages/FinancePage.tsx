@@ -47,15 +47,24 @@ const FinancePage: React.FC = () => {
         labels: report.map(r => r.month.split(' ')[0]), // Jan, Feb...
         datasets: [
             {
-                label: 'Revenue',
-                data: report.map(r => r.revenue),
-                backgroundColor: 'rgba(16, 185, 129, 0.6)', // Emerald
+                label: 'Gross Platform Profit (Commissions)',
+                data: report.map(r => r.expenses + r.profit), // Reconstructing Gross Profit from Net + Expenses
+                backgroundColor: 'rgba(59, 130, 246, 0.7)', // Blue
             },
             {
-                label: 'Expenses',
+                label: 'Operational Expenses',
                 data: report.map(r => r.expenses),
-                backgroundColor: 'rgba(239, 68, 68, 0.6)', // Red
+                backgroundColor: 'rgba(239, 68, 68, 0.7)', // Red
             },
+            {
+                label: 'Net Income',
+                data: report.map(r => r.profit),
+                backgroundColor: 'rgba(16, 185, 129, 0.7)', // Emerald
+                type: 'line' as const,
+                borderColor: 'rgba(16, 185, 129, 1)',
+                borderWidth: 2,
+                fill: false,
+            }
         ],
     };
 
@@ -63,7 +72,7 @@ const FinancePage: React.FC = () => {
         responsive: true,
         plugins: {
             legend: { position: 'top' as const },
-            title: { display: true, text: `Cash Flow - ${currentYear}` },
+            title: { display: true, text: `Profitability Analysis - ${currentYear}` },
         },
     };
 
@@ -72,9 +81,10 @@ const FinancePage: React.FC = () => {
         : expenses.filter(e => new Date(e.date).getMonth() === selectedMonthFilter && new Date(e.date).getFullYear() === currentYear);
 
     // Summary Totals
-    const totalRevenueYTD = report.reduce((sum, r) => sum + r.revenue, 0);
+    const totalGMV = report.reduce((sum, r) => sum + r.revenue, 0); // Gross Merchandise Value
     const totalExpenseYTD = report.reduce((sum, r) => sum + r.expenses, 0);
-    const netProfitYTD = totalRevenueYTD - totalExpenseYTD;
+    const netIncomeYTD = report.reduce((sum, r) => sum + r.profit, 0);
+    const grossPlatformProfit = netIncomeYTD + totalExpenseYTD;
 
     if (isLoading) return <div className="p-8 text-center text-gray-500">Loading financial data...</div>;
 
@@ -83,7 +93,7 @@ const FinancePage: React.FC = () => {
             <div className="flex justify-between items-end">
                 <div>
                     <h1 className="text-3xl font-bold text-gray-800">Finance & Cashflow</h1>
-                    <p className="text-gray-500 mt-1">Track business performance, revenue, and operational costs.</p>
+                    <p className="text-gray-500 mt-1">Profit tracking based on 15% Vendor Commission & 20% Delivery Fees.</p>
                 </div>
                 <button 
                     onClick={() => setIsModalOpen(true)}
@@ -95,20 +105,28 @@ const FinancePage: React.FC = () => {
             </div>
 
             {/* Summary Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="bg-white p-6 rounded-xl shadow-sm border-l-4 border-emerald-500">
-                    <p className="text-sm text-gray-500 font-bold uppercase">Total Revenue (YTD)</p>
-                    <p className="text-3xl font-extrabold text-gray-800 mt-2">৳{totalRevenueYTD.toLocaleString()}</p>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <div className="bg-white p-6 rounded-xl shadow-sm border-l-4 border-gray-400">
+                    <p className="text-xs text-gray-500 font-bold uppercase">Total Order Volume (GMV)</p>
+                    <p className="text-2xl font-bold text-gray-700 mt-2">৳{totalGMV.toLocaleString()}</p>
+                    <p className="text-xs text-gray-400 mt-1">Total sales processed</p>
+                </div>
+                <div className="bg-white p-6 rounded-xl shadow-sm border-l-4 border-blue-500">
+                    <p className="text-xs text-gray-500 font-bold uppercase">Gross Platform Revenue</p>
+                    <p className="text-2xl font-bold text-blue-600 mt-2">৳{grossPlatformProfit.toLocaleString()}</p>
+                    <p className="text-xs text-gray-400 mt-1">Before expenses (Commissions)</p>
                 </div>
                 <div className="bg-white p-6 rounded-xl shadow-sm border-l-4 border-red-500">
-                    <p className="text-sm text-gray-500 font-bold uppercase">Total Expenses (YTD)</p>
-                    <p className="text-3xl font-extrabold text-gray-800 mt-2">৳{totalExpenseYTD.toLocaleString()}</p>
+                    <p className="text-xs text-gray-500 font-bold uppercase">Total Expenses</p>
+                    <p className="text-2xl font-bold text-red-600 mt-2">৳{totalExpenseYTD.toLocaleString()}</p>
+                    <p className="text-xs text-gray-400 mt-1">Salaries, Hosting, Ops</p>
                 </div>
-                <div className={`bg-white p-6 rounded-xl shadow-sm border-l-4 ${netProfitYTD >= 0 ? 'border-blue-500' : 'border-orange-500'}`}>
-                    <p className="text-sm text-gray-500 font-bold uppercase">Net Profit (YTD)</p>
-                    <p className={`text-3xl font-extrabold mt-2 ${netProfitYTD >= 0 ? 'text-blue-600' : 'text-orange-600'}`}>
-                        {netProfitYTD >= 0 ? '+' : ''}৳{netProfitYTD.toLocaleString()}
+                <div className={`bg-white p-6 rounded-xl shadow-sm border-l-4 ${netIncomeYTD >= 0 ? 'border-emerald-500' : 'border-orange-500'}`}>
+                    <p className="text-xs text-gray-500 font-bold uppercase">Net Income</p>
+                    <p className={`text-2xl font-bold mt-2 ${netIncomeYTD >= 0 ? 'text-emerald-600' : 'text-orange-600'}`}>
+                        {netIncomeYTD >= 0 ? '+' : ''}৳{netIncomeYTD.toLocaleString()}
                     </p>
+                    <p className="text-xs text-gray-400 mt-1">Actual Profit</p>
                 </div>
             </div>
 
