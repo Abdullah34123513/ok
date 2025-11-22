@@ -383,10 +383,8 @@ export interface SystemAlert {
 }
 
 // --- Finance ---
-export type ExpenseCategory = 
-    'Bike Purchase' | 'Office Rent' | 'Employee 1' | 'Employee 2' | 
-    'Per Order Commission' | 'Other Cost' | 'Trade Licence' | 
-    'Hosting' | 'Google API' | 'Firebase' | 'Rider Uniform' | 'Marketing' | 'Product Testing';
+// Changed to string to allow dynamic categories
+export type ExpenseCategory = string;
 
 export interface Expense {
     id: string;
@@ -398,7 +396,7 @@ export interface Expense {
 
 export interface FinancialSpreadsheetData {
     months: string[];
-    expenses: Record<ExpenseCategory, number[]>;
+    expenses: Record<string, number[]>; // string key because categories are dynamic
     totalOpEx: number[];
     netProfit: number[];
     metrics: {

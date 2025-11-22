@@ -1,5 +1,5 @@
 
-import type { Offer, Restaurant, Food, MenuItem, Review, CartItem, Address, Order, User, Vendor, Rider, OperatingHours, CustomizationOption, ChatMessage, Moderator, SupportTicket, Area, FlashSaleCampaign, Admin, Expense } from '../types';
+import type { Offer, Restaurant, Food, MenuItem, Review, CartItem, Address, Order, User, Vendor, Rider, OperatingHours, CustomizationOption, ChatMessage, Moderator, SupportTicket, Area, FlashSaleCampaign, Admin, Expense, ExpenseCategory } from '../types';
 
 // --- UTILITY FUNCTIONS ---
 const createExpiryDate = (days: number): string => new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString();
@@ -309,8 +309,15 @@ export let mockSupportTickets: SupportTicket[] = [
 ];
 
 // --- MOCK EXPENSES ---
+// Dynamic list of categories
+export let expenseCategories: ExpenseCategory[] = [
+    'Bike Purchase', 'Office Rent', 'Employee 1', 'Employee 2', 
+    'Per Order Commission', 'Other Cost', 'Trade Licence', 
+    'Hosting', 'Google API', 'Firebase', 'Rider Uniform', 'Marketing', 'Product Testing'
+];
+
 const today = new Date();
-const createExpense = (category: Expense['category'], amount: number, monthOffset: number) => ({
+const createExpense = (category: ExpenseCategory, amount: number, monthOffset: number) => ({
     id: `exp-${Math.random().toString(36).substr(2, 9)}`,
     category,
     amount,

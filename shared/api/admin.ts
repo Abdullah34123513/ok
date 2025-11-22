@@ -1,6 +1,6 @@
 
 import { simulateDelay } from './utils';
-import { mockRiders, mockOrders, allMockRestaurants, mockUsers, mockVendors, mockModerators, mockAdmins, mockUserPasswords, mockExpenses } from './mockData';
+import { mockRiders, mockOrders, allMockRestaurants, mockUsers, mockVendors, mockModerators, mockAdmins, mockUserPasswords, mockExpenses, expenseCategories } from './mockData';
 import type { AdminDashboardSummary, Moderator, User, Expense, FinancialSpreadsheetData, ExpenseCategory } from '../types';
 
 export const getAdminDashboardSummary = async (): Promise<AdminDashboardSummary> => {
@@ -75,22 +75,57 @@ export const addExpense = async (expense: Omit<Expense, 'id'>): Promise<Expense>
     return newExpense;
 };
 
+export const addExpenseCategory = async (categoryName: string): Promise<void> => {
+    await simulateDelay(300);
+    if (!expenseCategories.includes(categoryName)) {
+        expenseCategories.push(categoryName);
+    }
+}
+
+export const updateMonthlyExpense = async (category: string, year: number, monthIndex: number, amount: number): Promise<FinancialSpreadsheetData> => {
+    await simulateDelay(300);
+    
+    // Find existing expense for this category/month/year
+    // For the spreadsheet logic, we assume we are updating the sum of that month. 
+    // Since our mock data might have multiple entries, we will wipe them for that month and create a single new entry to represent the edited value.
+    // This is a simplification for the spreadsheet "edit cell" interaction.
+    
+    // 1. Remove existing expenses for this cell
+    for (let i = mockExpenses.length - 1; i >= 0; i--) {
+        const e = mockExpenses[i];
+        const d = new Date(e.date);
+        if (e.category === category && d.getFullYear() === year && d.getMonth() === monthIndex) {
+            mockExpenses.splice(i, 1);
+        }
+    }
+
+    // 2. Add new expense entry if amount > 0
+    if (amount > 0) {
+        const date = new Date(year, monthIndex, 1); // Set to 1st of month
+        mockExpenses.push({
+            id: `exp-edit-${Date.now()}`,
+            category: category,
+            amount: amount,
+            date: date.toISOString(),
+            description: 'Manual update from spreadsheet'
+        });
+    }
+
+    // 3. Return full recalculated table
+    return getFinancialSpreadsheetData(year);
+};
+
 export const getExpenses = async (): Promise<Expense[]> => {
     await simulateDelay(400);
     return [...mockExpenses].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 };
 
 export const getFinancialSpreadsheetData = async (year: number): Promise<FinancialSpreadsheetData> => {
-    await simulateDelay(1000); // Simulate heavier calculation
+    await simulateDelay(600); 
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     const monthsFull = months.map(m => `${m}-${year.toString().slice(-2)}`); // e.g., "Jan-26"
     
-    const expenseCategories: ExpenseCategory[] = [
-        'Bike Purchase', 'Office Rent', 'Employee 1', 'Employee 2', 
-        'Per Order Commission', 'Other Cost', 'Trade Licence', 
-        'Hosting', 'Google API', 'Firebase', 'Rider Uniform', 'Marketing', 'Product Testing'
-    ];
-
+    // Use the dynamic list of categories
     // Initialize data structures
     const expenses: Record<ExpenseCategory, number[]> = {} as any;
     expenseCategories.forEach(cat => expenses[cat] = new Array(12).fill(0));
@@ -113,9 +148,12 @@ export const getFinancialSpreadsheetData = async (year: number): Promise<Financi
         const d = new Date(e.date);
         if (d.getFullYear() === year) {
             const monthIdx = d.getMonth();
-            if (expenses[e.category]) {
-                expenses[e.category][monthIdx] += e.amount;
+            // If we encounter a category not in our list (maybe added dynamically but list not synced), add it
+            if (!expenses[e.category]) {
+                expenses[e.category] = new Array(12).fill(0);
+                if (!expenseCategories.includes(e.category)) expenseCategories.push(e.category);
             }
+            expenses[e.category][monthIdx] += e.amount;
         }
     });
 
@@ -123,13 +161,14 @@ export const getFinancialSpreadsheetData = async (year: number): Promise<Financi
     for (let i = 0; i < 12; i++) {
         let monthlySum = 0;
         expenseCategories.forEach(cat => {
-            monthlySum += expenses[cat][i];
+            if(expenses[cat]) {
+                monthlySum += expenses[cat][i];
+            }
         });
         totalOpEx[i] = monthlySum;
     }
 
     // 3. Calculate Revenue & Profit Logic
-    // Since mock orders are sparse, we'll simulate volume based on month index to create a realistic trend
     for (let i = 0; i < 12; i++) {
         // Simulate varying order volume increasing over the year
         const baseVolume = 150 + (i * 50); 
@@ -157,10 +196,11 @@ export const getFinancialSpreadsheetData = async (year: number): Promise<Financi
         metrics.avgGrossProfit[i] = orderCount > 0 ? Math.round(grossPlatformRevenue / orderCount) : 0;
         
         // "Avg marketing cost": Marketing Spend / Orders
-        const marketingSpend = expenses['Marketing'][i];
+        // Check if 'Marketing' exists in dynamic categories, else 0
+        const marketingSpend = expenses['Marketing'] ? expenses['Marketing'][i] : 0;
         metrics.avgMarketingCost[i] = orderCount > 0 ? Math.round(marketingSpend / orderCount) : 0;
         
-        metrics.otherCost[i] = expenses['Other Cost'][i];
+        metrics.otherCost[i] = expenses['Other Cost'] ? expenses['Other Cost'][i] : 0;
 
         // Net Profit = Gross Revenue - OpEx
         const monthlyNetProfit = grossPlatformRevenue - totalOpEx[i];
