@@ -96,16 +96,16 @@ const FlashSaleCard: React.FC<{ food: Food; discount?: number }> = ({ food, disc
 };
 
 // 3. Category Grid Item
-const CategoryTile: React.FC<{ label: string; image: string; onClick?: () => void; isSpecial?: boolean }> = ({ label, image, onClick, isSpecial }) => (
-    <div 
-        onClick={onClick}
+const CategoryTile: React.FC<{ label: string; image: string; link: string; isSpecial?: boolean }> = ({ label, image, link, isSpecial }) => (
+    <a 
+        href={link}
         className="flex flex-col items-center bg-white p-2 sm:p-3 border border-gray-100 hover:shadow-md transition-all cursor-pointer h-full"
     >
         <div className={`w-12 h-12 sm:w-16 sm:h-16 mb-2 rounded-full overflow-hidden ${isSpecial ? 'border-2 border-orange-500 p-0.5' : ''}`}>
             <img src={image} alt={label} className="w-full h-full object-cover rounded-full" />
         </div>
         <span className={`text-[10px] sm:text-xs text-center leading-tight ${isSpecial ? 'font-bold text-orange-600' : 'text-gray-700'}`}>{label}</span>
-    </div>
+    </a>
 );
 
 // 4. Standard Product Card (Just For You)
@@ -132,7 +132,7 @@ const ProductCard: React.FC<{ food: Food }> = ({ food }) => {
     );
 };
 
-// 5. Horizontal Store Row (Grocery/Restaurant)
+// 5. Horizontal Store Row (Restaurant)
 const StoreRow: React.FC<{ title: string; stores: Restaurant[]; color?: string }> = ({ title, stores, color = "orange" }) => {
     if (!stores.length) return null;
     
@@ -143,7 +143,7 @@ const StoreRow: React.FC<{ title: string; stores: Restaurant[]; color?: string }
         <div className="bg-white mt-4 py-4 pl-4 border-t border-b border-gray-100">
             <div className="flex justify-between items-center pr-4 mb-3">
                 <h3 className={`text-lg font-bold ${textColor} uppercase tracking-tight`}>{title}</h3>
-                <button className="text-xs font-bold text-gray-500 border border-gray-300 px-3 py-1 rounded-sm hover:bg-gray-50 uppercase">Shop All</button>
+                <a href="#/restaurants" className="text-xs font-bold text-gray-500 border border-gray-300 px-3 py-1 rounded-sm hover:bg-gray-50 uppercase">Shop All</a>
             </div>
             <div className="flex overflow-x-auto space-x-3 pb-2 scrollbar-hide pr-4">
                 {stores.map(store => (
@@ -170,8 +170,6 @@ const StoreRow: React.FC<{ title: string; stores: Restaurant[]; color?: string }
 const HomePage: React.FC<{ area: Area }> = ({ area }) => {
     const [offers, setOffers] = useState<Offer[]>([]);
     const [flashFoods, setFlashFoods] = useState<Food[]>([]);
-    const [groceryStores, setGroceryStores] = useState<Restaurant[]>([]);
-    const [warehouseProducts, setWarehouseProducts] = useState<Food[]>([]);
     const [justForYou, setJustForYou] = useState<Food[]>([]);
     const [topRestaurants, setTopRestaurants] = useState<Restaurant[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -180,11 +178,9 @@ const HomePage: React.FC<{ area: Area }> = ({ area }) => {
         const fetchData = async () => {
             setIsLoading(true);
             try {
-                const [allOffers, foodsData, groceries, warehouse, topRes] = await Promise.all([
+                const [allOffers, foodsData, topRes] = await Promise.all([
                     api.getOffers(area.id),
                     api.getFoods(area.id, 1, 20),
-                    api.getTopGroceryStores(area.id),
-                    api.getWarehouseProducts(area.id),
                     api.getTopRestaurants(area.id)
                 ]);
 
@@ -192,8 +188,6 @@ const HomePage: React.FC<{ area: Area }> = ({ area }) => {
                 // Simulate Flash Sale by picking random items
                 setFlashFoods(foodsData.foods.slice(0, 6)); 
                 setJustForYou(foodsData.foods.slice(6));
-                setGroceryStores(groceries);
-                setWarehouseProducts(warehouse);
                 setTopRestaurants(topRes);
             } finally {
                 setIsLoading(false);
@@ -204,14 +198,14 @@ const HomePage: React.FC<{ area: Area }> = ({ area }) => {
 
     // Categories Configuration
     const categories = [
-        { label: 'Grocery', image: 'https://cdn-icons-png.flaticon.com/512/1261/1261163.png', action: () => window.scrollTo({ top: 800, behavior: 'smooth' }), isSpecial: true },
-        { label: 'Warehouse', image: 'https://cdn-icons-png.flaticon.com/512/446/446183.png', action: () => window.scrollTo({ top: 1000, behavior: 'smooth' }), isSpecial: true },
-        { label: 'Burgers', image: 'https://cdn-icons-png.flaticon.com/512/3075/3075977.png' },
-        { label: 'Pizza', image: 'https://cdn-icons-png.flaticon.com/512/1404/1404945.png' },
-        { label: 'Dessert', image: 'https://cdn-icons-png.flaticon.com/512/3081/3081967.png' },
-        { label: 'Drinks', image: 'https://cdn-icons-png.flaticon.com/512/2405/2405597.png' },
-        { label: 'Asian', image: 'https://cdn-icons-png.flaticon.com/512/2276/2276931.png' },
-        { label: 'Healthy', image: 'https://cdn-icons-png.flaticon.com/512/2515/2515183.png' },
+        { label: 'Grocery', image: 'https://cdn-icons-png.flaticon.com/512/1261/1261163.png', link: '#/category/grocery', isSpecial: true },
+        { label: 'Burgers', image: 'https://cdn-icons-png.flaticon.com/512/3075/3075977.png', link: '#/category/burgers' },
+        { label: 'Pizza', image: 'https://cdn-icons-png.flaticon.com/512/1404/1404945.png', link: '#/category/pizza' },
+        { label: 'Dessert', image: 'https://cdn-icons-png.flaticon.com/512/3081/3081967.png', link: '#/category/dessert' },
+        { label: 'Drinks', image: 'https://cdn-icons-png.flaticon.com/512/2405/2405597.png', link: '#/category/drinks' },
+        { label: 'Asian', image: 'https://cdn-icons-png.flaticon.com/512/2276/2276931.png', link: '#/category/asian' },
+        { label: 'Healthy', image: 'https://cdn-icons-png.flaticon.com/512/2515/2515183.png', link: '#/category/healthy' },
+        { label: 'More', image: 'https://cdn-icons-png.flaticon.com/512/2997/2997933.png', link: '#/restaurants' },
     ];
 
     if (isLoading) return <div className="flex justify-center items-center h-screen"><div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-orange-500"></div></div>;
@@ -228,7 +222,7 @@ const HomePage: React.FC<{ area: Area }> = ({ area }) => {
                         key={idx} 
                         label={cat.label} 
                         image={cat.image} 
-                        onClick={cat.action}
+                        link={cat.link}
                         isSpecial={cat.isSpecial}
                     />
                 ))}
@@ -254,42 +248,10 @@ const HomePage: React.FC<{ area: Area }> = ({ area }) => {
                 </div>
             </div>
 
-            {/* 4. Grocery Row (Requested "row only") */}
-            {groceryStores.length > 0 && (
-                <StoreRow title="Daily Grocery" stores={groceryStores} color="green" />
-            )}
-
-            {/* 5. Warehouse Row */}
-            {warehouseProducts.length > 0 && (
-                <div className="mt-4 bg-gradient-to-r from-purple-600 to-indigo-600 py-4 text-white">
-                    <div className="container mx-auto px-4">
-                        <div className="flex items-center justify-between mb-3">
-                            <h2 className="text-lg font-bold uppercase flex items-center">
-                                <PackageIcon className="w-5 h-5 mr-2" /> Warehouse Wholesale
-                            </h2>
-                            <span className="text-xs bg-white/20 px-2 py-1 rounded">Next Day Delivery</span>
-                        </div>
-                        <div className="flex overflow-x-auto space-x-3 pb-2 scrollbar-hide">
-                            {warehouseProducts.map(product => (
-                                <div 
-                                    key={product.id}
-                                    onClick={() => window.location.hash = `#/food/${product.id}`}
-                                    className="bg-white text-gray-800 rounded-md p-2 w-32 flex-shrink-0 cursor-pointer hover:shadow-lg transition-transform transform hover:-translate-y-1"
-                                >
-                                    <img src={product.imageUrl} className="w-full h-20 object-cover rounded mb-2" />
-                                    <p className="text-xs font-bold truncate">{product.name}</p>
-                                    <p className="text-purple-600 font-bold text-sm">৳{product.price}</p>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* 6. Trending Restaurants Row */}
+            {/* 4. Trending Restaurants Row */}
             <StoreRow title="Trending Restaurants" stores={topRestaurants} color="orange" />
 
-            {/* 7. Just For You (Masonry Grid) */}
+            {/* 5. Just For You (Masonry Grid) */}
             <div className="mx-4 mt-6">
                 <h3 className="text-lg font-bold text-gray-700 mb-4 uppercase tracking-wide">Just For You</h3>
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">

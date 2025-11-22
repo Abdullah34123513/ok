@@ -17,6 +17,7 @@ import OrderConfirmationPage from '@pages/OrderConfirmationPage';
 import OffersPage from '@pages/OffersPage';
 import OfferDetailPage from '@pages/OfferDetailPage';
 import FavoritesPage from '@pages/FavoritesPage';
+import CategoryListPage from '@pages/CategoryListPage';
 import BottomNav from '@components/BottomNav';
 import { CartProvider } from '@contexts/CartContext';
 import { NotificationProvider } from '@contexts/NotificationContext';
@@ -25,7 +26,7 @@ import Notification from '@components/Notification';
 import type { Area } from '@shared/types';
 
 
-export type View = 'home' | 'restaurants' | 'restaurantDetail' | 'foodDetail' | 'cart' | 'checkout' | 'profile' | 'login' | 'signup' | 'orderTracking' | 'orderConfirmation' | 'offers' | 'offerDetail' | 'favorites';
+export type View = 'home' | 'restaurants' | 'restaurantDetail' | 'foodDetail' | 'cart' | 'checkout' | 'profile' | 'login' | 'signup' | 'orderTracking' | 'orderConfirmation' | 'offers' | 'offerDetail' | 'favorites' | 'category';
 
 interface Route {
     view: View;
@@ -52,6 +53,7 @@ const parseHash = (): Route => {
         case 'offers': return { view: 'offers' };
         case 'offer': return { view: 'offerDetail', id };
         case 'favorites': return { view: 'favorites' };
+        case 'category': return { view: 'category', id };
         case 'home':
         default:
             return { view: 'home' };
@@ -100,7 +102,7 @@ const AppContent: React.FC = () => {
 
 
     const renderHeader = () => {
-        const { view } = route;
+        const { view, id } = route;
         switch (view) {
             case 'restaurants':
                 return <Header title={`Restaurants in ${area.name}`} />;
@@ -124,6 +126,8 @@ const AppContent: React.FC = () => {
                 return <Header title="Special Offer" />;
             case 'favorites':
                 return <Header title="Saved Restaurants" />;
+            case 'category':
+                return <Header title={id ? id.charAt(0).toUpperCase() + id.slice(1) : 'Category'} />;
             case 'login':
             case 'signup':
                 return null;
@@ -165,6 +169,9 @@ const AppContent: React.FC = () => {
                 return <OfferDetailPage offerId={id} area={area} />;
             case 'favorites':
                 return <FavoritesPage />;
+            case 'category':
+                if (!id) { window.location.hash = '#/home'; return null; }
+                return <CategoryListPage categoryId={id} area={area} />;
             case 'home':
             default:
                 return <HomePage area={area} />;

@@ -80,12 +80,15 @@ export const getTopRestaurants = async (areaId: string): Promise<Restaurant[]> =
 
 // --- New Methods for Grocery & Warehouse ---
 
-export const getTopGroceryStores = async (areaId: string): Promise<Restaurant[]> => {
+export const getStoresByType = async (areaId: string, type: 'GROCERY' | 'WAREHOUSE'): Promise<Restaurant[]> => {
     await simulateDelay(500);
-    // In a real app, you might want to allow cross-area shopping for grocery, but here we stick to areaId
-    // For mock data simplicity, we might show the grocery store even if area doesn't strictly match if count is low
-    const groceryStores = allMockRestaurants.filter(r => r.type === 'GROCERY'); 
-    return groceryStores;
+    // Filter by type and optionally area (though for mock we allow some flexibility)
+    return allMockRestaurants.filter(r => r.type === type); 
+};
+
+// Deprecated but kept for compatibility if needed, though replaced by getStoresByType
+export const getTopGroceryStores = async (areaId: string): Promise<Restaurant[]> => {
+    return getStoresByType(areaId, 'GROCERY');
 };
 
 export const getWarehouseProducts = async (areaId: string): Promise<Food[]> => {
@@ -178,12 +181,25 @@ export const getRestaurants = async (
     };
 };
 
-export const getFoods = async (areaId: string, page: number, limit = 12): Promise<PaginatedFoods> => {
+export const getFoods = async (areaId: string, page: number, limit = 12, category?: string): Promise<PaginatedFoods> => {
   await simulateDelay(1000);
-  const seed = locationHash(areaId);
-  // Only food from normal restaurants in food feed
+  const seed = locationHash(areaId + (category || ''));
+  
+  // Only food from normal restaurants in food feed unless category implies otherwise
   const restaurantsInArea = new Set(allMockRestaurants.filter(r => r.areaId === areaId && r.type === 'RESTAURANT').map(r => r.id));
-  const areaFoods = allMockFoods.filter(f => restaurantsInArea.has(f.restaurantId));
+  
+  let areaFoods = allMockFoods.filter(f => restaurantsInArea.has(f.restaurantId));
+  
+  if (category) {
+      const lowerCat = category.toLowerCase();
+      areaFoods = allMockFoods.filter(f => {
+          // Broad search for category match in item category, name, or description
+          return (f.category?.toLowerCase().includes(lowerCat)) || 
+                 (f.name.toLowerCase().includes(lowerCat)) || 
+                 (f.description.toLowerCase().includes(lowerCat));
+      });
+  }
+
   const shuffled = shuffleArray(areaFoods, seed);
   const start = (page - 1) * limit;
   const end = start + limit;
