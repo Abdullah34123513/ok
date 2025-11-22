@@ -309,8 +309,8 @@ export let mockSupportTickets: SupportTicket[] = [
 ];
 
 // --- MOCK EXPENSES ---
-// Dynamic list of categories
-export let expenseCategories: ExpenseCategory[] = [
+// Dynamic list of categories - Exported to allow modification
+export const expenseCategories: ExpenseCategory[] = [
     'Bike Purchase', 'Office Rent', 'Employee 1', 'Employee 2', 
     'Per Order Commission', 'Other Cost', 'Trade Licence', 
     'Hosting', 'Google API', 'Firebase', 'Rider Uniform', 'Marketing', 'Product Testing'
