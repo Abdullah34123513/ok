@@ -83,7 +83,7 @@ export const getTopRestaurants = async (areaId: string): Promise<Restaurant[]> =
 export const getStoresByType = async (areaId: string, type: 'GROCERY' | 'WAREHOUSE'): Promise<Restaurant[]> => {
     await simulateDelay(500);
     // Filter by type and optionally area (though for mock we allow some flexibility)
-    return allMockRestaurants.filter(r => r.type === type); 
+    return allMockRestaurants.filter(r => r.type === type && r.areaId === areaId); 
 };
 
 // Deprecated but kept for compatibility if needed, though replaced by getStoresByType
@@ -95,7 +95,7 @@ export const getGroceryProducts = async (areaId: string): Promise<Food[]> => {
     await simulateDelay(600);
     // Find grocery stores in area (or accessible to area)
     const groceryStoreIds = allMockRestaurants
-        .filter(r => r.type === 'GROCERY')
+        .filter(r => r.type === 'GROCERY' && r.areaId === areaId)
         .map(r => r.id);
     
     // Find foods belonging to these stores
@@ -634,9 +634,20 @@ export const getActiveFlashSale = async (): Promise<FlashSaleCampaign> => {
     return mockFlashSale;
 };
 
-export const getFoodsByIds = async (ids: string[]): Promise<Food[]> => {
+export const getFoodsByIds = async (ids: string[], areaId?: string): Promise<Food[]> => {
     await simulateDelay(500);
-    return allMockFoods.filter(f => ids.includes(f.id));
+    let foods = allMockFoods.filter(f => ids.includes(f.id));
+    
+    if (areaId) {
+        // Get all restaurant IDs in this area
+        const restaurantsInArea = new Set(
+            allMockRestaurants.filter(r => r.areaId === areaId).map(r => r.id)
+        );
+        // Filter foods that belong to restaurants in the area
+        foods = foods.filter(f => restaurantsInArea.has(f.restaurantId));
+    }
+    
+    return foods;
 };
 
 // --- Tracking API ---

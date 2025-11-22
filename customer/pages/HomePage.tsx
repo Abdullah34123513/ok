@@ -212,7 +212,8 @@ const HomePage: React.FC<{ area: Area }> = ({ area }) => {
                 
                 setFlashConfig(flashData);
                 if (flashData.isActive && flashData.itemIds.length > 0) {
-                    const flashItems = await api.getFoodsByIds(flashData.itemIds);
+                    // Pass area.id to filter flash sale items by location
+                    const flashItems = await api.getFoodsByIds(flashData.itemIds, area.id);
                     setFlashFoods(flashItems);
                 } else {
                     setFlashFoods([]);

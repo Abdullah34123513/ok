@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import * as api from '@shared/api';
-import type { FlashSaleCampaign, Food } from '@shared/types';
+import type { FlashSaleCampaign, Food, Area } from '@shared/types';
 import { ClockIcon } from '@components/Icons';
 import { SkeletonCard } from '@shared/components/Skeletons';
 
@@ -26,7 +26,11 @@ const Timer: React.FC<{ endTime: string }> = ({ endTime }) => {
     return <span className="font-mono font-bold ml-2">{timeLeft}</span>;
 };
 
-const FlashSaleListPage: React.FC = () => {
+interface FlashSaleListPageProps {
+    area: Area;
+}
+
+const FlashSaleListPage: React.FC<FlashSaleListPageProps> = ({ area }) => {
     const [campaign, setCampaign] = useState<FlashSaleCampaign | null>(null);
     const [items, setItems] = useState<Food[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -38,7 +42,8 @@ const FlashSaleListPage: React.FC = () => {
                 const config = await api.getActiveFlashSale();
                 setCampaign(config);
                 if (config.isActive && config.itemIds.length > 0) {
-                    const foodItems = await api.getFoodsByIds(config.itemIds);
+                    // Pass area.id to ensure we only get items available in this area
+                    const foodItems = await api.getFoodsByIds(config.itemIds, area.id);
                     setItems(foodItems);
                 }
             } catch (err) {
@@ -48,7 +53,7 @@ const FlashSaleListPage: React.FC = () => {
             }
         };
         fetchData();
-    }, []);
+    }, [area.id]);
 
     const handleItemClick = (id: string) => {
         window.location.hash = `#/food/${id}`;
@@ -124,7 +129,7 @@ const FlashSaleListPage: React.FC = () => {
                 </div>
                 
                 {items.length === 0 && (
-                    <p className="text-center text-gray-500 mt-10">No items found in this sale.</p>
+                    <p className="text-center text-gray-500 mt-10">No items found in this sale for your area.</p>
                 )}
             </div>
         </div>

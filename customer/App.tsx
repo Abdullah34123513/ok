@@ -177,7 +177,7 @@ const AppContent: React.FC = () => {
                 if (!id) { window.location.hash = '#/home'; return null; }
                 return <CategoryListPage categoryId={id} area={area} />;
             case 'flash-sale':
-                return <FlashSaleListPage />;
+                return <FlashSaleListPage area={area} />;
             case 'home':
             default:
                 return <HomePage area={area} />;
