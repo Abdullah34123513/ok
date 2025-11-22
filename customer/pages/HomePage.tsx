@@ -265,9 +265,9 @@ const HomePage: React.FC<{ area: Area }> = ({ area }) => {
                             <h3 className="text-orange-500 font-bold uppercase tracking-wide text-sm sm:text-base mr-4">Flash Sale</h3>
                             <FlashSaleTimer endTime={flashConfig.endTime} />
                         </div>
-                        <button className="text-orange-500 border border-orange-500 px-3 py-1 text-xs font-bold rounded hover:bg-orange-50 uppercase">
+                        <a href="#/flash-sale" className="text-orange-500 border border-orange-500 px-3 py-1 text-xs font-bold rounded hover:bg-orange-50 uppercase">
                             Shop All
-                        </button>
+                        </a>
                     </div>
                     <div className="flex overflow-x-auto scrollbar-hide">
                         {flashFoods.map(food => (

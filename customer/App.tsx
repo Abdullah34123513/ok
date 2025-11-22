@@ -18,6 +18,7 @@ import OffersPage from '@pages/OffersPage';
 import OfferDetailPage from '@pages/OfferDetailPage';
 import FavoritesPage from '@pages/FavoritesPage';
 import CategoryListPage from '@pages/CategoryListPage';
+import FlashSaleListPage from '@pages/FlashSaleListPage';
 import BottomNav from '@components/BottomNav';
 import { CartProvider } from '@contexts/CartContext';
 import { NotificationProvider } from '@contexts/NotificationContext';
@@ -26,7 +27,7 @@ import Notification from '@components/Notification';
 import type { Area } from '@shared/types';
 
 
-export type View = 'home' | 'restaurants' | 'restaurantDetail' | 'foodDetail' | 'cart' | 'checkout' | 'profile' | 'login' | 'signup' | 'orderTracking' | 'orderConfirmation' | 'offers' | 'offerDetail' | 'favorites' | 'category';
+export type View = 'home' | 'restaurants' | 'restaurantDetail' | 'foodDetail' | 'cart' | 'checkout' | 'profile' | 'login' | 'signup' | 'orderTracking' | 'orderConfirmation' | 'offers' | 'offerDetail' | 'favorites' | 'category' | 'flash-sale';
 
 interface Route {
     view: View;
@@ -54,6 +55,7 @@ const parseHash = (): Route => {
         case 'offer': return { view: 'offerDetail', id };
         case 'favorites': return { view: 'favorites' };
         case 'category': return { view: 'category', id };
+        case 'flash-sale': return { view: 'flash-sale' };
         case 'home':
         default:
             return { view: 'home' };
@@ -128,6 +130,8 @@ const AppContent: React.FC = () => {
                 return <Header title="Saved Restaurants" />;
             case 'category':
                 return <Header title={id ? id.charAt(0).toUpperCase() + id.slice(1) : 'Category'} />;
+            case 'flash-sale':
+                return <Header title="Flash Sale" />;
             case 'login':
             case 'signup':
                 return null;
@@ -172,6 +176,8 @@ const AppContent: React.FC = () => {
             case 'category':
                 if (!id) { window.location.hash = '#/home'; return null; }
                 return <CategoryListPage categoryId={id} area={area} />;
+            case 'flash-sale':
+                return <FlashSaleListPage />;
             case 'home':
             default:
                 return <HomePage area={area} />;
