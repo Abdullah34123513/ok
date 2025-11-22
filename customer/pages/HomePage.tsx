@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import type { Offer, Restaurant, Food, SearchResult, Area } from '@shared/types';
 import * as api from '@shared/api';
 import * as tracking from '@shared/tracking';
@@ -8,118 +8,140 @@ import OngoingOrderTracker from '@components/OngoingOrderTracker';
 import { SearchIcon, StarIcon, ClockIcon, PackageIcon, HeartIcon, PlusIcon } from '@components/Icons';
 import { useCart } from '@contexts/CartContext';
 
-// --- Modern Internal Components for this Page ---
+// --- MODERN UI COMPONENTS (Local to Home Page for unique design) ---
 
-const SectionTitle: React.FC<{ title: string; subtitle?: string; action?: string; onAction?: () => void }> = ({ title, subtitle, action, onAction }) => (
-    <div className="flex items-end justify-between px-6 mb-4 mt-8">
+const SectionHeader: React.FC<{ title: string; subtitle?: string; onAction?: () => void; actionLabel?: string }> = ({ title, subtitle, onAction, actionLabel }) => (
+    <div className="flex items-end justify-between px-6 mb-5 mt-10 first:mt-2">
         <div>
-            <h2 className="text-2xl font-extrabold text-gray-900 tracking-tight">{title}</h2>
-            {subtitle && <p className="text-sm text-gray-500 font-medium mt-1">{subtitle}</p>}
+            <h2 className="text-2xl font-black text-gray-900 tracking-tight leading-none">{title}</h2>
+            {subtitle && <p className="text-sm text-gray-500 font-medium mt-1.5">{subtitle}</p>}
         </div>
-        {action && (
-            <button onClick={onAction} className="text-red-500 text-sm font-bold hover:text-red-600 bg-red-50 px-3 py-1 rounded-full transition-colors">
-                {action}
+        {onAction && (
+            <button onClick={onAction} className="text-xs font-bold text-red-500 bg-red-50 px-3 py-1.5 rounded-full hover:bg-red-100 transition-colors uppercase tracking-wide">
+                {actionLabel || 'See All'}
             </button>
         )}
     </div>
 );
 
-const CategoryPill: React.FC<{ label: string; icon?: string; isSelected?: boolean; onClick?: () => void }> = ({ label, icon, isSelected, onClick }) => (
+const HeroSlide: React.FC<{ offer: Offer; onClick: () => void }> = ({ offer, onClick }) => (
+    <div onClick={onClick} className="relative w-full md:w-[400px] flex-shrink-0 h-64 rounded-[2rem] overflow-hidden shadow-xl shadow-orange-900/10 cursor-pointer group mx-2 first:ml-6 last:mr-6 transform transition-all hover:scale-[1.02]">
+        <img src={offer.imageUrl} alt={offer.title} className="w-full h-full object-cover" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent opacity-80"></div>
+        <div className="absolute bottom-0 left-0 p-6 md:p-8 text-white max-w-[85%]">
+            <span className="inline-block px-3 py-1 bg-white/20 backdrop-blur-md border border-white/30 rounded-lg text-[10px] font-bold uppercase tracking-wider mb-3">
+                Limited Time
+            </span>
+            <h3 className="text-3xl font-extrabold leading-tight mb-2 drop-shadow-sm">{offer.title}</h3>
+            <p className="text-sm text-gray-200 line-clamp-2 opacity-90">{offer.description}</p>
+        </div>
+    </div>
+);
+
+const CategoryCircle: React.FC<{ label: string; icon: string; isSelected?: boolean; onClick?: () => void }> = ({ label, icon, isSelected, onClick }) => (
     <button 
         onClick={onClick}
-        className={`flex flex-col items-center justify-center space-y-2 min-w-[80px] transition-transform transform active:scale-95`}
+        className="flex flex-col items-center justify-center space-y-3 min-w-[80px] group"
     >
-        <div className={`w-16 h-16 rounded-2xl flex items-center justify-center text-2xl shadow-sm border transition-all ${isSelected ? 'bg-red-500 border-red-500 text-white shadow-red-200' : 'bg-white border-gray-100 text-gray-600'}`}>
-            {icon || '🍔'}
+        <div className={`w-16 h-16 rounded-full flex items-center justify-center text-2xl shadow-sm border-2 transition-all duration-300 group-hover:shadow-md ${isSelected ? 'bg-red-500 border-red-500 text-white shadow-red-200 scale-110' : 'bg-white border-gray-100 text-gray-700 group-hover:border-red-100'}`}>
+            {icon}
         </div>
-        <span className={`text-xs font-bold ${isSelected ? 'text-red-600' : 'text-gray-500'}`}>{label}</span>
+        <span className={`text-xs font-bold tracking-wide ${isSelected ? 'text-red-600' : 'text-gray-500 group-hover:text-gray-800'}`}>{label}</span>
     </button>
 );
 
-const SpotlightCard: React.FC<{ offer: Offer; onClick: () => void }> = ({ offer, onClick }) => (
-    <div onClick={onClick} className="relative w-full md:w-96 flex-shrink-0 h-56 rounded-3xl overflow-hidden shadow-lg cursor-pointer group mx-2 first:ml-6 last:mr-6">
-        <img src={offer.imageUrl} alt={offer.title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
-        <div className="absolute bottom-0 left-0 p-6 text-white">
-            <span className="bg-red-500 text-white text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wider mb-2 inline-block">
-                Limited Offer
-            </span>
-            <h3 className="text-2xl font-bold leading-tight mb-1">{offer.title}</h3>
-            <p className="text-sm text-gray-200 line-clamp-1">{offer.description}</p>
+const GroceryTile: React.FC<{ store: Restaurant; onClick: () => void }> = ({ store, onClick }) => (
+    <div onClick={onClick} className="w-36 flex-shrink-0 rounded-2xl p-4 bg-white border border-green-100 shadow-sm hover:shadow-md hover:border-green-300 transition-all cursor-pointer mx-2 first:ml-6 last:mr-6 flex flex-col items-center text-center relative overflow-hidden group">
+        <div className="absolute top-0 left-0 w-full h-1 bg-green-500"></div>
+        <div className="w-14 h-14 rounded-full bg-green-50 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+            <span className="text-2xl">🥦</span>
         </div>
+        <h4 className="font-bold text-gray-800 text-sm leading-tight line-clamp-1">{store.name}</h4>
+        <p className="text-[10px] text-gray-400 mt-1 font-medium uppercase tracking-wide">{store.deliveryTime}</p>
     </div>
 );
 
-const ModernRestaurantCard: React.FC<{ restaurant: Restaurant; onClick: () => void }> = ({ restaurant, onClick }) => (
-    <div onClick={onClick} className="w-72 flex-shrink-0 bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden cursor-pointer hover:shadow-md transition-all mx-2 first:ml-6 last:mr-6 group">
-        <div className="relative h-40">
-            <img src={restaurant.coverImageUrl} alt={restaurant.name} className="w-full h-full object-cover" />
-            <div className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-lg text-xs font-bold flex items-center shadow-sm">
-                <StarIcon className="w-3 h-3 text-orange-400 mr-1" />
+const WarehouseTile: React.FC<{ product: Food; onClick: () => void }> = ({ product, onClick }) => (
+    <div onClick={onClick} className="w-36 flex-shrink-0 rounded-2xl p-3 bg-purple-50 border border-purple-100 shadow-sm hover:shadow-md transition-all cursor-pointer mx-2 first:ml-6 last:mr-6 flex flex-col group">
+        <div className="relative w-full h-24 mb-3 rounded-xl overflow-hidden">
+            <img src={product.imageUrl} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+            <div className="absolute top-1 left-1 bg-purple-600 text-white text-[8px] font-bold px-1.5 py-0.5 rounded-md">BULK</div>
+        </div>
+        <h4 className="font-bold text-gray-800 text-xs leading-tight line-clamp-2 mb-1">{product.name}</h4>
+        <p className="text-sm text-purple-700 font-black mt-auto">৳{product.price}</p>
+    </div>
+);
+
+const TrendingRestaurantCard: React.FC<{ restaurant: Restaurant; onClick: () => void }> = ({ restaurant, onClick }) => (
+    <div onClick={onClick} className="w-80 flex-shrink-0 bg-white rounded-[1.5rem] shadow-sm border border-gray-100 overflow-hidden cursor-pointer hover:shadow-lg transition-all mx-3 first:ml-6 last:mr-6 group relative">
+        <div className="h-48 overflow-hidden relative">
+            <img src={restaurant.coverImageUrl} alt={restaurant.name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+            <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors"></div>
+            <div className="absolute top-4 right-4 bg-white/95 backdrop-blur-md px-2.5 py-1 rounded-lg text-xs font-bold flex items-center shadow-sm">
+                <StarIcon className="w-3.5 h-3.5 text-yellow-400 mr-1" />
                 {restaurant.rating}
             </div>
-            <div className="absolute bottom-3 left-3 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-lg text-xs font-bold text-gray-700 shadow-sm flex items-center">
-                <ClockIcon className="w-3 h-3 mr-1" /> {restaurant.deliveryTime}
-            </div>
         </div>
-        <div className="p-4">
-            <h3 className="font-bold text-lg text-gray-800 group-hover:text-red-500 transition-colors truncate">{restaurant.name}</h3>
-            <div className="flex items-center justify-between mt-2">
-                <p className="text-sm text-gray-500 truncate">{restaurant.cuisine}</p>
-                <p className="text-xs font-semibold bg-gray-100 text-gray-600 px-2 py-1 rounded-md">৳{restaurant.deliveryFee} fee</p>
+        <div className="p-5">
+            <div className="flex justify-between items-start mb-2">
+                <h3 className="font-bold text-xl text-gray-900 leading-tight group-hover:text-red-600 transition-colors">{restaurant.name}</h3>
+                {restaurant.isFavorite && <HeartIcon isFilled={true} className="w-5 h-5 text-red-500 flex-shrink-0" />}
+            </div>
+            <div className="flex items-center text-gray-500 text-sm mb-4">
+                <span className="font-medium">{restaurant.cuisine}</span>
+                <span className="mx-2 text-gray-300">•</span>
+                <ClockIcon className="w-4 h-4 mr-1 text-gray-400" />
+                <span>{restaurant.deliveryTime}</span>
+            </div>
+            <div className="flex items-center gap-2">
+                <span className="px-2 py-1 bg-gray-100 rounded-md text-xs font-bold text-gray-600">৳{restaurant.deliveryFee} Delivery</span>
             </div>
         </div>
     </div>
 );
 
-const EssentialsCard: React.FC<{ store: Restaurant; onClick: () => void; type: 'GROCERY' | 'WAREHOUSE' }> = ({ store, onClick, type }) => (
-    <div onClick={onClick} className={`w-40 flex-shrink-0 rounded-2xl p-4 cursor-pointer transition-transform hover:scale-105 border mx-2 first:ml-6 last:mr-6 flex flex-col items-center text-center ${type === 'GROCERY' ? 'bg-green-50 border-green-100' : 'bg-purple-50 border-purple-100'}`}>
-        <div className={`w-16 h-16 rounded-full flex items-center justify-center mb-3 shadow-sm ${type === 'GROCERY' ? 'bg-white text-green-500' : 'bg-white text-purple-500'}`}>
-            {type === 'GROCERY' ? <span className="text-2xl">🥦</span> : <PackageIcon className="w-8 h-8" />}
-        </div>
-        <h4 className={`font-bold text-sm leading-tight ${type === 'GROCERY' ? 'text-green-800' : 'text-purple-800'}`}>{store.name}</h4>
-        <p className="text-xs text-gray-500 mt-1">{store.deliveryTime}</p>
-    </div>
-);
-
-const ModernFoodCard: React.FC<{ food: Food; onClick: () => void }> = ({ food, onClick }) => {
+const MasonryFoodCard: React.FC<{ food: Food; onClick: () => void }> = ({ food, onClick }) => {
     const { addItem } = useCart();
     
     return (
-        <div onClick={onClick} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden cursor-pointer hover:shadow-md transition-all group relative">
-            <div className="aspect-square relative overflow-hidden">
-                <img src={food.imageUrl} alt={food.name} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+        <div onClick={onClick} className="bg-white rounded-3xl p-3 shadow-sm border border-gray-100 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group cursor-pointer relative break-inside-avoid mb-4">
+            <div className="aspect-square rounded-2xl overflow-hidden relative mb-3">
+                <img src={food.imageUrl} alt={food.name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors"></div>
+                
+                {/* Quick Add Button */}
                 <button 
                     onClick={(e) => {
                         e.stopPropagation();
-                        // Quick Add Mock
                         const menuItem = {
                             id: food.id, name: food.name, description: food.description, price: food.price,
                             imageUrl: food.imageUrl, restaurantId: food.restaurantId, restaurantName: food.vendor.name, availability: food.availability
                         };
                         addItem(menuItem, 1, [], food.price);
                     }}
-                    className="absolute bottom-2 right-2 bg-white text-red-500 p-2 rounded-full shadow-lg transform translate-y-10 group-hover:translate-y-0 transition-transform duration-300 hover:bg-red-500 hover:text-white"
+                    className="absolute bottom-2 right-2 bg-white text-gray-900 w-10 h-10 rounded-full shadow-lg flex items-center justify-center transform translate-y-12 group-hover:translate-y-0 opacity-0 group-hover:opacity-100 transition-all duration-300 hover:bg-red-500 hover:text-white z-10"
                 >
-                    <PlusIcon className="w-5 h-5" />
+                    <PlusIcon className="w-6 h-6" />
                 </button>
             </div>
-            <div className="p-3">
-                <div className="flex justify-between items-start mb-1">
-                    <h4 className="font-bold text-gray-800 text-sm line-clamp-1">{food.name}</h4>
-                    <span className="text-xs font-bold text-green-600 bg-green-50 px-1.5 py-0.5 rounded ml-1">
-                        ★{food.rating}
-                    </span>
+            
+            <div className="px-1">
+                <div className="flex justify-between items-start gap-2 mb-1">
+                    <h4 className="font-bold text-gray-900 text-base leading-tight line-clamp-2">{food.name}</h4>
+                    <div className="flex items-center bg-yellow-50 px-1.5 py-0.5 rounded text-[10px] font-bold text-yellow-700 flex-shrink-0">
+                        ★ {food.rating}
+                    </div>
                 </div>
-                <p className="text-xs text-gray-500 mb-2 line-clamp-1">{food.vendor.name}</p>
-                <p className="font-extrabold text-gray-900">৳{food.price.toFixed(2)}</p>
+                <p className="text-xs text-gray-500 font-medium mb-3 line-clamp-1">{food.vendor.name}</p>
+                <div className="flex items-center justify-between">
+                    <span className="text-lg font-black text-gray-900">৳{food.price}</span>
+                </div>
             </div>
         </div>
     );
 };
 
-// --- Main Page Component ---
+// --- MAIN PAGE ---
 
 interface HomePageProps {
     area: Area;
@@ -140,12 +162,12 @@ const HomePage: React.FC<HomePageProps> = ({ area }) => {
     const [searchResults, setSearchResults] = useState<SearchResult | null>(null);
     const [isSearching, setIsSearching] = useState(false);
 
-    // Navigation Handlers
+    // Navigation
     const onRestaurantClick = (id: string) => { window.location.hash = `#/restaurant/${id}`; };
     const onFoodClick = (id: string) => { window.location.hash = `#/food/${id}`; };
     const onOfferClick = (id: string) => { window.location.hash = `#/offer/${id}`; };
 
-    // Initial Data Fetch
+    // Fetch Data
     useEffect(() => {
         const fetchData = async () => {
             setIsLoading(true);
@@ -169,11 +191,11 @@ const HomePage: React.FC<HomePageProps> = ({ area }) => {
         fetchData();
     }, [area.id]);
 
-    // Pagination for Main Feed
+    // Infinite Scroll for Foods
     const loadMoreFoods = useCallback(() => {
         if (isLoading || !hasMore) return;
         setIsLoading(true);
-        api.getFoods(area.id, page, 8) // Load 8 at a time for grid
+        api.getFoods(area.id, page, 8)
             .then(data => {
                 setFoods(prev => [...prev, ...data.foods]);
                 setPage(data.nextPage);
@@ -203,95 +225,126 @@ const HomePage: React.FC<HomePageProps> = ({ area }) => {
         return () => clearTimeout(handler);
     }, [searchQuery, area.id]);
 
-    // Render Search Results View
+    // --- RENDER SEARCH VIEW ---
     if (searchQuery.trim() !== '') {
         return (
-            <>
+            <div className="bg-white min-h-screen pb-20">
                 <Header searchQuery={searchQuery} onSearchChange={setSearchQuery} />
-                <div className="bg-gray-50 min-h-screen p-6">
+                <div className="p-6">
                     {isSearching ? (
-                        <div className="flex justify-center items-center h-64"><div className="animate-spin rounded-full h-10 w-10 border-b-2 border-red-500"></div></div>
+                        <div className="flex flex-col items-center justify-center mt-20 text-gray-400">
+                            <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-red-500 mb-4"></div>
+                            <p>Searching flavors...</p>
+                        </div>
                     ) : searchResults ? (
-                        <div className="space-y-8">
+                        <div className="space-y-10">
                             {searchResults.restaurants.length > 0 && (
                                 <div>
-                                    <h3 className="text-xl font-bold text-gray-800 mb-4">Restaurants</h3>
-                                    <div className="flex overflow-x-auto space-x-4 pb-4">
-                                        {searchResults.restaurants.map(r => <ModernRestaurantCard key={r.id} restaurant={r} onClick={() => onRestaurantClick(r.id)} />)}
+                                    <h3 className="text-lg font-bold text-gray-900 mb-4">Restaurants</h3>
+                                    <div className="flex overflow-x-auto space-x-4 pb-4 -mx-6 px-6">
+                                        {searchResults.restaurants.map(r => <TrendingRestaurantCard key={r.id} restaurant={r} onClick={() => onRestaurantClick(r.id)} />)}
                                     </div>
                                 </div>
                             )}
                             {searchResults.foods.length > 0 && (
                                 <div>
-                                    <h3 className="text-xl font-bold text-gray-800 mb-4">Dishes</h3>
-                                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                                        {searchResults.foods.map(f => <ModernFoodCard key={f.id} food={f} onClick={() => onFoodClick(f.id)} />)}
+                                    <h3 className="text-lg font-bold text-gray-900 mb-4">Dishes</h3>
+                                    <div className="columns-2 gap-4">
+                                        {searchResults.foods.map(f => <MasonryFoodCard key={f.id} food={f} onClick={() => onFoodClick(f.id)} />)}
                                     </div>
                                 </div>
                             )}
                             {searchResults.restaurants.length === 0 && searchResults.foods.length === 0 && (
-                                <div className="text-center text-gray-500 mt-20">No results found for "{searchQuery}".</div>
+                                <div className="text-center text-gray-500 mt-20">
+                                    <p className="text-lg">No results found for "{searchQuery}"</p>
+                                    <p className="text-sm">Try searching for 'Pizza', 'Burger', or 'Sushi'</p>
+                                </div>
                             )}
                         </div>
                     ) : null}
                 </div>
-            </>
+            </div>
         );
     }
 
+    // --- RENDER MAIN HOME VIEW ---
     return (
-        <div className="bg-gray-50 min-h-screen pb-32">
-            <Header searchQuery={searchQuery} onSearchChange={setSearchQuery} />
-            
-            <OngoingOrderTracker />
-
-            {/* 1. Welcome & Categories */}
-            <div className="pt-4">
-                <div className="px-6 mb-6">
-                    <h1 className="text-xl text-gray-600">Good Morning, <span className="font-bold text-gray-900 block text-3xl">Alex! 👋</span></h1>
-                </div>
-                
-                <div className="flex overflow-x-auto px-6 space-x-4 pb-4 scrollbar-hide mb-4">
-                    <CategoryPill label="All" icon="🍽️" isSelected />
-                    <CategoryPill label="Burger" icon="🍔" />
-                    <CategoryPill label="Pizza" icon="🍕" />
-                    <CategoryPill label="Sushi" icon="🍣" />
-                    <CategoryPill label="Healthy" icon="🥗" />
-                    <CategoryPill label="Dessert" icon="🍩" />
+        <div className="bg-[#FAFAFA] min-h-screen pb-32 font-sans selection:bg-red-100">
+            {/* Sticky Header */}
+            <div className="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-gray-100">
+                <div className="container mx-auto px-4 py-3">
+                    <div className="flex justify-between items-center mb-3">
+                        <div>
+                            <p className="text-xs text-gray-500 font-medium">Delivering to</p>
+                            <div className="flex items-center text-red-600 font-bold text-sm cursor-pointer hover:underline">
+                                <span className="truncate max-w-[200px]">{area.name}</span>
+                                <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                            </div>
+                        </div>
+                        <div className="w-10 h-10 bg-gray-100 rounded-full overflow-hidden border-2 border-white shadow-sm">
+                            <a href="#/profile"><img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=Alex`} alt="Profile" /></a>
+                        </div>
+                    </div>
+                    
+                    <div className="relative">
+                        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                            <SearchIcon className="h-5 w-5 text-gray-400" />
+                        </div>
+                        <input
+                            type="text"
+                            placeholder="What are you craving?"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="w-full pl-11 pr-4 py-3 bg-gray-100 border-none rounded-2xl text-gray-800 placeholder-gray-400 focus:ring-2 focus:ring-red-500/20 focus:bg-white transition-all shadow-inner"
+                        />
+                    </div>
                 </div>
             </div>
 
-            {/* 2. Spotlight (Hero) */}
-            {offers.length > 0 && (
-                <div className="mb-8">
-                    <SectionTitle title="Spotlight" />
-                    <div className="flex overflow-x-auto pb-6 scrollbar-hide">
-                        {offers.slice(0, 3).map(offer => (
-                            <SpotlightCard key={offer.id} offer={offer} onClick={() => onOfferClick(offer.id)} />
+            <OngoingOrderTracker />
+
+            {/* Categories */}
+            <div className="pt-6">
+                <div className="flex overflow-x-auto px-6 space-x-4 pb-2 scrollbar-hide snap-x">
+                    <CategoryCircle label="Offers" icon="🔥" onClick={() => window.location.hash = '#/offers'} />
+                    <CategoryCircle label="Burger" icon="🍔" onClick={() => setSearchQuery('Burger')} />
+                    <CategoryCircle label="Pizza" icon="🍕" onClick={() => setSearchQuery('Pizza')} />
+                    <CategoryCircle label="Asian" icon="🍜" onClick={() => setSearchQuery('Asian')} />
+                    <CategoryCircle label="Healthy" icon="🥗" onClick={() => setSearchQuery('Healthy')} />
+                    <CategoryCircle label="Dessert" icon="🍩" onClick={() => setSearchQuery('Dessert')} />
+                    <CategoryCircle label="Drinks" icon="🥤" onClick={() => setSearchQuery('Drinks')} />
+                </div>
+            </div>
+
+            {/* Hero Banner (Spotlight) */}
+            {activeOffers.length > 0 && (
+                <div className="mt-8">
+                    <div className="flex overflow-x-auto pb-8 px-4 -mx-2 scrollbar-hide snap-x snap-mandatory">
+                        {activeOffers.slice(0, 3).map(offer => (
+                            <div key={offer.id} className="snap-center">
+                                <HeroSlide offer={offer} onClick={() => onOfferClick(offer.id)} />
+                            </div>
                         ))}
                     </div>
                 </div>
             )}
 
-            {/* 3. Essentials (Grocery & Warehouse) */}
+            {/* Essentials Row (Grocery + Warehouse) */}
             {(groceryStores.length > 0 || warehouseProducts.length > 0) && (
                 <div className="mb-8">
-                    <SectionTitle title="Pantry & Essentials" subtitle="Get your groceries delivered fast" />
-                    <div className="flex overflow-x-auto pb-4 scrollbar-hide">
+                    <SectionHeader title="Daily Essentials" subtitle="Groceries & Warehouse Deals delivered fast" />
+                    <div className="flex overflow-x-auto pb-6 px-4 -mx-2 scrollbar-hide">
                         {groceryStores.map(store => (
-                            <EssentialsCard key={store.id} store={store} type="GROCERY" onClick={() => onRestaurantClick(store.id)} />
+                            <GroceryTile key={store.id} store={store} onClick={() => onRestaurantClick(store.id)} />
                         ))}
+                        
                         {warehouseProducts.length > 0 && (
-                            <div className="ml-2 pl-4 border-l border-gray-200 flex space-x-4">
-                                <div className="flex flex-col justify-center px-2">
-                                    <span className="text-xs font-bold text-purple-600 uppercase tracking-widest">Warehouse<br/>Deals</span>
+                            <div className="flex pl-4 ml-2 border-l border-gray-200 relative">
+                                <div className="absolute -top-4 left-6 bg-purple-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-b-md z-10">
+                                    WAREHOUSE
                                 </div>
-                                {warehouseProducts.slice(0, 3).map(prod => (
-                                    <div key={prod.id} onClick={() => onFoodClick(prod.id)} className="w-32 flex-shrink-0 bg-white rounded-xl p-2 shadow-sm border border-purple-50 cursor-pointer">
-                                        <img src={prod.imageUrl} className="w-full h-20 object-cover rounded-lg mb-2" />
-                                        <p className="text-xs font-bold text-gray-800 truncate">{prod.name}</p>
-                                        <p className="text-xs text-purple-600 font-bold">৳{prod.price}</p>
-                                    </div>
+                                {warehouseProducts.slice(0, 4).map(prod => (
+                                    <WarehouseTile key={prod.id} product={prod} onClick={() => onFoodClick(prod.id)} />
                                 ))}
                             </div>
                         )}
@@ -299,40 +352,52 @@ const HomePage: React.FC<HomePageProps> = ({ area }) => {
                 </div>
             )}
 
-            {/* 4. Trending Restaurants */}
-            <div className="mb-8">
-                <SectionTitle title="Trending Spots" action="View All" onAction={() => window.location.hash = '#/restaurants'} />
-                <div className="flex overflow-x-auto pb-6 scrollbar-hide">
+            {/* Trending Restaurants */}
+            <div className="mb-4">
+                <SectionHeader title="Curated Collections" subtitle="Top rated spots in your area" actionLabel="View All" onAction={() => window.location.hash = '#/restaurants'} />
+                <div className="flex overflow-x-auto pb-10 px-4 -mx-2 scrollbar-hide snap-x">
                     {topRestaurants.map(rest => (
-                        <ModernRestaurantCard key={rest.id} restaurant={rest} onClick={() => onRestaurantClick(rest.id)} />
+                        <div key={rest.id} className="snap-center">
+                            <TrendingRestaurantCard restaurant={rest} onClick={() => onRestaurantClick(rest.id)} />
+                        </div>
                     ))}
                 </div>
             </div>
 
-            {/* 5. Main Feed (Recommended) */}
-            <div className="px-6">
-                <h2 className="text-2xl font-extrabold text-gray-900 mb-6">Recommended For You</h2>
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                    {foods.map(food => (
-                        <ModernFoodCard key={food.id} food={food} onClick={() => onFoodClick(food.id)} />
-                    ))}
+            {/* Recommended Feed (Masonry) */}
+            <div className="px-4">
+                <div className="flex items-center mb-6">
+                    <h2 className="text-2xl font-black text-gray-900">Recommended For You</h2>
+                    <div className="ml-2 px-2 py-0.5 bg-yellow-100 text-yellow-700 text-[10px] font-bold uppercase rounded-full">
+                        Based on your likes
+                    </div>
                 </div>
                 
+                {/* CSS Columns for Masonry effect */}
+                <div className="columns-2 gap-4 space-y-4">
+                    {foods.map(food => (
+                        <MasonryFoodCard key={food.id} food={food} onClick={() => onFoodClick(food.id)} />
+                    ))}
+                </div>
+
                 {hasMore && (
-                    <div className="mt-8 text-center">
+                    <div className="mt-12 mb-8 text-center">
                         <button 
                             onClick={loadMoreFoods} 
                             disabled={isLoading}
-                            className="px-8 py-3 bg-white border border-gray-200 text-gray-600 font-bold rounded-full shadow-sm hover:bg-gray-50 hover:text-red-500 transition-all"
+                            className="px-8 py-4 bg-white text-gray-900 font-bold rounded-full shadow-lg shadow-gray-200 hover:shadow-xl transform hover:-translate-y-1 transition-all disabled:opacity-50 disabled:transform-none"
                         >
-                            {isLoading ? 'Loading flavors...' : 'Load More'}
+                            {isLoading ? (
+                                <span className="flex items-center"><div className="w-4 h-4 border-2 border-gray-600 border-t-transparent rounded-full animate-spin mr-2"></div> Loading...</span>
+                            ) : 'Discover More'}
                         </button>
                     </div>
                 )}
                 
                 {!hasMore && (
-                    <div className="mt-12 text-center text-gray-400 text-sm pb-10">
-                        <p>You've reached the end of the foodie universe! 🌮</p>
+                    <div className="py-10 text-center">
+                        <p className="text-gray-400 text-sm font-medium">You've reached the end of the list!</p>
+                        <div className="w-16 h-1 bg-gray-200 mx-auto mt-4 rounded-full"></div>
                     </div>
                 )}
             </div>
