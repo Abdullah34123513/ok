@@ -5,17 +5,20 @@
     "customer",
     "vendor",
     "rider",
-    "moderator"
+    "moderator",
+    "admin"
   ],
   "scripts": {
     "dev:customer": "npm run dev --workspace=customer-app",
     "dev:vendor": "npm run dev --workspace=vendor-app",
     "dev:rider": "npm run dev --workspace=rider-app",
     "dev:moderator": "npm run dev --workspace=moderator-app",
+    "dev:admin": "npm run dev --workspace=admin-app",
     "build:customer": "npm run build --workspace=customer-app",
     "build:vendor": "npm run build --workspace=vendor-app",
     "build:rider": "npm run build --workspace=rider-app",
     "build:moderator": "npm run build --workspace=moderator-app",
+    "build:admin": "npm run build --workspace=admin-app",
     "build": "npm run build --workspaces",
     "check": "npm run check --workspaces"
   }

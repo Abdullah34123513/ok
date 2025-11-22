@@ -1,5 +1,5 @@
 
-import type { Offer, Restaurant, Food, MenuItem, Review, CartItem, Address, Order, User, Vendor, Rider, OperatingHours, CustomizationOption, ChatMessage, Moderator, SupportTicket, Area, FlashSaleCampaign } from '../types';
+import type { Offer, Restaurant, Food, MenuItem, Review, CartItem, Address, Order, User, Vendor, Rider, OperatingHours, CustomizationOption, ChatMessage, Moderator, SupportTicket, Area, FlashSaleCampaign, Admin } from '../types';
 
 // --- UTILITY FUNCTIONS ---
 const createExpiryDate = (days: number): string => new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString();
@@ -260,15 +260,21 @@ export const mockModerators: Moderator[] = [
     { id: 'mod-1', name: 'Mod One', email: 'mod1@example.com', permissions: ['manage_users', 'review_content'] },
 ];
 
+export const mockAdmins: Admin[] = [
+    { id: 'admin-1', name: 'Super Admin', email: 'admin@foodiefind.com', role: 'SUPER_ADMIN' }
+];
+
 export let mockUsers: User[] = [
     { name: 'Alex Doe', email: 'alex.doe@example.com', phone: '123-456-7890', age: 30, gender: 'male' },
     ...mockModerators.map(m => ({ name: m.name, email: m.email, phone: '555-0199' })),
+    ...mockAdmins.map(a => ({ name: a.name, email: a.email, phone: '555-ADMIN' })),
     ...generatedData.vendorUsers,
 ];
 
 export const mockUserPasswords = new Map<string, string>([
     ['alex.doe@example.com', 'password123'],
     ['mod1@example.com', 'modpass1'],
+    ['admin@foodiefind.com', 'admin123'],
     ...generatedData.vendorPasswords
 ]);
 

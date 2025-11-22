@@ -1,6 +1,7 @@
+
 import type { User, LoginCredentials, SignupData, AuthResponse } from '../types';
 import { simulateDelay } from './utils';
-import { mockUsers, mockUserPasswords, mockVendors, mockModerators } from './mockData';
+import { mockUsers, mockUserPasswords, mockVendors, mockModerators, mockAdmins } from './mockData';
 
 // --- Auth API ---
 export const login = async (credentials: LoginCredentials): Promise<AuthResponse> => {
@@ -11,11 +12,14 @@ export const login = async (credentials: LoginCredentials): Promise<AuthResponse
     if (user && password === credentials.password) {
         const vendor = mockVendors.find(v => v.email === user.email);
         const moderator = mockModerators.find(m => m.email === user.email);
+        const admin = mockAdmins.find(a => a.email === user.email);
+        
         return { 
             user, 
             token: `mock-auth-token-${Date.now()}`,
             vendorId: vendor ? vendor.id : undefined,
             moderatorId: moderator ? moderator.id : undefined,
+            adminId: admin ? admin.id : undefined
         };
     } else {
         throw new Error('Invalid email or password.');

@@ -19,6 +19,7 @@ export interface AuthResponse {
   token: string;
   vendorId?: string;
   moderatorId?: string;
+  adminId?: string;
 }
 
 // --- Core App Entities ---
@@ -313,6 +314,13 @@ export interface Moderator {
   permissions: string[];
 }
 
+export interface Admin {
+    id: string;
+    name: string;
+    email: string;
+    role: 'SUPER_ADMIN';
+}
+
 export interface Rider {
   id: string;
   name: string;
@@ -352,6 +360,15 @@ export interface ModeratorDashboardSummary {
     completedOrders: number;
     cancelledOrders: number;
     openSupportTickets: number;
+}
+
+export interface AdminDashboardSummary {
+    totalRevenue: number;
+    netProfit: number;
+    totalOrders: number;
+    activeUsers: number;
+    activeVendors: number;
+    activeRiders: number;
 }
 
 export interface SystemAlert {
