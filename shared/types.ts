@@ -399,5 +399,6 @@ export interface MonthlyFinancialReport {
     revenue: number;
     expenses: number;
     profit: number;
+    orderCount: number;
     expenseBreakdown: Record<ExpenseCategory, number>;
 }

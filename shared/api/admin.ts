@@ -106,6 +106,7 @@ export const getYearlyFinancialReport = async (year: number): Promise<MonthlyFin
         // 2. Calculate Platform Profit
         let platformProfit = 0;
         let grossSales = 0;
+        let orderCount = 0;
 
         const monthlyOrders = mockOrders.filter(o => {
             // Use placedAt if available, otherwise date string
@@ -115,6 +116,7 @@ export const getYearlyFinancialReport = async (year: number): Promise<MonthlyFin
         });
 
         if (monthlyOrders.length > 0) {
+            orderCount = monthlyOrders.length;
             grossSales = monthlyOrders.reduce((sum, o) => sum + o.total, 0);
             platformProfit = monthlyOrders.reduce((sum, o) => {
                 const vendorShare = o.subtotal * VENDOR_COMMISSION_RATE;
@@ -124,6 +126,7 @@ export const getYearlyFinancialReport = async (year: number): Promise<MonthlyFin
         } else if (year === new Date().getFullYear() && index <= currentMonthIndex) {
             // Simulate past data for visual fullness if no mock orders exist for that month
             // In a real app, this block wouldn't exist, we'd just show 0
+            orderCount = Math.floor(200 + Math.random() * 50);
             const simulatedOrderVolume = 50000 + Math.random() * 20000; // ~50k-70k sales
             grossSales = simulatedOrderVolume;
             
@@ -140,8 +143,7 @@ export const getYearlyFinancialReport = async (year: number): Promise<MonthlyFin
             revenue: grossSales, // GMV
             expenses: totalExpense, // Costs
             profit: platformProfit - totalExpense, // Net Income
-            // Extra fields for UI breakdown (not in interface but useful if we extended it)
-            // platformRevenue: platformProfit 
+            orderCount,
             expenseBreakdown
         };
     });
