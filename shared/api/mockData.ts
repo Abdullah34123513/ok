@@ -26,9 +26,9 @@ const sizeOption: CustomizationOption = {
 // --- SINGLE SOURCE OF TRUTH FOR RESTAURANT & VENDOR DATA ---
 
 export const mockAreas: Area[] = [
-    { id: 'area-1', name: 'Downtown', center: { lat: 34.0522, lng: -118.2437 }, radius: 3000 },
-    { id: 'area-2', name: 'Suburbia', center: { lat: 34.0622, lng: -118.2537 }, radius: 5000 },
-    { id: 'area-3', name: 'Market District', center: { lat: 34.0422, lng: -118.2337 }, radius: 2000 },
+    { id: 'area-1', name: 'Downtown', center: { lat: 34.0522, lng: -118.2437 }, radius: 3000, hasWarehouseAccess: true },
+    { id: 'area-2', name: 'Suburbia', center: { lat: 34.0622, lng: -118.2537 }, radius: 5000, hasWarehouseAccess: false },
+    { id: 'area-3', name: 'Market District', center: { lat: 34.0422, lng: -118.2337 }, radius: 2000, hasWarehouseAccess: true },
 ];
 
 const generatedData = (() => {
@@ -51,6 +51,7 @@ const generatedData = (() => {
     // 1. Create Restaurant
     const restaurant: Restaurant = {
         id: `restaurant-${i}`,
+        type: 'RESTAURANT',
         logoUrl: `https://picsum.photos/seed/logo${i}/100/100`,
         coverImageUrl: `https://picsum.photos/seed/cover${i}/1200/400`,
         name: `Restaurant Hub ${i}`,
@@ -120,6 +121,7 @@ const generatedData = (() => {
   // Add a special 24/7 restaurant
    const diner: Restaurant = {
       id: `restaurant-26`,
+      type: 'RESTAURANT',
       logoUrl: `https://picsum.photos/seed/logo26/100/100`,
       coverImageUrl: `https://picsum.photos/seed/cover26/1200/400`,
       name: `24/7 Diner`,
@@ -150,6 +152,66 @@ const generatedData = (() => {
       availability: { type: 'CUSTOM_TIME', startTime: '22:00', endTime: '06:00' }
    };
    foods.push(dinerFood);
+
+   // --- GROCERY STORE SETUP ---
+   const grocery: Restaurant = {
+       id: 'restaurant-grocery-1',
+       type: 'GROCERY',
+       logoUrl: 'https://picsum.photos/seed/grocerylogo/100/100',
+       coverImageUrl: 'https://picsum.photos/seed/grocerycover/1200/400',
+       name: 'Fresh Mart',
+       rating: 4.5,
+       cuisine: 'Groceries',
+       deliveryFee: 4.99,
+       deliveryTime: '45-60 min',
+       address: '88 Market St, Downtown',
+       areaId: 'area-1',
+       location: { lat: 34.0522, lng: -118.2437 },
+       operatingHours: twentyFourSevenHours
+   };
+   restaurants.push(grocery);
+   const groceryVendor: Vendor = { id: 'vendor-grocery', restaurantId: grocery.id, name: 'Fresh Mart Manager', email: 'grocery@example.com', status: 'active', areaId: 'area-1' };
+   vendors.push(groceryVendor);
+   const groceryUser: User = { name: 'Grocery Mgr', email: 'grocery@example.com', phone: '555-9999' };
+   vendorUsers.push(groceryUser);
+   vendorPasswords.set(groceryUser.email, 'grocery123');
+   
+   const groceryItems: Food[] = [
+       { id: 'g-1', imageUrl: 'https://picsum.photos/seed/milk/400/300', name: 'Fresh Milk 1L', price: 2.50, rating: 5, restaurantId: grocery.id, description: 'Full cream milk', vendor: { name: grocery.name }, category: 'Dairy' },
+       { id: 'g-2', imageUrl: 'https://picsum.photos/seed/bread/400/300', name: 'Whole Wheat Bread', price: 3.00, rating: 4.8, restaurantId: grocery.id, description: 'Freshly baked', vendor: { name: grocery.name }, category: 'Bakery' },
+       { id: 'g-3', imageUrl: 'https://picsum.photos/seed/eggs/400/300', name: 'Eggs (Dozen)', price: 4.50, rating: 4.9, restaurantId: grocery.id, description: 'Organic eggs', vendor: { name: grocery.name }, category: 'Dairy' }
+   ];
+   foods.push(...groceryItems);
+
+   // --- WAREHOUSE SETUP ---
+   const warehouse: Restaurant = {
+       id: 'restaurant-warehouse-1',
+       type: 'WAREHOUSE',
+       logoUrl: 'https://picsum.photos/seed/warehouselogo/100/100',
+       coverImageUrl: 'https://picsum.photos/seed/warehousecover/1200/400',
+       name: 'FoodieFind Warehouse',
+       rating: 5.0,
+       cuisine: 'Wholesale',
+       deliveryFee: 2.99,
+       deliveryTime: 'Next Day',
+       address: '1 Industrial Way',
+       areaId: 'area-1', // Base area
+       location: { lat: 34.0522, lng: -118.2437 },
+       operatingHours: twentyFourSevenHours
+   };
+   restaurants.push(warehouse);
+   const warehouseVendor: Vendor = { id: 'vendor-warehouse', restaurantId: warehouse.id, name: 'Warehouse Ops', email: 'warehouse@example.com', status: 'active', areaId: 'area-1' };
+   vendors.push(warehouseVendor);
+   const warehouseUser: User = { name: 'Warehouse Admin', email: 'warehouse@example.com', phone: '555-8888' };
+   vendorUsers.push(warehouseUser);
+   vendorPasswords.set(warehouseUser.email, 'warehouse123');
+
+   const warehouseItems: Food[] = [
+       { id: 'w-1', imageUrl: 'https://picsum.photos/seed/rice/400/300', name: 'Premium Basmati Rice (5kg)', price: 15.00, rating: 5, restaurantId: warehouse.id, description: 'Export quality rice', vendor: { name: warehouse.name }, category: 'Staples' },
+       { id: 'w-2', imageUrl: 'https://picsum.photos/seed/oil/400/300', name: 'Sunflower Oil (5L)', price: 12.00, rating: 5, restaurantId: warehouse.id, description: 'Healthy cooking oil', vendor: { name: warehouse.name }, category: 'Staples' },
+       { id: 'w-3', imageUrl: 'https://picsum.photos/seed/sugar/400/300', name: 'White Sugar (2kg)', price: 4.00, rating: 5, restaurantId: warehouse.id, description: 'Refined sugar', vendor: { name: warehouse.name }, category: 'Staples' }
+   ];
+   foods.push(...warehouseItems);
 
 
   return { restaurants, vendors, vendorUsers, vendorPasswords, foods };

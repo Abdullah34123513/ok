@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import type { Offer, Restaurant, Food, SearchResult, Area } from '@shared/types';
 import * as api from '@shared/api';
@@ -5,6 +6,8 @@ import * as tracking from '@shared/tracking';
 import Header from '@components/Header';
 import HeroBanner from '@components/HeroBanner';
 import TopRestaurants from '@components/TopVendors';
+import TopGroceryStores from '@components/TopGroceryStores';
+import WarehouseFeed from '@components/WarehouseFeed';
 import OffersCarousel from '@components/OffersCarousel';
 import FoodFeed from '@components/FoodFeed';
 import FoodCard from '@components/FoodCard';
@@ -19,6 +22,8 @@ const HomePage: React.FC<HomePageProps> = ({ area }) => {
     const [offers, setOffers] = useState<Offer[]>([]);
     const [activeOffers, setActiveOffers] = useState<Offer[]>([]);
     const [topRestaurants, setTopRestaurants] = useState<Restaurant[]>([]);
+    const [groceryStores, setGroceryStores] = useState<Restaurant[]>([]);
+    const [warehouseProducts, setWarehouseProducts] = useState<Food[]>([]);
     
     const [foods, setFoods] = useState<Food[]>([]);
     const [page, setPage] = useState(1);
@@ -46,11 +51,17 @@ const HomePage: React.FC<HomePageProps> = ({ area }) => {
     useEffect(() => {
         resetFoodFeed();
         setTopRestaurants([]);
+        setGroceryStores([]);
+        setWarehouseProducts([]);
         setOffers([]);
         setActiveOffers([]);
+        
         api.getOffers(area.id).then(setOffers);
         api.getActiveOffers(area.id).then(setActiveOffers);
         api.getTopRestaurants(area.id).then(setTopRestaurants);
+        api.getTopGroceryStores(area.id).then(setGroceryStores);
+        api.getWarehouseProducts(area.id).then(setWarehouseProducts);
+
     }, [area, resetFoodFeed]);
 
     const loadMoreFoods = useCallback(() => {
@@ -108,7 +119,7 @@ const HomePage: React.FC<HomePageProps> = ({ area }) => {
                 <div>
                     {searchResults.restaurants.length > 0 && (
                         <>
-                            <h3 className="text-xl font-semibold text-gray-700 mb-3 mt-6">Restaurants</h3>
+                            <h3 className="text-xl font-semibold text-gray-700 mb-3 mt-6">Restaurants & Stores</h3>
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                                  {searchResults.restaurants.map((restaurant: Restaurant) => (
                                     <div key={restaurant.id} className="bg-white p-4 rounded-lg shadow-md flex items-center space-x-4 cursor-pointer hover:shadow-lg transition" onClick={() => onRestaurantClick(restaurant.id)}>
@@ -128,7 +139,7 @@ const HomePage: React.FC<HomePageProps> = ({ area }) => {
                     )}
                     {searchResults.foods.length > 0 && (
                         <>
-                            <h3 className="text-xl font-semibold text-gray-700 mb-3 mt-6">Food Items</h3>
+                            <h3 className="text-xl font-semibold text-gray-700 mb-3 mt-6">Items</h3>
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                                 {searchResults.foods.map((food: Food) => <FoodCard key={food.id} food={food} onFoodClick={onFoodClick} />)}
                             </div>
@@ -150,11 +161,27 @@ const HomePage: React.FC<HomePageProps> = ({ area }) => {
                 <>
                     <OngoingOrderTracker />
                     <HeroBanner offers={offers} />
+                    
+                    {/* New Grocery Section */}
+                    <TopGroceryStores 
+                        stores={groceryStores}
+                        onStoreClick={onRestaurantClick}
+                    />
+
+                    {/* Existing Top Restaurants */}
                     <TopRestaurants 
                         restaurants={topRestaurants} 
                         onRestaurantClick={onRestaurantClick} 
                     />
+
+                    {/* New Warehouse Section (Conditional based on area) */}
+                    <WarehouseFeed 
+                        products={warehouseProducts}
+                        onProductClick={onFoodClick}
+                    />
+
                     <OffersCarousel offers={activeOffers} />
+                    
                     <FoodFeed 
                         foods={foods} 
                         onLoadMore={loadMoreFoods} 

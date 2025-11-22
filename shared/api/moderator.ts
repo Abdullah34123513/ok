@@ -114,6 +114,7 @@ export const createVendor = async (
     // 1. Create Restaurant
     const newRestaurant: Restaurant = {
         id: `restaurant-${Date.now()}`,
+        type: 'RESTAURANT',
         name: restaurantName,
         cuisine,
         address,
@@ -265,20 +266,21 @@ export const getSystemAlerts = async (): Promise<SystemAlert[]> => {
 
 // --- NEW MANAGEMENT APIS ---
 
-export const createArea = async (name: string, center?: LocationPoint, radius?: number): Promise<Area> => {
+export const createArea = async (name: string, center?: LocationPoint, radius?: number, hasWarehouseAccess?: boolean): Promise<Area> => {
     await simulateDelay(400);
-    const newArea = { id: `area-${Date.now()}`, name, center, radius };
+    const newArea: Area = { id: `area-${Date.now()}`, name, center, radius, hasWarehouseAccess };
     mockAreas.push(newArea);
     return newArea;
 };
 
-export const updateArea = async (id: string, name: string, center?: LocationPoint, radius?: number): Promise<Area> => {
+export const updateArea = async (id: string, name: string, center?: LocationPoint, radius?: number, hasWarehouseAccess?: boolean): Promise<Area> => {
     await simulateDelay(400);
     const area = mockAreas.find(a => a.id === id);
     if (!area) throw new Error("Area not found");
     area.name = name;
     area.center = center;
     area.radius = radius;
+    area.hasWarehouseAccess = hasWarehouseAccess;
     return area;
 };
 

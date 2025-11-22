@@ -61,11 +61,13 @@ export interface Area {
   name: string;
   center?: LocationPoint;
   radius?: number; // in meters
+  hasWarehouseAccess?: boolean; // New field: Moderator controls this
 }
 
 
 export interface Restaurant {
   id: string;
+  type: 'RESTAURANT' | 'GROCERY' | 'WAREHOUSE'; // New field
   logoUrl: string;
   coverImageUrl: string;
   name: string;

@@ -6,7 +6,7 @@ import type { Area, LocationPoint } from '@shared/types';
 interface AreaModalProps {
     area?: Area;
     onClose: () => void;
-    onSave: (name: string, center?: LocationPoint, radius?: number) => void;
+    onSave: (name: string, center?: LocationPoint, radius?: number, hasWarehouseAccess?: boolean) => void;
 }
 
 declare global {
@@ -19,6 +19,7 @@ const AreaModal: React.FC<AreaModalProps> = ({ area, onClose, onSave }) => {
     const [name, setName] = useState(area?.name || '');
     const [center, setCenter] = useState<LocationPoint>(area?.center || { lat: 34.0522, lng: -118.2437 });
     const [radius, setRadius] = useState<number>(area?.radius || 2000);
+    const [hasWarehouseAccess, setHasWarehouseAccess] = useState(area?.hasWarehouseAccess || false);
     
     const mapRef = useRef<HTMLDivElement>(null);
     const searchInputRef = useRef<HTMLInputElement>(null);
@@ -119,7 +120,7 @@ const AreaModal: React.FC<AreaModalProps> = ({ area, onClose, onSave }) => {
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        onSave(name, center, radius);
+        onSave(name, center, radius, hasWarehouseAccess);
     };
 
     return (
@@ -158,7 +159,7 @@ const AreaModal: React.FC<AreaModalProps> = ({ area, onClose, onSave }) => {
                             </div>
                         </div>
 
-                        <div className="h-96 w-full bg-gray-100 rounded-md overflow-hidden relative">
+                        <div className="h-80 w-full bg-gray-100 rounded-md overflow-hidden relative">
                             {!window.google && (
                                 <div className="absolute inset-0 flex items-center justify-center text-gray-500">
                                     Map could not be loaded. Please check API configuration.
@@ -174,6 +175,20 @@ const AreaModal: React.FC<AreaModalProps> = ({ area, onClose, onSave }) => {
                             <div>
                                 <span className="font-semibold">Radius:</span> {Math.round(radius)} meters
                             </div>
+                        </div>
+
+                        <div className="flex items-center space-x-2 pt-2 border-t">
+                            <input 
+                                type="checkbox" 
+                                id="warehouseAccess" 
+                                checked={hasWarehouseAccess} 
+                                onChange={(e) => setHasWarehouseAccess(e.target.checked)}
+                                className="h-4 w-4 text-[#FF6B00] focus:ring-[#FF6B00] border-gray-300 rounded"
+                            />
+                            <label htmlFor="warehouseAccess" className="text-sm font-medium text-gray-800">
+                                Enable Warehouse Product Access
+                            </label>
+                            <span className="text-xs text-gray-500">(Users in this area can order from the central warehouse)</span>
                         </div>
                     </form>
                 </div>

@@ -1,6 +1,7 @@
+
 import React from 'react';
 import { View } from '../App';
-import { DashboardIcon, MenuIcon, SettingsIcon, LogoIcon, LogoutIcon, EarningsIcon } from './Icons';
+import { DashboardIcon, MenuIcon, SettingsIcon, LogoIcon, LogoutIcon, EarningsIcon, CubeIcon } from './Icons';
 import { useAuth } from '../contexts/AuthContext';
 
 interface NavProps {
@@ -34,10 +35,17 @@ const BottomNavLink: React.FC<NavLinkProps> = ({ view, label, icon: Icon, isActi
 
 
 const Navigation: React.FC<NavProps> = ({ activeView }) => {
-    const { logout } = useAuth();
+    const { logout, vendorType } = useAuth();
+    
+    const isGroceryOrWarehouse = vendorType === 'GROCERY' || vendorType === 'WAREHOUSE';
+
     const navItems: { view: View; label: string; icon: React.ComponentType<{ className?: string }>; }[] = [
         { view: 'dashboard', label: 'Dashboard', icon: DashboardIcon },
-        { view: 'menu', label: 'Menu', icon: MenuIcon },
+        // Conditionally render Menu or Inventory
+        ...(isGroceryOrWarehouse 
+            ? [{ view: 'inventory' as View, label: 'Inventory', icon: CubeIcon }]
+            : [{ view: 'menu' as View, label: 'Menu', icon: MenuIcon }]
+        ),
         { view: 'earnings', label: 'Earnings', icon: EarningsIcon },
         { view: 'settings', label: 'Settings', icon: SettingsIcon },
     ];

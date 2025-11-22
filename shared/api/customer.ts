@@ -74,9 +74,38 @@ export const getFoodsForOffer = async (offerId: string, areaId: string): Promise
 export const getTopRestaurants = async (areaId: string): Promise<Restaurant[]> => {
   await simulateDelay(600);
   const seed = locationHash(areaId);
-  const areaRestaurants = allMockRestaurants.filter(r => r.areaId === areaId);
+  const areaRestaurants = allMockRestaurants.filter(r => r.areaId === areaId && r.type === 'RESTAURANT');
   return shuffleArray(areaRestaurants, seed).slice(0, 10);
 };
+
+// --- New Methods for Grocery & Warehouse ---
+
+export const getTopGroceryStores = async (areaId: string): Promise<Restaurant[]> => {
+    await simulateDelay(500);
+    // In a real app, you might want to allow cross-area shopping for grocery, but here we stick to areaId
+    // For mock data simplicity, we might show the grocery store even if area doesn't strictly match if count is low
+    const groceryStores = allMockRestaurants.filter(r => r.type === 'GROCERY'); 
+    return groceryStores;
+};
+
+export const getWarehouseProducts = async (areaId: string): Promise<Food[]> => {
+    await simulateDelay(600);
+    const area = mockAreas.find(a => a.id === areaId);
+    
+    // Check if area allows warehouse access
+    if (!area || !area.hasWarehouseAccess) {
+        return [];
+    }
+
+    // Get the warehouse ID (mocking assumption: there is one main warehouse or specific per area)
+    const warehouse = allMockRestaurants.find(r => r.type === 'WAREHOUSE');
+    if (!warehouse) return [];
+
+    // Return foods belonging to the warehouse
+    return allMockFoods.filter(f => f.restaurantId === warehouse.id);
+};
+
+// -------------------------------------------
 
 interface RestaurantFilters {
     sortBy?: 'rating' | 'deliveryTime' | 'deliveryFee';
@@ -92,7 +121,8 @@ export const getRestaurants = async (
 ): Promise<PaginatedRestaurants> => {
     await simulateDelay(800);
     
-    let filtered = allMockRestaurants.filter(r => r.areaId === areaId);
+    // Filter for RESTAURANT type specifically for the main listing
+    let filtered = allMockRestaurants.filter(r => r.areaId === areaId && r.type === 'RESTAURANT');
 
     if (filters) {
         if (filters.minRating) {
@@ -151,7 +181,8 @@ export const getRestaurants = async (
 export const getFoods = async (areaId: string, page: number, limit = 12): Promise<PaginatedFoods> => {
   await simulateDelay(1000);
   const seed = locationHash(areaId);
-  const restaurantsInArea = new Set(allMockRestaurants.filter(r => r.areaId === areaId).map(r => r.id));
+  // Only food from normal restaurants in food feed
+  const restaurantsInArea = new Set(allMockRestaurants.filter(r => r.areaId === areaId && r.type === 'RESTAURANT').map(r => r.id));
   const areaFoods = allMockFoods.filter(f => restaurantsInArea.has(f.restaurantId));
   const shuffled = shuffleArray(areaFoods, seed);
   const start = (page - 1) * limit;
@@ -168,6 +199,7 @@ export const search = async (query: string, areaId: string): Promise<SearchResul
     await simulateDelay(500);
     const lowerQuery = query.toLowerCase();
     
+    // Allow searching all types in area
     const restaurantsInArea = allMockRestaurants.filter(r => r.areaId === areaId);
     const restaurantsInAreaIds = new Set(restaurantsInArea.map(r => r.id));
     const foodsInArea = allMockFoods.filter(f => restaurantsInAreaIds.has(f.restaurantId));

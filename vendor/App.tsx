@@ -6,6 +6,7 @@ import Notification from '@shared/components/Notification';
 import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
 import MenuPage from './pages/MenuPage';
+import InventoryPage from './pages/InventoryPage';
 import ProfilePage from './pages/ProfilePage';
 import SettingsPage from './pages/SettingsPage';
 import EarningsPage from './pages/EarningsPage';
@@ -13,7 +14,7 @@ import Navigation from './components/Sidebar';
 import Header from './components/Header';
 import MasqueradeBanner from './components/MasqueradeBanner';
 
-export type View = 'dashboard' | 'menu' | 'settings' | 'profile' | 'earnings';
+export type View = 'dashboard' | 'menu' | 'inventory' | 'settings' | 'profile' | 'earnings';
 
 interface Route {
     view: View;
@@ -27,6 +28,7 @@ const parseHash = (): Route => {
     
     switch (view) {
         case 'menu': return { view: 'menu' };
+        case 'inventory': return { view: 'inventory' };
         case 'settings': return { view: 'settings' };
         case 'profile': return { view: 'profile' };
         case 'earnings': return { view: 'earnings' };
@@ -81,6 +83,8 @@ const AppContent: React.FC = () => {
         switch (route.view) {
             case 'menu':
                 return <MenuPage />;
+            case 'inventory':
+                return <InventoryPage />;
             case 'settings':
                 return <SettingsPage />;
             case 'profile':
