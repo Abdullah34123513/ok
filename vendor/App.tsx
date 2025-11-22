@@ -58,7 +58,11 @@ const AppContent: React.FC = () => {
     }, []);
 
     if (isLoading) {
-        return <div className="flex h-screen items-center justify-center">Loading...</div>;
+        return (
+            <div className="flex h-screen items-center justify-center bg-gray-100">
+                <div className="text-gray-500 font-medium">Loading Vendor Dashboard...</div>
+            </div>
+        );
     }
 
     if (!currentVendor) {

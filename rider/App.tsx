@@ -44,7 +44,11 @@ const AppContent: React.FC = () => {
     }, []);
 
     if (isLoading) {
-        return <div className="flex h-screen items-center justify-center">Loading...</div>;
+        return (
+            <div className="flex h-screen items-center justify-center bg-gray-50">
+                <div className="text-[#FF6B00] font-bold text-lg animate-pulse">Loading Rider App...</div>
+            </div>
+        );
     }
 
     // If logged in, always show dashboard.

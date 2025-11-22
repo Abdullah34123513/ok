@@ -64,7 +64,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Don't render children until we've checked for a logged in user
   if (isLoading) {
-      return <div className="flex h-screen items-center justify-center">Loading application...</div>;
+      return (
+        <div className="flex h-screen items-center justify-center bg-gray-50">
+            <div className="flex flex-col items-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-red-500 mb-4"></div>
+                <p className="text-gray-500 font-medium">Loading application...</p>
+            </div>
+        </div>
+      );
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
