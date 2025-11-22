@@ -399,6 +399,17 @@ export interface FinancialSpreadsheetData {
     expenses: Record<string, number[]>; // string key because categories are dynamic
     totalOpEx: number[];
     netProfit: number[];
+    // Detailed breakdown
+    revenueSources: {
+        commissions: number[];
+        deliveryFees: number[];
+        ads: number[];
+    };
+    expenseBreakdown: {
+        operations: number[]; // salaries, rent
+        marketing: number[];
+        technology: number[]; // hosting, api
+    };
     metrics: {
         dailySales: number[];
         monthlySales: number[];

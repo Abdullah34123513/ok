@@ -82,6 +82,15 @@ export const addExpenseCategory = async (categoryName: string): Promise<void> =>
     }
 }
 
+export const removeExpenseCategory = async (categoryName: string, year: number): Promise<FinancialSpreadsheetData> => {
+    await simulateDelay(300);
+    const index = expenseCategories.indexOf(categoryName);
+    if (index > -1) {
+        expenseCategories.splice(index, 1);
+    }
+    return getFinancialSpreadsheetData(year);
+};
+
 export const updateMonthlyExpense = async (category: string, year: number, monthIndex: number, amount: number): Promise<FinancialSpreadsheetData> => {
     await simulateDelay(300);
     
@@ -125,13 +134,26 @@ export const getFinancialSpreadsheetData = async (year: number): Promise<Financi
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     const monthsFull = months.map(m => `${m}-${year.toString().slice(-2)}`); // e.g., "Jan-26"
     
-    // Use the dynamic list of categories
     // Initialize data structures
     const expenses: Record<ExpenseCategory, number[]> = {} as any;
     expenseCategories.forEach(cat => expenses[cat] = new Array(12).fill(0));
     
     const totalOpEx = new Array(12).fill(0);
     const netProfit = new Array(12).fill(0);
+    
+    // Detailed Revenue Arrays
+    const revenueSources = {
+        commissions: new Array(12).fill(0),
+        deliveryFees: new Array(12).fill(0),
+        ads: new Array(12).fill(0)
+    };
+
+    // Detailed Expense Arrays (Aggregation)
+    const expenseBreakdown = {
+        operations: new Array(12).fill(0),
+        marketing: new Array(12).fill(0),
+        technology: new Array(12).fill(0),
+    };
     
     const metrics = {
         dailySales: new Array(12).fill(0),
@@ -148,12 +170,21 @@ export const getFinancialSpreadsheetData = async (year: number): Promise<Financi
         const d = new Date(e.date);
         if (d.getFullYear() === year) {
             const monthIdx = d.getMonth();
-            // If we encounter a category not in our list (maybe added dynamically but list not synced), add it
+            // Ensure category exists
             if (!expenses[e.category]) {
                 expenses[e.category] = new Array(12).fill(0);
                 if (!expenseCategories.includes(e.category)) expenseCategories.push(e.category);
             }
             expenses[e.category][monthIdx] += e.amount;
+
+            // Categorize for breakdown chart
+            if (['Marketing', 'Ads', 'Promo'].some(s => e.category.includes(s))) {
+                expenseBreakdown.marketing[monthIdx] += e.amount;
+            } else if (['Google API', 'Firebase', 'Hosting', 'Server'].some(s => e.category.includes(s))) {
+                expenseBreakdown.technology[monthIdx] += e.amount;
+            } else {
+                expenseBreakdown.operations[monthIdx] += e.amount;
+            }
         }
     });
 
@@ -168,56 +199,51 @@ export const getFinancialSpreadsheetData = async (year: number): Promise<Financi
         totalOpEx[i] = monthlySum;
     }
 
-    // 3. Calculate Revenue & Profit Logic
+    // 3. Calculate Detailed Revenue (Simulated with granular logic)
     for (let i = 0; i < 12; i++) {
-        // Simulate varying order volume increasing over the year
+        // Order Volume Trend
         const baseVolume = 150 + (i * 50); 
-        const orderCount = Math.floor(baseVolume * (0.9 + Math.random() * 0.2)); // +/- 10% variance
+        const orderCount = Math.floor(baseVolume * (0.9 + Math.random() * 0.2));
         
-        // Simulate Revenue components
-        const avgOrderValue = 1200; // avg basket size
-        const avgDeliveryFee = 60;
-        const avgCommissionRate = 0.15; // 15% platform commission
-
-        const totalSalesVolume = orderCount * avgOrderValue; // GMV
-        const totalCommissionRevenue = totalSalesVolume * avgCommissionRate;
-        const totalDeliveryRevenue = orderCount * avgDeliveryFee;
+        // Averages
+        const avgBasket = 1200; // ৳
+        const avgCommission = 0.15; // 15%
+        const avgDelivery = 60; // ৳
         
-        const grossPlatformRevenue = totalCommissionRevenue + totalDeliveryRevenue;
+        // Revenue Streams
+        const monthlyGMV = orderCount * avgBasket;
+        const commRev = monthlyGMV * avgCommission;
+        const delRev = orderCount * avgDelivery;
+        const adRev = i * 2000 + 5000; // Simulated growing ad revenue
 
-        // Populate Metrics
+        revenueSources.commissions[i] = commRev;
+        revenueSources.deliveryFees[i] = delRev;
+        revenueSources.ads[i] = adRev;
+
+        const totalMonthlyRevenue = commRev + delRev + adRev;
+
+        // Metrics
         metrics.monthlySales[i] = orderCount;
         metrics.dailySales[i] = Math.round(orderCount / 30);
+        metrics.commissionPerOrder[i] = orderCount > 0 ? Math.round(commRev / orderCount) : 0;
+        metrics.avgGrossProfit[i] = orderCount > 0 ? Math.round(totalMonthlyRevenue / orderCount) : 0;
         
-        // "Sales commission per order": Total Commission / Orders
-        metrics.commissionPerOrder[i] = orderCount > 0 ? Math.round(totalCommissionRevenue / orderCount) : 0;
-        
-        // "Avg gross profit/delivery revenue": Total Revenue / Orders
-        metrics.avgGrossProfit[i] = orderCount > 0 ? Math.round(grossPlatformRevenue / orderCount) : 0;
-        
-        // "Avg marketing cost": Marketing Spend / Orders
-        // Check if 'Marketing' exists in dynamic categories, else 0
         const marketingSpend = expenses['Marketing'] ? expenses['Marketing'][i] : 0;
         metrics.avgMarketingCost[i] = orderCount > 0 ? Math.round(marketingSpend / orderCount) : 0;
-        
         metrics.otherCost[i] = expenses['Other Cost'] ? expenses['Other Cost'][i] : 0;
 
-        // Net Profit = Gross Revenue - OpEx
-        const monthlyNetProfit = grossPlatformRevenue - totalOpEx[i];
-        netProfit[i] = monthlyNetProfit;
-
-        // "net profit per sales": Net Profit / Order Count
-        metrics.netProfitPerSales[i] = orderCount > 0 ? Math.round(monthlyNetProfit / orderCount) : 0;
+        // Net Profit
+        netProfit[i] = totalMonthlyRevenue - totalOpEx[i];
+        metrics.netProfitPerSales[i] = orderCount > 0 ? Math.round(netProfit[i] / orderCount) : 0;
     }
 
     // 4. Totals
     const totalOpExYear = totalOpEx.reduce((a, b) => a + b, 0);
-    const totalRevenueYear = metrics.monthlySales.reduce((sum, count, idx) => {
-        // Re-calculate revenue from metrics for consistency
-        return sum + (metrics.avgGrossProfit[idx] * count);
-    }, 0);
+    const totalRevenueYear = revenueSources.commissions.reduce((a,b) => a+b, 0) + 
+                             revenueSources.deliveryFees.reduce((a,b) => a+b, 0) + 
+                             revenueSources.ads.reduce((a,b) => a+b, 0);
     
-    const totalCostYear = totalOpExYear; // Assuming Cost = OpEx for this spreadsheet model
+    const totalCostYear = totalOpExYear; 
     const difference = totalRevenueYear - totalCostYear;
 
     return {
@@ -225,6 +251,8 @@ export const getFinancialSpreadsheetData = async (year: number): Promise<Financi
         expenses,
         totalOpEx,
         netProfit,
+        revenueSources,
+        expenseBreakdown,
         metrics,
         totals: {
             totalOpExYear,
