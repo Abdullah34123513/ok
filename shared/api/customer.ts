@@ -1,7 +1,7 @@
 
-import type { Offer, Restaurant, Food, PaginatedFoods, SearchResult, PaginatedRestaurants, MenuCategory, Review, CartItem, MenuItem, Address, Order, AddressSuggestion, AddressDetails, User, LocationPoint, SupportInfo, ChatMessage, OrderReview, SelectedCustomization, Area } from '../types';
+import type { Offer, Restaurant, Food, PaginatedFoods, SearchResult, PaginatedRestaurants, MenuCategory, Review, CartItem, MenuItem, Address, Order, AddressSuggestion, AddressDetails, User, LocationPoint, SupportInfo, ChatMessage, OrderReview, SelectedCustomization, Area, FlashSaleCampaign } from '../types';
 import { simulateDelay, shuffleArray } from './utils';
-import { mockOffers, allMockRestaurants, allMockFoods, mockCart, mockAddresses, mockOrders, allMockReviews, mockChatHistory, mockUsers, mockRiders, mockAreas } from './mockData';
+import { mockOffers, allMockRestaurants, allMockFoods, mockCart, mockAddresses, mockOrders, allMockReviews, mockChatHistory, mockUsers, mockRiders, mockAreas, mockFlashSale } from './mockData';
 
 export const getAreaForLocation = async (lat: number, _lng: number): Promise<Area> => {
     await simulateDelay(300);
@@ -625,6 +625,18 @@ export const validateCoupon = async (code: string): Promise<Offer | null> => {
         return offer;
     }
     return null;
+};
+
+// --- Flash Sale (Customer Access) ---
+export const getActiveFlashSale = async (): Promise<FlashSaleCampaign> => {
+    await simulateDelay(400);
+    // Return the global mock flash sale state
+    return mockFlashSale;
+};
+
+export const getFoodsByIds = async (ids: string[]): Promise<Food[]> => {
+    await simulateDelay(500);
+    return allMockFoods.filter(f => ids.includes(f.id));
 };
 
 // --- Tracking API ---

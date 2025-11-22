@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
-import type { Offer, Restaurant, Food, Area } from '@shared/types';
+import type { Offer, Restaurant, Food, Area, FlashSaleCampaign } from '@shared/types';
 import * as api from '@shared/api';
 import { useCart } from '@contexts/CartContext';
 import { StarIcon, ClockIcon, PackageIcon, ChevronRightIcon } from '@components/Icons';
@@ -59,19 +59,39 @@ const HeroSlider: React.FC<{ offers: Offer[] }> = ({ offers }) => {
     );
 };
 
-// 2. Flash Sale Card
-const FlashSaleCard: React.FC<{ food: Food; discount?: number }> = ({ food, discount = 20 }) => {
-    const { addItem } = useCart();
-    const originalPrice = food.price * (1 + discount / 100);
+// Real Countdown Timer Component
+const FlashSaleTimer: React.FC<{ endTime: string }> = ({ endTime }) => {
+    const [timeLeft, setTimeLeft] = useState('');
 
-    const handleAdd = (e: React.MouseEvent) => {
-        e.stopPropagation();
-        const menuItem = {
-            id: food.id, name: food.name, description: food.description, price: food.price,
-            imageUrl: food.imageUrl, restaurantId: food.restaurantId, restaurantName: food.vendor.name
+    useEffect(() => {
+        const calculate = () => {
+            const diff = new Date(endTime).getTime() - Date.now();
+            if (diff <= 0) return 'Expired';
+            
+            const hours = Math.floor(diff / (1000 * 60 * 60));
+            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+            
+            return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
         };
-        addItem(menuItem, 1, [], food.price);
-    };
+        
+        setTimeLeft(calculate());
+        const timer = setInterval(() => setTimeLeft(calculate()), 1000);
+        return () => clearInterval(timer);
+    }, [endTime]);
+
+    return (
+        <div className="hidden sm:flex items-center bg-orange-100 text-orange-600 px-2 py-0.5 rounded text-xs font-bold">
+            <ClockIcon className="w-3 h-3 mr-1"/> Ending in {timeLeft}
+        </div>
+    );
+};
+
+// 2. Flash Sale Card
+const FlashSaleCard: React.FC<{ food: Food; discount: number }> = ({ food, discount }) => {
+    // Calculate discounted price
+    const originalPrice = food.price;
+    const discountedPrice = originalPrice * (1 - discount / 100);
 
     return (
         <div 
@@ -87,7 +107,7 @@ const FlashSaleCard: React.FC<{ food: Food; discount?: number }> = ({ food, disc
             <div className="p-3 flex flex-col flex-1">
                 <h3 className="text-xs sm:text-sm text-gray-800 line-clamp-2 mb-1 h-8 sm:h-10 leading-snug">{food.name}</h3>
                 <div className="mt-auto">
-                    <div className="text-orange-500 font-bold text-sm sm:text-base">৳{food.price.toFixed(0)}</div>
+                    <div className="text-orange-500 font-bold text-sm sm:text-base">৳{discountedPrice.toFixed(0)}</div>
                     <div className="text-gray-400 text-xs line-through">৳{originalPrice.toFixed(0)}</div>
                 </div>
             </div>
@@ -169,6 +189,7 @@ const StoreRow: React.FC<{ title: string; stores: Restaurant[]; color?: string }
 
 const HomePage: React.FC<{ area: Area }> = ({ area }) => {
     const [offers, setOffers] = useState<Offer[]>([]);
+    const [flashConfig, setFlashConfig] = useState<FlashSaleCampaign | null>(null);
     const [flashFoods, setFlashFoods] = useState<Food[]>([]);
     const [justForYou, setJustForYou] = useState<Food[]>([]);
     const [topRestaurants, setTopRestaurants] = useState<Restaurant[]>([]);
@@ -178,17 +199,25 @@ const HomePage: React.FC<{ area: Area }> = ({ area }) => {
         const fetchData = async () => {
             setIsLoading(true);
             try {
-                const [allOffers, foodsData, topRes] = await Promise.all([
+                const [allOffers, foodsData, topRes, flashData] = await Promise.all([
                     api.getOffers(area.id),
                     api.getFoods(area.id, 1, 20),
-                    api.getTopRestaurants(area.id)
+                    api.getTopRestaurants(area.id),
+                    api.getActiveFlashSale()
                 ]);
 
                 setOffers(allOffers);
-                // Simulate Flash Sale by picking random items
-                setFlashFoods(foodsData.foods.slice(0, 6)); 
-                setJustForYou(foodsData.foods.slice(6));
+                setJustForYou(foodsData.foods);
                 setTopRestaurants(topRes);
+                
+                setFlashConfig(flashData);
+                if (flashData.isActive && flashData.itemIds.length > 0) {
+                    const flashItems = await api.getFoodsByIds(flashData.itemIds);
+                    setFlashFoods(flashItems);
+                } else {
+                    setFlashFoods([]);
+                }
+
             } finally {
                 setIsLoading(false);
             }
@@ -228,25 +257,25 @@ const HomePage: React.FC<{ area: Area }> = ({ area }) => {
                 ))}
             </div>
 
-            {/* 3. Flash Sale Section */}
-            <div className="mx-4 mt-4 bg-white rounded-xl shadow-sm overflow-hidden">
-                <div className="flex items-center justify-between p-3 border-b border-gray-100">
-                    <div className="flex items-center">
-                        <h3 className="text-orange-500 font-bold uppercase tracking-wide text-sm sm:text-base mr-4">Flash Sale</h3>
-                        <div className="hidden sm:flex items-center bg-orange-100 text-orange-600 px-2 py-0.5 rounded text-xs font-bold">
-                            <ClockIcon className="w-3 h-3 mr-1"/> Ending in 04:23:12
+            {/* 3. Flash Sale Section (Conditional) */}
+            {flashConfig && flashConfig.isActive && flashFoods.length > 0 && (
+                <div className="mx-4 mt-4 bg-white rounded-xl shadow-sm overflow-hidden">
+                    <div className="flex items-center justify-between p-3 border-b border-gray-100">
+                        <div className="flex items-center">
+                            <h3 className="text-orange-500 font-bold uppercase tracking-wide text-sm sm:text-base mr-4">Flash Sale</h3>
+                            <FlashSaleTimer endTime={flashConfig.endTime} />
                         </div>
+                        <button className="text-orange-500 border border-orange-500 px-3 py-1 text-xs font-bold rounded hover:bg-orange-50 uppercase">
+                            Shop All
+                        </button>
                     </div>
-                    <button className="text-orange-500 border border-orange-500 px-3 py-1 text-xs font-bold rounded hover:bg-orange-50 uppercase">
-                        Shop All Products
-                    </button>
+                    <div className="flex overflow-x-auto scrollbar-hide">
+                        {flashFoods.map(food => (
+                            <FlashSaleCard key={food.id} food={food} discount={flashConfig.discountPercentage} />
+                        ))}
+                    </div>
                 </div>
-                <div className="flex overflow-x-auto scrollbar-hide">
-                    {flashFoods.map(food => (
-                        <FlashSaleCard key={food.id} food={food} discount={Math.floor(Math.random() * 20) + 10} />
-                    ))}
-                </div>
-            </div>
+            )}
 
             {/* 4. Trending Restaurants Row */}
             <StoreRow title="Trending Restaurants" stores={topRestaurants} color="orange" />

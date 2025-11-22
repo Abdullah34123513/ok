@@ -1,7 +1,7 @@
 
 import { simulateDelay } from './utils';
-import { mockRiders, mockOrders, allMockRestaurants, mockSupportTickets, mockUsers, mockVendors, mockModerators, mockAreas, mockAddresses, mockUserPasswords, mockOffers } from './mockData';
-import type { ModeratorDashboardSummary, Restaurant, SupportTicket, Rider, User, Vendor, Order, Area, SystemAlert, Address, LocationPoint, OperatingHours, Offer } from '../types';
+import { mockRiders, mockOrders, allMockRestaurants, mockSupportTickets, mockUsers, mockVendors, mockModerators, mockAreas, mockAddresses, mockUserPasswords, mockOffers, mockFlashSale, allMockFoods } from './mockData';
+import type { ModeratorDashboardSummary, Restaurant, SupportTicket, Rider, User, Vendor, Order, Area, SystemAlert, Address, LocationPoint, OperatingHours, Offer, FlashSaleCampaign, Food } from '../types';
 
 export const getModeratorDashboardSummary = async (): Promise<ModeratorDashboardSummary> => {
     await simulateDelay(600);
@@ -361,4 +361,29 @@ export const deleteSystemOffer = async (offerId: string): Promise<void> => {
     if (index > -1) {
         mockOffers.splice(index, 1);
     }
+};
+
+// --- FLASH SALE MANAGEMENT ---
+
+export const getFlashSaleConfig = async (): Promise<FlashSaleCampaign> => {
+    await simulateDelay(300);
+    return mockFlashSale;
+};
+
+export const updateFlashSaleConfig = async (config: FlashSaleCampaign): Promise<FlashSaleCampaign> => {
+    await simulateDelay(500);
+    mockFlashSale.isActive = config.isActive;
+    mockFlashSale.endTime = config.endTime;
+    mockFlashSale.discountPercentage = config.discountPercentage;
+    mockFlashSale.itemIds = config.itemIds;
+    return mockFlashSale;
+};
+
+export const searchFoodsForModerator = async (query: string): Promise<Food[]> => {
+    await simulateDelay(300);
+    const lowerQuery = query.toLowerCase();
+    return allMockFoods.filter(f => 
+        f.name.toLowerCase().includes(lowerQuery) || 
+        f.vendor.name.toLowerCase().includes(lowerQuery)
+    ).slice(0, 10);
 };

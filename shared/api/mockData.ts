@@ -1,5 +1,5 @@
 
-import type { Offer, Restaurant, Food, MenuItem, Review, CartItem, Address, Order, User, Vendor, Rider, OperatingHours, CustomizationOption, ChatMessage, Moderator, SupportTicket, Area } from '../types';
+import type { Offer, Restaurant, Food, MenuItem, Review, CartItem, Address, Order, User, Vendor, Rider, OperatingHours, CustomizationOption, ChatMessage, Moderator, SupportTicket, Area, FlashSaleCampaign } from '../types';
 
 // --- UTILITY FUNCTIONS ---
 const createExpiryDate = (days: number): string => new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString();
@@ -234,6 +234,14 @@ export const mockOffers: Offer[] = [
   { id: 'offer-5', imageUrl: 'https://picsum.photos/seed/banner5/1200/400', title: 'Combo Meal Deal', description: 'Get a special price on our new combo meal, including a burger, fries, and a drink!', applicableFoods: ['food-1', 'food-2'] },
   { id: 'offer-6', imageUrl: 'https://picsum.photos/seed/banner6/1200/400', title: 'Expired Deal', description: 'This deal was great, but it has expired.', expiry: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString() },
 ];
+
+// Initialize Mock Flash Sale
+export let mockFlashSale: FlashSaleCampaign = {
+    isActive: true,
+    endTime: createExpiryDate(1), // Ends in 24 hours
+    discountPercentage: 25,
+    itemIds: ['food-10', 'food-20', 'food-30', 'food-40', 'food-50', 'g-1', 'w-2']
+};
 
 export let mockCart: CartItem[] = [];
 export let mockAddresses: Address[] = [

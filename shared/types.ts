@@ -161,6 +161,13 @@ export interface AppliedOffer extends Offer {
     discountAmount: number;
 }
 
+export interface FlashSaleCampaign {
+    isActive: boolean;
+    endTime: string; // ISO String
+    discountPercentage: number;
+    itemIds: string[];
+}
+
 
 export interface Review {
   id: string;

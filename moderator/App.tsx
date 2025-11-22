@@ -11,10 +11,11 @@ import VendorDetailPage from './pages/VendorDetailPage';
 import VendorOrdersPage from './pages/VendorOrdersPage';
 import AreaManagementPage from './pages/AreaManagementPage';
 import OffersManagementPage from './pages/OffersManagementPage';
+import FlashSalePage from './pages/FlashSalePage';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
 
-export type View = 'dashboard' | 'users' | 'vendors' | 'vendorDetail' | 'vendorOrders' | 'areas' | 'offers';
+export type View = 'dashboard' | 'users' | 'vendors' | 'vendorDetail' | 'vendorOrders' | 'areas' | 'offers' | 'flash-sale';
 
 interface Route {
     view: View;
@@ -40,6 +41,7 @@ const parseHash = (): Route => {
         case 'vendors': return { view: 'vendors' };
         case 'areas': return { view: 'areas' };
         case 'offers': return { view: 'offers' };
+        case 'flash-sale': return { view: 'flash-sale' };
         case 'dashboard':
         default:
             return { view: 'dashboard' };
@@ -78,6 +80,8 @@ const AppContent: React.FC = () => {
                 return <AreaManagementPage />;
             case 'offers':
                 return <OffersManagementPage />;
+            case 'flash-sale':
+                return <FlashSalePage />;
             case 'dashboard':
             default:
                 return <DashboardPage />;
