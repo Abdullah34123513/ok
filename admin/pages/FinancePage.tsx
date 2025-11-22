@@ -2,11 +2,11 @@
 import React, { useState, useEffect } from 'react';
 import * as api from '@shared/api';
 import type { Expense, MonthlyFinancialReport } from '@shared/types';
-import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend } from 'chart.js';
+import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, PointElement, LineElement, Title, Tooltip, Legend } from 'chart.js';
 import { Bar } from 'react-chartjs-2';
 import AddExpenseModal from '../components/AddExpenseModal';
 
-ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
+ChartJS.register(CategoryScale, LinearScale, BarElement, PointElement, LineElement, Title, Tooltip, Legend);
 
 const FinancePage: React.FC = () => {
     const [report, setReport] = useState<MonthlyFinancialReport[]>([]);
@@ -50,11 +50,13 @@ const FinancePage: React.FC = () => {
                 label: 'Gross Platform Profit (Commissions)',
                 data: report.map(r => r.expenses + r.profit), // Reconstructing Gross Profit from Net + Expenses
                 backgroundColor: 'rgba(59, 130, 246, 0.7)', // Blue
+                order: 2,
             },
             {
                 label: 'Operational Expenses',
                 data: report.map(r => r.expenses),
                 backgroundColor: 'rgba(239, 68, 68, 0.7)', // Red
+                order: 3,
             },
             {
                 label: 'Net Income',
@@ -64,7 +66,8 @@ const FinancePage: React.FC = () => {
                 borderColor: 'rgba(16, 185, 129, 1)',
                 borderWidth: 2,
                 fill: false,
-            }
+                order: 1,
+            } as any
         ],
     };
 
