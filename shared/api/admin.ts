@@ -165,7 +165,7 @@ export const getFinancialSpreadsheetData = async (year: number): Promise<Financi
         netProfitPerSales: new Array(12).fill(0)
     };
 
-    // 1. Process Expenses
+    // 1. Process Expenses (REAL DATA)
     mockExpenses.forEach(e => {
         const d = new Date(e.date);
         if (d.getFullYear() === year) {
@@ -199,45 +199,47 @@ export const getFinancialSpreadsheetData = async (year: number): Promise<Financi
         totalOpEx[i] = monthlySum;
     }
 
-    // 3. Calculate Detailed Revenue (Simulated with granular logic)
+    // 3. Calculate Detailed Revenue (REAL DATA from mockOrders)
+    // Iterate through all orders and place them in the correct month bucket
+    mockOrders.forEach(order => {
+        const orderDate = order.placedAt ? new Date(order.placedAt) : new Date(order.date);
+        
+        if (orderDate.getFullYear() === year) {
+            const monthIdx = orderDate.getMonth();
+            
+            // Find Vendor to get commission rate
+            const vendor = mockVendors.find(v => allMockRestaurants.find(r => r.id === v.restaurantId)?.name === order.restaurantName);
+            const commissionRate = (vendor?.commissionRate || 15) / 100; // Default 15%
+            
+            const commission = order.subtotal * commissionRate;
+            const deliveryFee = order.deliveryFee;
+
+            revenueSources.commissions[monthIdx] += commission;
+            revenueSources.deliveryFees[monthIdx] += deliveryFee;
+            
+            metrics.monthlySales[monthIdx] += 1;
+        }
+    });
+
+    // 4. Calculate Derived Metrics & Net Profit
     for (let i = 0; i < 12; i++) {
-        // Order Volume Trend
-        const baseVolume = 150 + (i * 50); 
-        const orderCount = Math.floor(baseVolume * (0.9 + Math.random() * 0.2));
+        const totalMonthlyRevenue = revenueSources.commissions[i] + revenueSources.deliveryFees[i] + revenueSources.ads[i];
+        netProfit[i] = totalMonthlyRevenue - totalOpEx[i];
+
+        const orderCount = metrics.monthlySales[i];
         
-        // Averages
-        const avgBasket = 1200; // ৳
-        const avgCommission = 0.15; // 15%
-        const avgDelivery = 60; // ৳
-        
-        // Revenue Streams
-        const monthlyGMV = orderCount * avgBasket;
-        const commRev = monthlyGMV * avgCommission;
-        const delRev = orderCount * avgDelivery;
-        const adRev = i * 2000 + 5000; // Simulated growing ad revenue
-
-        revenueSources.commissions[i] = commRev;
-        revenueSources.deliveryFees[i] = delRev;
-        revenueSources.ads[i] = adRev;
-
-        const totalMonthlyRevenue = commRev + delRev + adRev;
-
-        // Metrics
-        metrics.monthlySales[i] = orderCount;
-        metrics.dailySales[i] = Math.round(orderCount / 30);
-        metrics.commissionPerOrder[i] = orderCount > 0 ? Math.round(commRev / orderCount) : 0;
+        metrics.dailySales[i] = Math.round(orderCount / 30); // approx
+        metrics.commissionPerOrder[i] = orderCount > 0 ? Math.round(revenueSources.commissions[i] / orderCount) : 0;
         metrics.avgGrossProfit[i] = orderCount > 0 ? Math.round(totalMonthlyRevenue / orderCount) : 0;
         
         const marketingSpend = expenses['Marketing'] ? expenses['Marketing'][i] : 0;
         metrics.avgMarketingCost[i] = orderCount > 0 ? Math.round(marketingSpend / orderCount) : 0;
         metrics.otherCost[i] = expenses['Other Cost'] ? expenses['Other Cost'][i] : 0;
-
-        // Net Profit
-        netProfit[i] = totalMonthlyRevenue - totalOpEx[i];
+        
         metrics.netProfitPerSales[i] = orderCount > 0 ? Math.round(netProfit[i] / orderCount) : 0;
     }
 
-    // 4. Totals
+    // 5. Totals
     const totalOpExYear = totalOpEx.reduce((a, b) => a + b, 0);
     const totalRevenueYear = revenueSources.commissions.reduce((a,b) => a+b, 0) + 
                              revenueSources.deliveryFees.reduce((a,b) => a+b, 0) + 
