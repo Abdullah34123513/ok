@@ -1,7 +1,7 @@
 
 import { simulateDelay } from './utils';
-import { mockRiders, mockOrders, allMockRestaurants, mockUsers, mockVendors, mockModerators, mockAdmins, mockUserPasswords } from './mockData';
-import type { AdminDashboardSummary, Moderator, User } from '../types';
+import { mockRiders, mockOrders, allMockRestaurants, mockUsers, mockVendors, mockModerators, mockAdmins, mockUserPasswords, mockExpenses } from './mockData';
+import type { AdminDashboardSummary, Moderator, User, Expense, MonthlyFinancialReport, ExpenseCategory } from '../types';
 
 export const getAdminDashboardSummary = async (): Promise<AdminDashboardSummary> => {
     await simulateDelay(600);
@@ -54,24 +54,70 @@ export const deleteModerator = async (modId: string): Promise<void> => {
     }
 };
 
-export const getFinancialStats = async (): Promise<{ date: string, revenue: number, profit: number }[]> => {
-    await simulateDelay(700);
-    // Mock last 7 days data
-    const data = [];
-    const today = new Date();
-    for (let i = 6; i >= 0; i--) {
-        const d = new Date(today);
-        d.setDate(today.getDate() - i);
-        const dateStr = d.toLocaleDateString();
-        // Randomize revenue a bit based on a base
-        const baseRevenue = 1500 + (Math.random() * 1000); 
-        data.push({
-            date: dateStr,
-            revenue: parseFloat(baseRevenue.toFixed(2)),
-            profit: parseFloat((baseRevenue * 0.2).toFixed(2)) // 20% profit margin
+// --- Financial API ---
+
+export const addExpense = async (expense: Omit<Expense, 'id'>): Promise<Expense> => {
+    await simulateDelay(500);
+    const newExpense: Expense = {
+        ...expense,
+        id: `exp-${Date.now()}`,
+    };
+    mockExpenses.unshift(newExpense); // Add to top
+    return newExpense;
+};
+
+export const getExpenses = async (): Promise<Expense[]> => {
+    await simulateDelay(400);
+    return [...mockExpenses].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+};
+
+export const getYearlyFinancialReport = async (year: number): Promise<MonthlyFinancialReport[]> => {
+    await simulateDelay(800);
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    
+    return months.map((monthName, index) => {
+        // 1. Calculate Real Expenses from mockExpenses
+        const monthlyExpenses = mockExpenses.filter(e => {
+            const d = new Date(e.date);
+            return d.getFullYear() === year && d.getMonth() === index;
         });
-    }
-    return data;
+        
+        const totalExpense = monthlyExpenses.reduce((sum, e) => sum + e.amount, 0);
+        
+        const expenseBreakdown: Record<ExpenseCategory, number> = {
+            'Rider Salary': 0, 'Hosting Cost': 0, 'Marketing': 0, 'Office Supplies': 0, 'Maintenance': 0, 'Other': 0
+        };
+        monthlyExpenses.forEach(e => {
+            if (expenseBreakdown[e.category] !== undefined) {
+                expenseBreakdown[e.category] += e.amount;
+            }
+        });
+
+        // 2. Calculate Real Revenue from mockOrders (limited data usually, so we might simulate past months)
+        // For current month and last month, try to use real data. For older months, simulate consistent revenue.
+        let totalRevenue = 0;
+        const monthlyOrders = mockOrders.filter(o => {
+            const d = new Date(o.date);
+            return d.getFullYear() === year && d.getMonth() === index;
+        });
+
+        if (monthlyOrders.length > 0) {
+            totalRevenue = monthlyOrders.reduce((sum, o) => sum + o.total, 0);
+        } else if (year === new Date().getFullYear() && index <= new Date().getMonth()) {
+            // Simulate revenue for past months without mock order data
+            totalRevenue = 15000 + Math.random() * 5000; 
+        }
+
+        return {
+            month: `${monthName} ${year}`,
+            year,
+            monthIndex: index,
+            revenue: totalRevenue,
+            expenses: totalExpense,
+            profit: totalRevenue - totalExpense,
+            expenseBreakdown
+        };
+    });
 };
 
 export const getAllSystemUsers = async (): Promise<{name: string, email: string, role: string}[]> => {

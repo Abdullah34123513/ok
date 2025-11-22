@@ -1,5 +1,5 @@
 
-import type { Offer, Restaurant, Food, MenuItem, Review, CartItem, Address, Order, User, Vendor, Rider, OperatingHours, CustomizationOption, ChatMessage, Moderator, SupportTicket, Area, FlashSaleCampaign, Admin } from '../types';
+import type { Offer, Restaurant, Food, MenuItem, Review, CartItem, Address, Order, User, Vendor, Rider, OperatingHours, CustomizationOption, ChatMessage, Moderator, SupportTicket, Area, FlashSaleCampaign, Admin, Expense } from '../types';
 
 // --- UTILITY FUNCTIONS ---
 const createExpiryDate = (days: number): string => new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString();
@@ -305,4 +305,15 @@ export let mockSupportTickets: SupportTicket[] = [
     { id: 'ticket-1', userEmail: 'alex.doe@example.com', subject: 'Wrong item delivered', status: 'Open', lastUpdate: '2 hours ago' },
     { id: 'ticket-2', userEmail: 'customer2@example.com', subject: 'Late delivery inquiry', status: 'In Progress', lastUpdate: '1 day ago' },
     { id: 'ticket-3', userEmail: 'customer3@example.com', subject: 'Payment issue', status: 'Open', lastUpdate: '5 minutes ago' },
+];
+
+// --- MOCK EXPENSES ---
+const today = new Date();
+export let mockExpenses: Expense[] = [
+    { id: 'exp-1', category: 'Rider Salary', amount: 5000, date: new Date(today.getFullYear(), today.getMonth(), 5).toISOString(), description: 'Monthly Payout - Zone A' },
+    { id: 'exp-2', category: 'Hosting Cost', amount: 150, date: new Date(today.getFullYear(), today.getMonth(), 1).toISOString(), description: 'AWS Server Costs' },
+    { id: 'exp-3', category: 'Marketing', amount: 1200, date: new Date(today.getFullYear(), today.getMonth(), 10).toISOString(), description: 'Facebook Ads Campaign' },
+    { id: 'exp-4', category: 'Office Supplies', amount: 300, date: new Date(today.getFullYear(), today.getMonth(), 15).toISOString(), description: 'Paper and Ink' },
+    { id: 'exp-5', category: 'Rider Salary', amount: 4800, date: new Date(today.getFullYear(), today.getMonth() - 1, 5).toISOString(), description: 'Monthly Payout - Zone A' },
+    { id: 'exp-6', category: 'Hosting Cost', amount: 150, date: new Date(today.getFullYear(), today.getMonth() - 1, 1).toISOString(), description: 'AWS Server Costs' },
 ];

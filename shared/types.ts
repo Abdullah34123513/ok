@@ -380,3 +380,24 @@ export interface SystemAlert {
     entityId?: string;
     timestamp: string;
 }
+
+// --- Finance ---
+export type ExpenseCategory = 'Rider Salary' | 'Hosting Cost' | 'Marketing' | 'Office Supplies' | 'Maintenance' | 'Other';
+
+export interface Expense {
+    id: string;
+    category: ExpenseCategory;
+    amount: number;
+    date: string; // ISO Date string
+    description: string;
+}
+
+export interface MonthlyFinancialReport {
+    month: string; // "Jan 2023"
+    year: number;
+    monthIndex: number; // 0-11
+    revenue: number;
+    expenses: number;
+    profit: number;
+    expenseBreakdown: Record<ExpenseCategory, number>;
+}
