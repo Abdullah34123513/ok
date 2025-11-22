@@ -1,7 +1,7 @@
 
 import { simulateDelay } from './utils';
-import { mockRiders, mockOrders, allMockRestaurants, mockSupportTickets, mockUsers, mockVendors, mockModerators, mockAreas, mockAddresses, mockUserPasswords } from './mockData';
-import type { ModeratorDashboardSummary, Restaurant, SupportTicket, Rider, User, Vendor, Order, Area, SystemAlert, Address, LocationPoint, OperatingHours } from '../types';
+import { mockRiders, mockOrders, allMockRestaurants, mockSupportTickets, mockUsers, mockVendors, mockModerators, mockAreas, mockAddresses, mockUserPasswords, mockOffers } from './mockData';
+import type { ModeratorDashboardSummary, Restaurant, SupportTicket, Rider, User, Vendor, Order, Area, SystemAlert, Address, LocationPoint, OperatingHours, Offer } from '../types';
 
 export const getModeratorDashboardSummary = async (): Promise<ModeratorDashboardSummary> => {
     await simulateDelay(600);
@@ -327,4 +327,38 @@ export const deleteCustomerAddress = async (addressId: string): Promise<void> =>
     await simulateDelay(300);
     const index = mockAddresses.findIndex(a => a.id === addressId);
     if(index > -1) mockAddresses.splice(index, 1);
+};
+
+// --- OFFER MANAGEMENT APIS ---
+
+export const getSystemOffers = async (): Promise<Offer[]> => {
+    await simulateDelay(400);
+    return mockOffers;
+};
+
+export const createSystemOffer = async (offerData: Omit<Offer, 'id'>): Promise<Offer> => {
+    await simulateDelay(600);
+    const newOffer: Offer = {
+        ...offerData,
+        id: `offer-${Date.now()}`,
+    };
+    mockOffers.push(newOffer);
+    return newOffer;
+};
+
+export const updateSystemOffer = async (offerId: string, offerData: Partial<Offer>): Promise<Offer> => {
+    await simulateDelay(500);
+    const index = mockOffers.findIndex(o => o.id === offerId);
+    if (index === -1) throw new Error("Offer not found");
+    
+    mockOffers[index] = { ...mockOffers[index], ...offerData };
+    return mockOffers[index];
+};
+
+export const deleteSystemOffer = async (offerId: string): Promise<void> => {
+    await simulateDelay(400);
+    const index = mockOffers.findIndex(o => o.id === offerId);
+    if (index > -1) {
+        mockOffers.splice(index, 1);
+    }
 };
