@@ -23,6 +23,8 @@ const DashboardPage: React.FC = () => {
     if (isLoading) return <div className="p-8">Loading...</div>;
     if (!stats) return <div className="p-8">Failed to load stats.</div>;
 
+    const avgOrderValue = stats.totalOrders > 0 ? (stats.totalRevenue / stats.totalOrders).toFixed(2) : '0.00';
+
     return (
         <div className="p-8 space-y-8 bg-gray-50 min-h-full">
             <div className="flex justify-between items-end">
@@ -56,7 +58,7 @@ const DashboardPage: React.FC = () => {
                         </div>
                         <div className="flex justify-between items-center">
                             <span className="text-gray-600">Avg Order Value</span>
-                            <span className="font-bold text-gray-900">৳{(stats.totalRevenue / stats.totalOrders).toFixed(2)}</span>
+                            <span className="font-bold text-gray-900">৳{avgOrderValue}</span>
                         </div>
                     </div>
                 </div>

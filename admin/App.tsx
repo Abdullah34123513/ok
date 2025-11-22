@@ -7,8 +7,7 @@ import FinancePage from './pages/FinancePage';
 import ModeratorManagementPage from './pages/ModeratorManagementPage';
 import UserDatabasePage from './pages/UserDatabasePage';
 import Sidebar from './components/Sidebar';
-
-export type View = 'dashboard' | 'finance' | 'moderators' | 'users';
+import { View } from './types';
 
 const AppContent: React.FC = () => {
     const { currentAdmin, isLoading } = useAuth();
