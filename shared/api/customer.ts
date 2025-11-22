@@ -91,6 +91,24 @@ export const getTopGroceryStores = async (areaId: string): Promise<Restaurant[]>
     return getStoresByType(areaId, 'GROCERY');
 };
 
+export const getGroceryProducts = async (areaId: string): Promise<Food[]> => {
+    await simulateDelay(600);
+    // Find grocery stores in area (or accessible to area)
+    const groceryStoreIds = allMockRestaurants
+        .filter(r => r.type === 'GROCERY')
+        .map(r => r.id);
+    
+    // Find foods belonging to these stores
+    const products = allMockFoods.filter(f => groceryStoreIds.includes(f.restaurantId));
+    
+    // Duplicate for demo purposes if list is small to show grid effect
+    if (products.length < 10 && products.length > 0) {
+        return [...products, ...products, ...products].map((p, i) => ({...p, id: `${p.id}-dup-${i}`}));
+    }
+    
+    return products;
+};
+
 export const getWarehouseProducts = async (areaId: string): Promise<Food[]> => {
     await simulateDelay(600);
     const area = mockAreas.find(a => a.id === areaId);
