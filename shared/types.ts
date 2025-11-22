@@ -305,6 +305,7 @@ export interface Vendor {
   email: string;
   status?: 'active' | 'disabled' | 'pending';
   areaId?: string;
+  commissionRate?: number; // Percentage (e.g., 15 for 15%)
 }
 
 export interface Moderator {
@@ -382,7 +383,10 @@ export interface SystemAlert {
 }
 
 // --- Finance ---
-export type ExpenseCategory = 'Rider Salary' | 'Hosting Cost' | 'Marketing' | 'Office Supplies' | 'Maintenance' | 'Other';
+export type ExpenseCategory = 
+    'Bike Purchase' | 'Office Rent' | 'Employee 1' | 'Employee 2' | 
+    'Per Order Commission' | 'Other Cost' | 'Trade Licence' | 
+    'Hosting' | 'Google API' | 'Firebase' | 'Rider Uniform' | 'Marketing' | 'Product Testing';
 
 export interface Expense {
     id: string;
@@ -392,13 +396,24 @@ export interface Expense {
     description: string;
 }
 
-export interface MonthlyFinancialReport {
-    month: string; // "Jan 2023"
-    year: number;
-    monthIndex: number; // 0-11
-    revenue: number;
-    expenses: number;
-    profit: number;
-    orderCount: number;
-    expenseBreakdown: Record<ExpenseCategory, number>;
+export interface FinancialSpreadsheetData {
+    months: string[];
+    expenses: Record<ExpenseCategory, number[]>;
+    totalOpEx: number[];
+    netProfit: number[];
+    metrics: {
+        dailySales: number[];
+        monthlySales: number[];
+        commissionPerOrder: number[];
+        avgGrossProfit: number[];
+        avgMarketingCost: number[];
+        otherCost: number[];
+        netProfitPerSales: number[];
+    };
+    totals: {
+        totalOpExYear: number;
+        totalRevenueYear: number;
+        totalCostYear: number;
+        difference: number;
+    }
 }

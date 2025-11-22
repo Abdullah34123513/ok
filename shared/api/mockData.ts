@@ -83,6 +83,7 @@ const generatedData = (() => {
         email: `vendor${i}@example.com`,
         status: statuses[(i - 1) % 3],
         areaId: area.id,
+        commissionRate: Math.floor(Math.random() * 15) + 10, // Random commission between 10% and 25%
     };
     vendors.push(vendor);
 
@@ -135,7 +136,7 @@ const generatedData = (() => {
       operatingHours: twentyFourSevenHours
    };
    restaurants.push(diner);
-   const dinerVendor: Vendor = { id: 'vendor-26', restaurantId: diner.id, name: 'Diner Manager', email: 'vendor26@example.com', status: 'active', areaId: 'area-1' };
+   const dinerVendor: Vendor = { id: 'vendor-26', restaurantId: diner.id, name: 'Diner Manager', email: 'vendor26@example.com', status: 'active', areaId: 'area-1', commissionRate: 18 };
    vendors.push(dinerVendor);
    const dinerUser: User = { name: dinerVendor.name, email: dinerVendor.email, phone: '555-0126' };
    vendorUsers.push(dinerUser);
@@ -170,7 +171,7 @@ const generatedData = (() => {
        operatingHours: twentyFourSevenHours
    };
    restaurants.push(grocery);
-   const groceryVendor: Vendor = { id: 'vendor-grocery', restaurantId: grocery.id, name: 'Fresh Mart Manager', email: 'grocery@example.com', status: 'active', areaId: 'area-1' };
+   const groceryVendor: Vendor = { id: 'vendor-grocery', restaurantId: grocery.id, name: 'Fresh Mart Manager', email: 'grocery@example.com', status: 'active', areaId: 'area-1', commissionRate: 12 };
    vendors.push(groceryVendor);
    const groceryUser: User = { name: 'Grocery Mgr', email: 'grocery@example.com', phone: '555-9999' };
    vendorUsers.push(groceryUser);
@@ -200,7 +201,7 @@ const generatedData = (() => {
        operatingHours: twentyFourSevenHours
    };
    restaurants.push(warehouse);
-   const warehouseVendor: Vendor = { id: 'vendor-warehouse', restaurantId: warehouse.id, name: 'Warehouse Ops', email: 'warehouse@example.com', status: 'active', areaId: 'area-1' };
+   const warehouseVendor: Vendor = { id: 'vendor-warehouse', restaurantId: warehouse.id, name: 'Warehouse Ops', email: 'warehouse@example.com', status: 'active', areaId: 'area-1', commissionRate: 5 };
    vendors.push(warehouseVendor);
    const warehouseUser: User = { name: 'Warehouse Admin', email: 'warehouse@example.com', phone: '555-8888' };
    vendorUsers.push(warehouseUser);
@@ -309,11 +310,27 @@ export let mockSupportTickets: SupportTicket[] = [
 
 // --- MOCK EXPENSES ---
 const today = new Date();
-export let mockExpenses: Expense[] = [
-    { id: 'exp-1', category: 'Rider Salary', amount: 5000, date: new Date(today.getFullYear(), today.getMonth(), 5).toISOString(), description: 'Monthly Payout - Zone A' },
-    { id: 'exp-2', category: 'Hosting Cost', amount: 150, date: new Date(today.getFullYear(), today.getMonth(), 1).toISOString(), description: 'AWS Server Costs' },
-    { id: 'exp-3', category: 'Marketing', amount: 1200, date: new Date(today.getFullYear(), today.getMonth(), 10).toISOString(), description: 'Facebook Ads Campaign' },
-    { id: 'exp-4', category: 'Office Supplies', amount: 300, date: new Date(today.getFullYear(), today.getMonth(), 15).toISOString(), description: 'Paper and Ink' },
-    { id: 'exp-5', category: 'Rider Salary', amount: 4800, date: new Date(today.getFullYear(), today.getMonth() - 1, 5).toISOString(), description: 'Monthly Payout - Zone A' },
-    { id: 'exp-6', category: 'Hosting Cost', amount: 150, date: new Date(today.getFullYear(), today.getMonth() - 1, 1).toISOString(), description: 'AWS Server Costs' },
-];
+const createExpense = (category: Expense['category'], amount: number, monthOffset: number) => ({
+    id: `exp-${Math.random().toString(36).substr(2, 9)}`,
+    category,
+    amount,
+    date: new Date(today.getFullYear(), today.getMonth() - monthOffset, 1).toISOString(),
+    description: 'Monthly recurring'
+});
+
+// Populate generic expenses for the last 12 months to enable the spreadsheet
+export let mockExpenses: Expense[] = [];
+for(let i = 0; i < 12; i++) {
+    mockExpenses.push(createExpense('Bike Purchase', i === 0 ? 40000 : 0, i)); // One-time bike
+    mockExpenses.push(createExpense('Office Rent', 2000, i));
+    mockExpenses.push(createExpense('Employee 1', 6000 + (i*100), i)); // Variable salary
+    mockExpenses.push(createExpense('Employee 2', 7000, i));
+    mockExpenses.push(createExpense('Per Order Commission', 1500 + (i*200), i)); // Cost to affiliates
+    mockExpenses.push(createExpense('Other Cost', 500, i));
+    mockExpenses.push(createExpense('Trade Licence', i === 0 ? 1000 : 0, i)); // One-time
+    mockExpenses.push(createExpense('Hosting', 15000, i));
+    mockExpenses.push(createExpense('Google API', 1500, i));
+    mockExpenses.push(createExpense('Firebase', 1500, i));
+    mockExpenses.push(createExpense('Rider Uniform', 2000, i));
+    mockExpenses.push(createExpense('Marketing', 3000, i));
+}

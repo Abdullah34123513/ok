@@ -8,13 +8,17 @@ interface AddExpenseModalProps {
 }
 
 const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ onClose, onSave }) => {
-    const [category, setCategory] = useState<ExpenseCategory>('Other');
+    const [category, setCategory] = useState<ExpenseCategory>('Other Cost');
     const [amount, setAmount] = useState('');
     const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
     const [description, setDescription] = useState('');
     const [isSaving, setIsSaving] = useState(false);
 
-    const categories: ExpenseCategory[] = ['Rider Salary', 'Hosting Cost', 'Marketing', 'Office Supplies', 'Maintenance', 'Other'];
+    const categories: ExpenseCategory[] = [
+        'Bike Purchase', 'Office Rent', 'Employee 1', 'Employee 2', 
+        'Per Order Commission', 'Other Cost', 'Trade Licence', 
+        'Hosting', 'Google API', 'Firebase', 'Rider Uniform', 'Marketing', 'Product Testing'
+    ];
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();

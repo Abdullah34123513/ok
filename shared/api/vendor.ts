@@ -1,3 +1,4 @@
+
 import type { Order, Restaurant, MenuItem, VendorDashboardSummary, CustomizationOption } from '../types';
 import { simulateDelay } from './utils';
 import { mockVendors, mockOrders, allMockRestaurants, allMockFoods } from './mockData';

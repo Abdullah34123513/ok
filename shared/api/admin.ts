@@ -1,27 +1,28 @@
 
 import { simulateDelay } from './utils';
 import { mockRiders, mockOrders, allMockRestaurants, mockUsers, mockVendors, mockModerators, mockAdmins, mockUserPasswords, mockExpenses } from './mockData';
-import type { AdminDashboardSummary, Moderator, User, Expense, MonthlyFinancialReport, ExpenseCategory } from '../types';
-
-const VENDOR_COMMISSION_RATE = 0.15; // 15% take from subtotal
-const DELIVERY_PROFIT_RATE = 0.20;   // 20% take from delivery fee
+import type { AdminDashboardSummary, Moderator, User, Expense, FinancialSpreadsheetData, ExpenseCategory } from '../types';
 
 export const getAdminDashboardSummary = async (): Promise<AdminDashboardSummary> => {
     await simulateDelay(600);
     
-    // Calculate Total Gross Merchandise Value (GMV) - Total money flowing through system
+    // Total Gross Merchandise Value (GMV)
     const totalRevenue = mockOrders.reduce((acc, order) => acc + order.total, 0);
     
-    // Calculate Actual Platform Profit
+    // Actual Platform Profit based on variable commissions
     const netProfit = mockOrders.reduce((acc, order) => {
-        const vendorCut = order.subtotal * VENDOR_COMMISSION_RATE;
-        const deliveryCut = order.deliveryFee * DELIVERY_PROFIT_RATE;
-        return acc + vendorCut + deliveryCut;
+        const vendor = mockVendors.find(v => allMockRestaurants.find(r => r.id === v.restaurantId)?.name === order.restaurantName);
+        const commissionRate = (vendor?.commissionRate || 15) / 100; // Default 15% if not found
+        
+        const vendorCut = order.subtotal * commissionRate;
+        // We assume platform keeps delivery fee but pays riders from expenses (salaries), so delivery fee is revenue here.
+        const deliveryRevenue = order.deliveryFee; 
+        return acc + vendorCut + deliveryRevenue;
     }, 0);
 
     return {
-        totalRevenue, // This is GMV
-        netProfit,    // This is Platform Earnings
+        totalRevenue,
+        netProfit,
         totalOrders: mockOrders.length,
         activeUsers: mockUsers.length,
         activeVendors: mockVendors.filter(v => v.status === 'active').length,
@@ -55,7 +56,6 @@ export const deleteModerator = async (modId: string): Promise<void> => {
     await simulateDelay(500);
     const index = mockModerators.findIndex(m => m.id === modId);
     if (index > -1) {
-        // Also remove from users list
         const email = mockModerators[index].email;
         const userIndex = mockUsers.findIndex(u => u.email === email);
         if (userIndex > -1) mockUsers.splice(userIndex, 1);
@@ -71,7 +71,7 @@ export const addExpense = async (expense: Omit<Expense, 'id'>): Promise<Expense>
         ...expense,
         id: `exp-${Date.now()}`,
     };
-    mockExpenses.unshift(newExpense); // Add to top
+    mockExpenses.unshift(newExpense);
     return newExpense;
 };
 
@@ -80,73 +80,119 @@ export const getExpenses = async (): Promise<Expense[]> => {
     return [...mockExpenses].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 };
 
-export const getYearlyFinancialReport = async (year: number): Promise<MonthlyFinancialReport[]> => {
-    await simulateDelay(800);
+export const getFinancialSpreadsheetData = async (year: number): Promise<FinancialSpreadsheetData> => {
+    await simulateDelay(1000); // Simulate heavier calculation
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    const currentMonthIndex = new Date().getMonth();
+    const monthsFull = months.map(m => `${m}-${year.toString().slice(-2)}`); // e.g., "Jan-26"
     
-    return months.map((monthName, index) => {
-        // 1. Calculate Real Expenses
-        const monthlyExpenses = mockExpenses.filter(e => {
-            const d = new Date(e.date);
-            return d.getFullYear() === year && d.getMonth() === index;
-        });
-        
-        const totalExpense = monthlyExpenses.reduce((sum, e) => sum + e.amount, 0);
-        
-        const expenseBreakdown: Record<ExpenseCategory, number> = {
-            'Rider Salary': 0, 'Hosting Cost': 0, 'Marketing': 0, 'Office Supplies': 0, 'Maintenance': 0, 'Other': 0
-        };
-        monthlyExpenses.forEach(e => {
-            if (expenseBreakdown[e.category] !== undefined) {
-                expenseBreakdown[e.category] += e.amount;
+    const expenseCategories: ExpenseCategory[] = [
+        'Bike Purchase', 'Office Rent', 'Employee 1', 'Employee 2', 
+        'Per Order Commission', 'Other Cost', 'Trade Licence', 
+        'Hosting', 'Google API', 'Firebase', 'Rider Uniform', 'Marketing', 'Product Testing'
+    ];
+
+    // Initialize data structures
+    const expenses: Record<ExpenseCategory, number[]> = {} as any;
+    expenseCategories.forEach(cat => expenses[cat] = new Array(12).fill(0));
+    
+    const totalOpEx = new Array(12).fill(0);
+    const netProfit = new Array(12).fill(0);
+    
+    const metrics = {
+        dailySales: new Array(12).fill(0),
+        monthlySales: new Array(12).fill(0),
+        commissionPerOrder: new Array(12).fill(0),
+        avgGrossProfit: new Array(12).fill(0),
+        avgMarketingCost: new Array(12).fill(0),
+        otherCost: new Array(12).fill(0),
+        netProfitPerSales: new Array(12).fill(0)
+    };
+
+    // 1. Process Expenses
+    mockExpenses.forEach(e => {
+        const d = new Date(e.date);
+        if (d.getFullYear() === year) {
+            const monthIdx = d.getMonth();
+            if (expenses[e.category]) {
+                expenses[e.category][monthIdx] += e.amount;
             }
-        });
-
-        // 2. Calculate Platform Profit
-        let platformProfit = 0;
-        let grossSales = 0;
-        let orderCount = 0;
-
-        const monthlyOrders = mockOrders.filter(o => {
-            // Use placedAt if available, otherwise date string
-            const dateStr = o.placedAt || o.date;
-            const d = new Date(dateStr);
-            return d.getFullYear() === year && d.getMonth() === index;
-        });
-
-        if (monthlyOrders.length > 0) {
-            orderCount = monthlyOrders.length;
-            grossSales = monthlyOrders.reduce((sum, o) => sum + o.total, 0);
-            platformProfit = monthlyOrders.reduce((sum, o) => {
-                const vendorShare = o.subtotal * VENDOR_COMMISSION_RATE;
-                const deliveryShare = o.deliveryFee * DELIVERY_PROFIT_RATE;
-                return sum + vendorShare + deliveryShare;
-            }, 0);
-        } else if (year === new Date().getFullYear() && index <= currentMonthIndex) {
-            // Simulate past data for visual fullness if no mock orders exist for that month
-            // In a real app, this block wouldn't exist, we'd just show 0
-            orderCount = Math.floor(200 + Math.random() * 50);
-            const simulatedOrderVolume = 50000 + Math.random() * 20000; // ~50k-70k sales
-            grossSales = simulatedOrderVolume;
-            
-            const simulatedSubtotal = simulatedOrderVolume * 0.85;
-            const simulatedDeliveryFees = simulatedOrderVolume * 0.15;
-            
-            platformProfit = (simulatedSubtotal * VENDOR_COMMISSION_RATE) + (simulatedDeliveryFees * DELIVERY_PROFIT_RATE);
         }
-
-        return {
-            month: `${monthName} ${year}`,
-            year,
-            monthIndex: index,
-            revenue: grossSales, // GMV
-            expenses: totalExpense, // Costs
-            profit: platformProfit - totalExpense, // Net Income
-            orderCount,
-            expenseBreakdown
-        };
     });
+
+    // 2. Calculate OpEx per month
+    for (let i = 0; i < 12; i++) {
+        let monthlySum = 0;
+        expenseCategories.forEach(cat => {
+            monthlySum += expenses[cat][i];
+        });
+        totalOpEx[i] = monthlySum;
+    }
+
+    // 3. Calculate Revenue & Profit Logic
+    // Since mock orders are sparse, we'll simulate volume based on month index to create a realistic trend
+    for (let i = 0; i < 12; i++) {
+        // Simulate varying order volume increasing over the year
+        const baseVolume = 150 + (i * 50); 
+        const orderCount = Math.floor(baseVolume * (0.9 + Math.random() * 0.2)); // +/- 10% variance
+        
+        // Simulate Revenue components
+        const avgOrderValue = 1200; // avg basket size
+        const avgDeliveryFee = 60;
+        const avgCommissionRate = 0.15; // 15% platform commission
+
+        const totalSalesVolume = orderCount * avgOrderValue; // GMV
+        const totalCommissionRevenue = totalSalesVolume * avgCommissionRate;
+        const totalDeliveryRevenue = orderCount * avgDeliveryFee;
+        
+        const grossPlatformRevenue = totalCommissionRevenue + totalDeliveryRevenue;
+
+        // Populate Metrics
+        metrics.monthlySales[i] = orderCount;
+        metrics.dailySales[i] = Math.round(orderCount / 30);
+        
+        // "Sales commission per order": Total Commission / Orders
+        metrics.commissionPerOrder[i] = orderCount > 0 ? Math.round(totalCommissionRevenue / orderCount) : 0;
+        
+        // "Avg gross profit/delivery revenue": Total Revenue / Orders
+        metrics.avgGrossProfit[i] = orderCount > 0 ? Math.round(grossPlatformRevenue / orderCount) : 0;
+        
+        // "Avg marketing cost": Marketing Spend / Orders
+        const marketingSpend = expenses['Marketing'][i];
+        metrics.avgMarketingCost[i] = orderCount > 0 ? Math.round(marketingSpend / orderCount) : 0;
+        
+        metrics.otherCost[i] = expenses['Other Cost'][i];
+
+        // Net Profit = Gross Revenue - OpEx
+        const monthlyNetProfit = grossPlatformRevenue - totalOpEx[i];
+        netProfit[i] = monthlyNetProfit;
+
+        // "net profit per sales": Net Profit / Order Count
+        metrics.netProfitPerSales[i] = orderCount > 0 ? Math.round(monthlyNetProfit / orderCount) : 0;
+    }
+
+    // 4. Totals
+    const totalOpExYear = totalOpEx.reduce((a, b) => a + b, 0);
+    const totalRevenueYear = metrics.monthlySales.reduce((sum, count, idx) => {
+        // Re-calculate revenue from metrics for consistency
+        return sum + (metrics.avgGrossProfit[idx] * count);
+    }, 0);
+    
+    const totalCostYear = totalOpExYear; // Assuming Cost = OpEx for this spreadsheet model
+    const difference = totalRevenueYear - totalCostYear;
+
+    return {
+        months: monthsFull,
+        expenses,
+        totalOpEx,
+        netProfit,
+        metrics,
+        totals: {
+            totalOpExYear,
+            totalRevenueYear,
+            totalCostYear,
+            difference
+        }
+    };
 };
 
 export const getAllSystemUsers = async (): Promise<{name: string, email: string, role: string}[]> => {

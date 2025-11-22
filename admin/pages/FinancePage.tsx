@@ -1,15 +1,11 @@
 
 import React, { useState, useEffect } from 'react';
 import * as api from '@shared/api';
-import type { Expense, MonthlyFinancialReport, ExpenseCategory } from '@shared/types';
-import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, PointElement, LineElement, Title, Tooltip, Legend, type ChartData } from 'chart.js';
-import { Chart } from 'react-chartjs-2';
+import type { FinancialSpreadsheetData, Expense, ExpenseCategory } from '@shared/types';
 import AddExpenseModal from '../components/AddExpenseModal';
 
-ChartJS.register(CategoryScale, LinearScale, BarElement, PointElement, LineElement, Title, Tooltip, Legend);
-
 const FinancePage: React.FC = () => {
-    const [report, setReport] = useState<MonthlyFinancialReport[]>([]);
+    const [data, setData] = useState<FinancialSpreadsheetData | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -18,8 +14,8 @@ const FinancePage: React.FC = () => {
     const fetchData = async () => {
         setIsLoading(true);
         try {
-            const reportData = await api.getYearlyFinancialReport(currentYear);
-            setReport(reportData);
+            const spreadsheetData = await api.getFinancialSpreadsheetData(currentYear);
+            setData(spreadsheetData);
         } catch (err) {
             console.error(err);
         } finally {
@@ -33,203 +29,173 @@ const FinancePage: React.FC = () => {
 
     const handleAddExpense = async (expenseData: Omit<Expense, 'id'>) => {
         await api.addExpense(expenseData);
-        fetchData(); // Refresh data to update charts and lists
+        fetchData();
     };
 
-    // Chart Configuration
-    const chartData: ChartData<'bar' | 'line'> = {
-        labels: report.map(r => r.month.split(' ')[0]), // Jan, Feb...
-        datasets: [
-            {
-                type: 'bar' as const,
-                label: 'Gross Platform Revenue',
-                data: report.map(r => r.expenses + r.profit),
-                backgroundColor: 'rgba(59, 130, 246, 0.7)', // Blue
-                order: 2,
-            },
-            {
-                type: 'bar' as const,
-                label: 'Total Expenses',
-                data: report.map(r => r.expenses),
-                backgroundColor: 'rgba(239, 68, 68, 0.7)', // Red
-                order: 3,
-            },
-            {
-                type: 'line' as const,
-                label: 'Net Income',
-                data: report.map(r => r.profit),
-                borderColor: 'rgba(16, 185, 129, 1)', // Green
-                borderWidth: 2,
-                fill: false,
-                tension: 0.3,
-                pointBackgroundColor: 'rgba(16, 185, 129, 1)',
-                order: 1,
-            }
-        ],
-    };
+    if (isLoading || !data) return <div className="p-8 text-center text-gray-500">Loading detailed financial data...</div>;
 
-    const chartOptions = {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-            legend: { position: 'top' as const },
-            title: { display: false },
-        },
-        scales: {
-            y: {
-                beginAtZero: true,
-            }
-        }
-    };
+    const { months, expenses, totalOpEx, netProfit, metrics, totals } = data;
+    const expenseCategories = Object.keys(expenses) as ExpenseCategory[];
 
-    // Summary Totals
-    const totalExpenseYTD = report.reduce((sum, r) => sum + r.expenses, 0);
-    const netIncomeYTD = report.reduce((sum, r) => sum + r.profit, 0);
-    const grossPlatformProfit = netIncomeYTD + totalExpenseYTD;
-
-    // Define Categories for the spreadsheet
-    const expenseCategories: ExpenseCategory[] = ['Rider Salary', 'Hosting Cost', 'Marketing', 'Office Supplies', 'Maintenance', 'Other'];
-
-    // Formatting helper
-    const formatMoney = (val: number) => `৳${val.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
-
-    if (isLoading) return <div className="p-8 text-center text-gray-500">Loading financial data...</div>;
+    // Helper to format money without currency symbol for cleaner cells
+    const fm = (val: number) => val !== 0 ? Math.round(val).toLocaleString() : '0';
 
     return (
-        <div className="p-8 space-y-8 bg-gray-50 min-h-full">
-            {/* Header */}
-            <div className="flex flex-col md:flex-row md:justify-between md:items-end gap-4">
-                <div>
-                    <h1 className="text-3xl font-bold text-gray-800">Finance & Cashflow</h1>
-                    <p className="text-gray-500 mt-1">{currentYear} Financial Overview</p>
-                </div>
+        <div className="p-6 space-y-6 bg-gray-100 min-h-full overflow-x-auto">
+            <div className="flex justify-between items-center">
+                <h1 className="text-2xl font-bold text-gray-800">Financial Report {currentYear}</h1>
                 <button 
                     onClick={() => setIsModalOpen(true)}
-                    className="bg-indigo-600 text-white px-4 py-2 rounded-lg font-bold shadow hover:bg-indigo-700 transition flex items-center whitespace-nowrap"
+                    className="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700 transition font-bold text-sm"
                 >
-                    <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
-                    Add Expense
+                    + Add Expense
                 </button>
             </div>
 
-            {/* Summary Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="bg-white p-6 rounded-xl shadow-sm border-l-4 border-blue-500">
-                    <p className="text-xs text-gray-500 font-bold uppercase">Gross Revenue (YTD)</p>
-                    <p className="text-2xl font-bold text-blue-600 mt-2">{formatMoney(grossPlatformProfit)}</p>
-                </div>
-                <div className="bg-white p-6 rounded-xl shadow-sm border-l-4 border-red-500">
-                    <p className="text-xs text-gray-500 font-bold uppercase">Total Expenses (YTD)</p>
-                    <p className="text-2xl font-bold text-red-600 mt-2">{formatMoney(totalExpenseYTD)}</p>
-                </div>
-                <div className={`bg-white p-6 rounded-xl shadow-sm border-l-4 ${netIncomeYTD >= 0 ? 'border-emerald-500' : 'border-orange-500'}`}>
-                    <p className="text-xs text-gray-500 font-bold uppercase">Net Income (YTD)</p>
-                    <p className={`text-2xl font-bold mt-2 ${netIncomeYTD >= 0 ? 'text-emerald-600' : 'text-orange-600'}`}>
-                        {netIncomeYTD >= 0 ? '+' : ''}{formatMoney(netIncomeYTD)}
-                    </p>
-                </div>
-            </div>
-
-            {/* Chart Section */}
-            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 h-80">
-                <Chart type='bar' options={chartOptions} data={chartData} />
-            </div>
-
-            {/* Detailed Spreadsheet Table */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                <div className="p-4 border-b bg-gray-50">
-                    <h3 className="text-lg font-bold text-gray-800">Financial Report Spreadsheet</h3>
-                </div>
-                
-                <div className="overflow-x-auto">
-                    <table className="w-full text-sm text-right border-collapse">
-                        <thead>
-                            <tr className="bg-gray-100 text-gray-600">
-                                <th className="p-3 text-left font-bold border-b border-r bg-gray-50 sticky left-0 min-w-[180px] z-10">Category</th>
-                                {report.map(r => (
-                                    <th key={r.month} className="p-3 border-b min-w-[100px] font-semibold">{r.month.split(' ')[0]}</th>
-                                ))}
-                                <th className="p-3 border-b border-l bg-gray-50 font-bold min-w-[120px]">Total</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {/* --- OPEX SECTION --- */}
-                            <tr className="bg-gray-50"><td colSpan={14} className="p-2 text-left font-bold text-gray-500 text-xs uppercase tracking-wider pl-4">Operational Expenses (OpEx)</td></tr>
-                            
-                            {expenseCategories.map(category => {
-                                const rowTotal = report.reduce((sum, r) => sum + (r.expenseBreakdown[category] || 0), 0);
-                                return (
-                                    <tr key={category} className="hover:bg-red-50/30">
-                                        <td className="p-3 text-left border-r bg-white sticky left-0 z-10 font-medium text-gray-700">{category}</td>
-                                        {report.map(r => (
-                                            <td key={r.month} className="p-3 border-b border-gray-100 text-red-600/80">
-                                                {(r.expenseBreakdown[category] || 0) > 0 ? (r.expenseBreakdown[category] || 0).toLocaleString() : '-'}
-                                            </td>
-                                        ))}
-                                        <td className="p-3 border-l border-b font-bold text-red-600 bg-gray-50/50">{formatMoney(rowTotal)}</td>
-                                    </tr>
-                                );
-                            })}
-
-                            {/* Total OpEx Row */}
-                            <tr className="bg-red-100/50 font-bold">
-                                <td className="p-3 text-left border-r border-red-200 bg-red-100/50 sticky left-0 z-10 text-red-800">Total OpEx</td>
-                                {report.map(r => (
-                                    <td key={r.month} className="p-3 border-b border-red-200 text-red-800">{r.expenses > 0 ? r.expenses.toLocaleString() : '-'}</td>
-                                ))}
-                                <td className="p-3 border-l border-b border-red-200 text-red-900">{formatMoney(totalExpenseYTD)}</td>
-                            </tr>
-
-                            {/* Spacer */}
-                            <tr><td colSpan={14} className="h-6 bg-gray-50"></td></tr>
-
-                            {/* --- REVENUE SECTION --- */}
-                            <tr className="bg-gray-50"><td colSpan={14} className="p-2 text-left font-bold text-gray-500 text-xs uppercase tracking-wider pl-4">Revenue & Metrics</td></tr>
-
-                            <tr>
-                                <td className="p-3 text-left border-r bg-white sticky left-0 z-10 font-medium text-gray-700">Total Orders</td>
-                                {report.map(r => (
-                                    <td key={r.month} className="p-3 border-b border-gray-100 text-gray-600">{r.orderCount > 0 ? r.orderCount : '-'}</td>
-                                ))}
-                                <td className="p-3 border-l border-b bg-gray-50/50 font-bold text-gray-800">{report.reduce((acc, r) => acc + r.orderCount, 0)}</td>
-                            </tr>
-
-                            <tr>
-                                <td className="p-3 text-left border-r bg-white sticky left-0 z-10 font-medium text-gray-700">Gross Platform Revenue</td>
-                                {report.map(r => (
-                                    <td key={r.month} className="p-3 border-b border-gray-100 text-blue-600">{(r.profit + r.expenses) > 0 ? Math.round(r.profit + r.expenses).toLocaleString() : '-'}</td>
-                                ))}
-                                <td className="p-3 border-l border-b bg-gray-50/50 font-bold text-blue-700">{formatMoney(grossPlatformProfit)}</td>
-                            </tr>
-
-                            {/* Net Profit Row */}
-                            <tr className="bg-green-100/50 font-bold">
-                                <td className="p-3 text-left border-r border-green-200 bg-green-100/50 sticky left-0 z-10 text-green-800">Net Profit</td>
-                                {report.map(r => (
-                                    <td key={r.month} className={`p-3 border-b border-green-200 ${r.profit >= 0 ? 'text-green-800' : 'text-red-600'}`}>
-                                        {r.profit !== 0 ? r.profit.toLocaleString(undefined, {maximumFractionDigits: 0}) : '-'}
+            <div className="bg-white shadow-lg rounded-lg overflow-hidden border border-gray-300">
+                <table className="w-full text-xs md:text-sm text-right border-collapse">
+                    <thead className="bg-orange-100 text-gray-800 font-bold">
+                        <tr>
+                            <th className="p-2 text-left border border-orange-200 bg-orange-100 sticky left-0 min-w-[150px]">date</th>
+                            {months.map(m => <th key={m} className="p-2 border border-orange-200 min-w-[80px]">{m}</th>)}
+                            <th className="p-2 border border-orange-200 min-w-[100px]">total</th>
+                            <th className="p-2 border border-orange-200 min-w-[100px]">salaries</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {/* --- EXPENSES --- */}
+                        {expenseCategories.map(cat => {
+                            const rowTotal = expenses[cat].reduce((a, b) => a + b, 0);
+                            return (
+                                <tr key={cat} className="hover:bg-red-50">
+                                    <td className="p-2 text-left border border-gray-200 bg-red-50/30 font-medium sticky left-0">{cat}</td>
+                                    {expenses[cat].map((amount, idx) => (
+                                        <td key={idx} className="p-2 border border-gray-200">{fm(amount)}</td>
+                                    ))}
+                                    <td className="p-2 border border-gray-200 font-bold">{fm(rowTotal)}</td>
+                                    <td className="p-2 border border-gray-200 bg-orange-50">
+                                        {/* Placeholder for salaries column logic if specifically needed separately */}
                                     </td>
-                                ))}
-                                <td className="p-3 border-l border-b border-green-200 text-green-900">{formatMoney(netIncomeYTD)}</td>
-                            </tr>
-                            
-                            <tr>
-                                <td className="p-3 text-left border-r bg-white sticky left-0 z-10 font-medium text-gray-700 text-xs">Avg Profit / Order</td>
-                                {report.map(r => (
-                                    <td key={r.month} className="p-3 border-b border-gray-100 text-gray-500 text-xs">
-                                        {r.orderCount > 0 ? (r.profit / r.orderCount).toFixed(1) : '-'}
-                                    </td>
-                                ))}
-                                <td className="p-3 border-l border-b bg-gray-50/50 font-bold text-gray-600 text-xs">
-                                    {report.reduce((acc, r) => acc + r.orderCount, 0) > 0 
-                                        ? (netIncomeYTD / report.reduce((acc, r) => acc + r.orderCount, 0)).toFixed(1) 
-                                        : '-'}
-                                </td>
-                            </tr>
+                                </tr>
+                            );
+                        })}
 
-                        </tbody>
-                    </table>
-                </div>
+                        {/* --- TOTAL OPEX --- */}
+                        <tr className="bg-red-200 font-bold text-red-900">
+                            <td className="p-2 text-left border border-red-300 sticky left-0 bg-red-200">total OpEx</td>
+                            {totalOpEx.map((val, idx) => (
+                                <td key={idx} className="p-2 border border-red-300">{fm(val)}</td>
+                            ))}
+                            <td className="p-2 border border-red-300">{fm(totals.totalOpExYear)}</td>
+                            <td className="p-2 border border-red-300"></td>
+                        </tr>
+
+                        {/* Spacer */}
+                        <tr className="h-4 bg-white"><td colSpan={15}></td></tr>
+
+                        {/* --- NET PROFIT --- */}
+                        <tr className="bg-green-100 font-bold text-green-900">
+                            <td className="p-2 text-left border border-green-200 sticky left-0 bg-green-100">total net profit</td>
+                            {netProfit.map((val, idx) => (
+                                <td key={idx} className={`p-2 border border-green-200 ${val < 0 ? 'text-red-600' : ''}`}>{fm(val)}</td>
+                            ))}
+                            <td className="p-2 border border-green-200"></td> {/* No annual sum here usually for net profit rows in this specific view style, or maybe there is. Let's leave blank to match image approx */}
+                            <td className="p-2 border border-green-200"></td>
+                        </tr>
+
+                        {/* Spacer */}
+                        <tr className="h-4 bg-white"><td colSpan={15}></td></tr>
+
+                        {/* --- METRICS --- */}
+                        <tr className="bg-white hover:bg-gray-50">
+                            <td className="p-2 text-left border border-gray-200 bg-gray-50 sticky left-0 font-medium">daily sales</td>
+                            {metrics.dailySales.map((val, idx) => <td key={idx} className="p-2 border border-gray-200">{val}</td>)}
+                            <td className="p-2 border border-gray-200"></td>
+                            <td className="p-2 border border-gray-200"></td>
+                        </tr>
+                        <tr className="bg-white hover:bg-gray-50">
+                            <td className="p-2 text-left border border-gray-200 bg-gray-50 sticky left-0 font-medium">monthly sales</td>
+                            {metrics.monthlySales.map((val, idx) => <td key={idx} className="p-2 border border-gray-200">{val}</td>)}
+                            <td className="p-2 border border-gray-200"></td>
+                            <td className="p-2 border border-gray-200"></td>
+                        </tr>
+                        <tr className="bg-green-100 hover:bg-green-200 text-green-900">
+                            <td className="p-2 text-left border border-green-200 sticky left-0 bg-green-100 font-medium">Sales commission per order</td>
+                            {metrics.commissionPerOrder.map((val, idx) => <td key={idx} className="p-2 border border-green-200">{val}</td>)}
+                            <td className="p-2 border border-green-200"></td>
+                            <td className="p-2 border border-green-200"></td>
+                        </tr>
+                        <tr className="bg-green-100 hover:bg-green-200 text-green-900">
+                            <td className="p-2 text-left border border-green-200 sticky left-0 bg-green-100 font-medium">Avg gross profit/delivery revenue</td>
+                            {metrics.avgGrossProfit.map((val, idx) => <td key={idx} className="p-2 border border-green-200">{val}</td>)}
+                            <td className="p-2 border border-green-200"></td>
+                            <td className="p-2 border border-green-200"></td>
+                        </tr>
+                        <tr className="bg-white hover:bg-gray-50">
+                            <td className="p-2 text-left border border-gray-200 bg-gray-50 sticky left-0 font-medium">Avg marketing cost</td>
+                            {metrics.avgMarketingCost.map((val, idx) => <td key={idx} className="p-2 border border-gray-200">{val}</td>)}
+                            <td className="p-2 border border-gray-200"></td>
+                            <td className="p-2 border border-gray-200"></td>
+                        </tr>
+                        <tr className="bg-white hover:bg-gray-50">
+                            <td className="p-2 text-left border border-gray-200 bg-gray-50 sticky left-0 font-medium">other cost</td>
+                            {metrics.otherCost.map((val, idx) => <td key={idx} className="p-2 border border-gray-200">{val}</td>)}
+                            <td className="p-2 border border-gray-200"></td>
+                            <td className="p-2 border border-gray-200"></td>
+                        </tr>
+                        <tr className="bg-white hover:bg-gray-50">
+                            <td className="p-2 text-left border border-gray-200 bg-gray-50 sticky left-0 font-medium">product testing</td>
+                            {Array(12).fill(0).map((val, idx) => <td key={idx} className="p-2 border border-gray-200">{val}</td>)}
+                            <td className="p-2 border border-gray-200"></td>
+                            <td className="p-2 border border-gray-200"></td>
+                        </tr>
+                        <tr className="bg-green-100 hover:bg-green-200 text-green-900 font-bold">
+                            <td className="p-2 text-left border border-green-200 sticky left-0 bg-green-100">net profit</td>
+                            {netProfit.map((val, idx) => <td key={idx} className={`p-2 border border-green-200 ${val < 0 ? 'text-red-600' : ''}`}>{fm(val)}</td>)}
+                            <td className="p-2 border border-green-200"></td>
+                            <td className="p-2 border border-green-200"></td>
+                        </tr>
+                        <tr className="bg-red-50 hover:bg-red-100">
+                            <td className="p-2 text-left border border-red-200 sticky left-0 bg-red-50 font-medium">net profit per sales</td>
+                            {metrics.netProfitPerSales.map((val, idx) => <td key={idx} className={`p-2 border border-red-200 ${val < 0 ? 'text-red-600' : ''}`}>{val}</td>)}
+                            <td className="p-2 border border-red-200"></td>
+                            <td className="p-2 border border-red-200"></td>
+                        </tr>
+
+                        {/* Spacer */}
+                        <tr className="h-4 bg-white"><td colSpan={15}></td></tr>
+
+                        {/* --- TOTAL COST ROW --- */}
+                        <tr className="bg-red-200 font-bold text-red-900">
+                            <td className="p-2 text-left border border-red-300 sticky left-0 bg-red-200">total cost</td>
+                            {totalOpEx.map((val, idx) => (
+                                <td key={idx} className="p-2 border border-red-300">{fm(val)}</td>
+                            ))}
+                            <td className="p-2 border border-red-300"></td>
+                            <td className="p-2 border border-red-300"></td>
+                        </tr>
+                        
+                        {/* --- FOOTER SUMMARY --- */}
+                        <tr className="h-8 bg-white"><td colSpan={15}></td></tr>
+                        <tr className="bg-yellow-100 font-bold text-gray-800">
+                            <td className="p-3 text-left border border-yellow-200 sticky left-0 bg-yellow-100">1 year total revenue</td>
+                            <td colSpan={2} className="p-3 text-left text-green-600 border border-yellow-200">{fm(totals.totalRevenueYear)}</td>
+                            <td colSpan={12}></td>
+                        </tr>
+                        <tr className="bg-red-100 font-bold text-gray-800">
+                            <td className="p-3 text-left border border-red-200 sticky left-0 bg-red-100">1 year total cost</td>
+                            <td colSpan={2} className="p-3 text-left text-red-600 border border-red-200">{fm(totals.totalCostYear)}</td>
+                            <td colSpan={12}></td>
+                        </tr>
+                        <tr><td colSpan={3} className="border-b-2 border-dashed border-black"></td><td colSpan={12}></td></tr>
+                        <tr className="bg-green-100 font-bold text-gray-800">
+                            <td className="p-3 text-left border border-green-200 sticky left-0 bg-orange-200">Difference</td>
+                            <td colSpan={2} className={`p-3 text-left border border-green-200 bg-green-100 ${totals.difference >= 0 ? 'text-green-700' : 'text-red-700'}`}>{fm(totals.difference)}</td>
+                            <td colSpan={12}></td>
+                        </tr>
+
+                    </tbody>
+                </table>
             </div>
 
             {isModalOpen && <AddExpenseModal onClose={() => setIsModalOpen(false)} onSave={handleAddExpense} />}
